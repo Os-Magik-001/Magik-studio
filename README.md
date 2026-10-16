@@ -48,6 +48,17 @@ pnpm test        # render + plan unit tests (ENGINE_INTEGRATION=1 also runs live
 
 It reads `../.env.local` (or `engine/.env`): `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`) and `ANTHROPIC_API_KEY`. Optional: `WHISPER_CPP_MODEL` (path to a ggml model) to add transcripts, `ENGINE_MAX_FRAMES` (default 216) to cap how much footage Claude sees per job, and `ENGINE_MODEL`.
 
+**On a Mac**, run it as a background service that starts at login and restarts itself:
+
+```bash
+engine/scripts/mac-service.sh install   # also use after engine code or key changes
+engine/scripts/mac-service.sh status
+engine/scripts/mac-service.sh logs
+engine/scripts/mac-service.sh stop
+```
+
+It runs from `~/Library/Application Support/Magik Edit Engine` with a private copy of only the keys it needs, because macOS blocks background services from reading the Desktop. Edits only run while the Mac is awake.
+
 To run it on a server, `engine/Dockerfile` builds an image with FFmpeg and fonts.
 
 Not there yet: music (the mood is in the brand kit, but there's no track library), and the Phase 1 blind test, where editors compare Claude's cut with a pro edit of the same footage.
