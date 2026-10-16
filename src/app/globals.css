@@ -1,51 +1,30 @@
 @import "tailwindcss";
 
+/* Magik identity (Charte du logo v1.0): black ground, Magik Gold on screen,
+   anthracite surfaces, Cormorant Garamond titles, Montserrat text. */
 :root {
-  --bg: #fbfaf7;
-  --surface: #ffffff;
-  --surface-2: #f4f2ee;
-  --border: #e7e4de;
-  --border-strong: #d6d2ca;
-  --ink: #1e1d1b;
-  --ink-2: #4a4843;
-  --muted: #77736b;
-  --accent: #2e6bd8;
-  --accent-ink: #ffffff;
-  --accent-soft: #e8f0fc;
-  --success: #2f7d4f;
-  --success-soft: #e5f3ea;
-  --warning: #a8620a;
-  --warning-soft: #fbf0df;
-  --danger: #b4372f;
-  --danger-soft: #fae8e6;
-  --stage: #141413;
-  --stage-2: #1f1e1c;
-  --stage-ink: #f2f0eb;
-  --stage-muted: #9c988f;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161615;
-    --surface: #1d1c1a;
-    --surface-2: #252421;
-    --border: #2f2e2a;
-    --border-strong: #3d3b36;
-    --ink: #f0eee9;
-    --ink-2: #cfccc4;
-    --muted: #9a968d;
-    --accent: #5b8ff0;
-    --accent-ink: #0d1424;
-    --accent-soft: #1c2840;
-    --success: #5fbf86;
-    --success-soft: #17291e;
-    --warning: #e3a04a;
-    --warning-soft: #2e2213;
-    --danger: #ec7b72;
-    --danger-soft: #331a18;
-    --stage: #0f0f0e;
-    --stage-2: #191917;
-  }
+  --bg: #000000;
+  --surface: #0d0d0d;
+  --surface-2: #1a1a1a;
+  --border: #2a2a2a;
+  --border-strong: #3d3d3d;
+  --ink: #ffffff;
+  --ink-2: #d9d6cc;
+  --muted: #8c8a83;
+  --accent: #f6d43a;
+  --accent-ink: #000000;
+  --accent-soft: rgba(246, 212, 58, 0.12);
+  --success: #5fc48a;
+  --success-ink: #000000;
+  --success-soft: rgba(95, 196, 138, 0.13);
+  --warning: #f0883e;
+  --warning-soft: rgba(240, 136, 62, 0.14);
+  --danger: #f2685f;
+  --danger-soft: rgba(242, 104, 95, 0.14);
+  --stage: #000000;
+  --stage-2: #0d0d0d;
+  --stage-ink: #ffffff;
+  --stage-muted: #8c8a83;
 }
 
 @theme inline {
@@ -61,6 +40,7 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
@@ -70,27 +50,52 @@
   --color-stage-2: var(--stage-2);
   --color-stage-ink: var(--stage-ink);
   --color-stage-muted: var(--stage-muted);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
 }
 
 html {
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
+  font-feature-settings: "lnum" 1;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: var(--accent-soft);
+  background: rgba(246, 212, 58, 0.3);
+  color: #fff;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Date and time pickers: light icons on the dark ground. */
+input::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+}
+
+/* The "kicker": small uppercase gold label used above titles (from the charte). */
+.kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

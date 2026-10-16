@@ -5,7 +5,7 @@ import { requireRole, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { VIDEO_STATUSES, FORMAT_LABEL } from "@/lib/workflow";
 import { Avatar, EmptyState, LinkButton, PageHeader } from "@/components/ui";
-import { formatCalendarDate } from "@/components/local-date";
+import { formatCalendarDate } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Pipeline" };
 
@@ -53,14 +53,14 @@ export default async function PipelinePage() {
                     {s.label}
                     <span className="text-muted">{items.length}</span>
                   </h2>
-                  <div className="flex min-h-24 flex-col gap-2 rounded-xl bg-surface-2/60 p-2">
+                  <div className="flex min-h-24 flex-col gap-2 rounded-md bg-surface-2/60 p-2">
                     {items.map((v) => {
                       const editor = v.editor ? displayName(v.editor) : null;
                       return (
                         <Link
                           key={v.id}
                           href={`/videos/${v.id}`}
-                          className="rounded-lg border border-line bg-surface p-3 transition-colors hover:border-line-strong"
+                          className="rounded-md border border-line bg-surface p-3 transition-colors hover:border-line-strong"
                         >
                           <div className="text-xs text-muted">{v.client?.name}</div>
                           <div className="mt-0.5 text-sm font-medium text-ink">{v.title}</div>

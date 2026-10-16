@@ -120,7 +120,7 @@ export function ScriptEditor({
   const [key, setKey] = useState(0);
   return (
     <div className="flex flex-col gap-5">
-      <ActionForm action={draftScriptWithClaude} onSuccess={() => setKey((k) => k + 1)} className="rounded-lg border border-line bg-surface-2/50 p-4">
+      <ActionForm action={draftScriptWithClaude} onSuccess={() => setKey((k) => k + 1)} className="rounded-md border border-line bg-surface-2/50 p-4">
         <input type="hidden" name="videoId" value={videoId} />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <Field label="Notes for Claude (optional)" className="flex-1">

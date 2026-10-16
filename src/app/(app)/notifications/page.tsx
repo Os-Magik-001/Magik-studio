@@ -45,7 +45,7 @@ export default async function NotificationsPage() {
       {!items?.length ? (
         <EmptyState title="You're all caught up" />
       ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+        <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface">
           {items.map((n) => {
             const href = hrefFor(n);
             const inner = (

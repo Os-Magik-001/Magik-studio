@@ -60,11 +60,11 @@ export default async function ShootsPage() {
       )}
       {viewer.role === "admin" && waiting.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-3 text-[13px] font-medium text-ink-2">Ready to shoot, not scheduled</h2>
+          <h2 className="kicker mb-3">Ready to shoot, not scheduled</h2>
           <ul className="flex flex-wrap gap-2">
             {waiting.map((v) => (
               <li key={v.id}>
-                <Link href={`/videos/${v.id}`} className="inline-flex rounded-lg border border-line bg-surface px-3 py-2 text-[13px] hover:border-line-strong">
+                <Link href={`/videos/${v.id}`} className="inline-flex rounded-md border border-line bg-surface px-3 py-2 text-[13px] hover:border-line-strong">
                   {v.client?.name} · {v.title}
                 </Link>
               </li>

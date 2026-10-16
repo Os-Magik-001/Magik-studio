@@ -8,16 +8,16 @@ export function cx(...parts: (string | false | null | undefined)[]) {
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 
 const variantClass: Record<Variant, string> = {
-  primary: "bg-accent text-accent-ink hover:opacity-90 border border-transparent",
-  secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-2",
-  ghost: "text-ink-2 hover:bg-surface-2 border border-transparent",
-  danger: "bg-danger text-white hover:opacity-90 border border-transparent",
-  success: "bg-success text-white hover:opacity-90 border border-transparent",
+  primary: "bg-accent text-accent-ink font-semibold hover:brightness-110 border border-transparent shadow-[0_0_0_1px_rgba(246,212,58,0.25),0_8px_24px_-12px_rgba(246,212,58,0.6)]",
+  secondary: "bg-transparent text-ink border border-line-strong hover:border-accent/60 hover:text-accent",
+  ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink border border-transparent",
+  danger: "bg-danger text-black font-semibold hover:brightness-110 border border-transparent",
+  success: "bg-success text-success-ink font-semibold hover:brightness-110 border border-transparent",
 };
 
 export function buttonClass(variant: Variant = "secondary", size: "sm" | "md" = "md") {
   return cx(
-    "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap",
+    "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-[color,background-color,border-color,filter] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap",
     size === "sm" ? "h-8 px-2.5 text-[13px]" : "h-9 px-3.5 text-sm",
     variantClass[variant],
   );
@@ -42,7 +42,7 @@ export function LinkButton({
 }
 
 const fieldClass =
-  "w-full rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none";
+  "w-full rounded-md border border-line bg-black px-3 text-sm text-ink placeholder:text-muted/80 transition-colors hover:border-line-strong focus:border-accent focus:outline-none";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cx(fieldClass, "h-9", className)} {...props} />;
@@ -59,7 +59,7 @@ export function Select({ className, ...props }: ComponentProps<"select">) {
 export function Card({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
-      className={cx("rounded-xl border border-line bg-surface", className)}
+      className={cx("rounded-md border border-line bg-surface", className)}
       {...props}
     />
   );
@@ -120,20 +120,24 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-0">
-        {eyebrow && <div className="mb-1 text-[13px] text-muted">{eyebrow}</div>}
-        <h1 className="font-serif text-3xl leading-tight text-ink">{title}</h1>
-        {description && <p className="mt-1.5 max-w-2xl text-sm text-muted">{description}</p>}
+    <header className="mb-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          {eyebrow && <div className="kicker mb-2 [&_a:hover]:text-ink">{eyebrow}</div>}
+          <h1 className="font-serif text-[2.6rem] leading-[1.05] font-medium text-ink">{title}</h1>
+          {description && <p className="mt-2 max-w-2xl text-sm text-muted">{description}</p>}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {/* The charte's gold hairline rule. */}
+      <div aria-hidden className="mt-6 h-px bg-gradient-to-r from-accent/55 via-accent/15 to-transparent" />
     </header>
   );
 }
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-line-strong px-6 py-10 text-center">
+    <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
       <p className="text-sm font-medium text-ink">{title}</p>
       {children && <div className="mt-1 text-sm text-muted">{children}</div>}
     </div>
@@ -149,7 +153,7 @@ export function Avatar({ name, size = 28 }: { name: string; size?: number }) {
     .join("");
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-surface-2 font-medium text-ink-2"
+      className="inline-flex shrink-0 items-center justify-center rounded-full border border-accent/30 bg-accent-soft font-semibold text-accent"
       style={{ width: size, height: size, fontSize: size * 0.4 }}
       aria-hidden
     >

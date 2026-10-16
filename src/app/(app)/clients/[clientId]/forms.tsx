@@ -101,9 +101,9 @@ export function BrandKitForm({
       <div className="flex flex-wrap items-center gap-4">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL
-          <img src={logoUrl} alt="Client logo" className="h-16 w-16 rounded-lg border border-line object-contain p-1" />
+          <img src={logoUrl} alt="Client logo" className="h-16 w-16 rounded-md border border-line object-contain p-1" />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-line-strong text-xs text-muted">
+          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-line-strong text-xs text-muted">
             No logo
           </div>
         )}

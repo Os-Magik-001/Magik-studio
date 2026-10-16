@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import Image from "next/image";
 import type { Metadata } from "next";
+import { Matrix } from "@/components/matrix";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -14,20 +16,35 @@ export default function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-8">
-          <div className="mb-6 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-ink font-serif text-xl text-bg">
-            M
-          </div>
-          <h1 className="font-serif text-3xl text-ink">Sign in to Magik OS</h1>
-          <p className="mt-2 text-sm text-muted">
-            Forgot your password? Ask your studio manager to reset it.
-          </p>
+    <main className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-black px-4 py-12">
+      {/* The gold matrix corridor, calmed toward the centre so the card reads. */}
+      <div aria-hidden className="fixed inset-0 -z-10">
+        <Matrix variant="tunnel" />
+        <div className="absolute inset-0 bg-black/25 sm:bg-[radial-gradient(ellipse_42%_48%_at_50%_46%,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.7)_45%,rgba(0,0,0,0.15)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 hidden h-1/3 bg-gradient-to-t from-black via-black/60 to-transparent sm:block" />
+      </div>
+
+      <div className="w-full max-w-[400px] rounded-md border border-line bg-black/70 p-7 shadow-[0_30px_120px_-40px_rgba(246,212,58,0.35)] backdrop-blur-[1.5px] sm:bg-black/75 sm:p-10 sm:backdrop-blur-md">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Image
+            src="/brand/magik-vertical.svg"
+            alt="Magik Management"
+            width={180}
+            height={132}
+            unoptimized
+            priority
+            className="h-auto w-[180px]"
+          />
+          <div className="mt-8 h-px w-16 bg-accent/60" aria-hidden />
+          <p className="kicker mt-6">Studio OS</p>
+          <h1 className="mt-2 font-serif text-[2.4rem] leading-none font-medium text-ink">Sign in</h1>
         </div>
-        <Suspense>
+        <Suspense fallback={<div className="h-[236px]" aria-busy="true" />}>
           <LoginBody searchParams={searchParams} />
         </Suspense>
+        <p className="mt-6 text-center text-xs text-muted">
+          Forgot your password? Ask your studio manager to reset it.
+        </p>
       </div>
     </main>
   );
@@ -42,7 +59,7 @@ async function LoginBody({
   return (
     <>
       {error && ERRORS[error] && (
-        <p role="alert" className="mb-4 rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger">
+        <p role="alert" className="mb-4 rounded-md bg-danger-soft px-3 py-2 text-[13px] text-danger">
           {ERRORS[error]}
         </p>
       )}

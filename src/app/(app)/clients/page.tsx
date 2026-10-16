@@ -37,7 +37,7 @@ export default async function ClientsPage() {
                   <li key={c.id}>
                     <Link
                       href={`/clients/${c.id}`}
-                      className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong"
+                      className="flex items-start gap-3 rounded-md border border-line bg-surface p-4 transition-colors hover:border-line-strong"
                     >
                       <FolderOpen size={18} strokeWidth={1.5} className="mt-0.5 text-muted" aria-hidden />
                       <div className="min-w-0">

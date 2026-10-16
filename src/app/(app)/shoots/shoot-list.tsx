@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Clock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui";
-import { formatDate, useHydrated } from "@/components/local-date";
+import { useHydrated } from "@/components/local-date";
+import { formatDate } from "@/lib/dates";
 
 export type ShootRow = {
   id: string;
@@ -37,7 +38,7 @@ export function ShootList({ shoots }: { shoots: ShootRow[] }) {
               <li key={s.id}>
                 <Link
                   href={`/shoots/${s.videoId}`}
-                  className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong sm:flex-row sm:items-center sm:gap-6"
+                  className="flex flex-col gap-2 rounded-md border border-line bg-surface p-4 transition-colors hover:border-line-strong sm:flex-row sm:items-center sm:gap-6"
                 >
                   <div className="flex w-40 shrink-0 items-center gap-1.5 text-sm font-medium text-ink">
                     <Clock size={14} className="text-muted" aria-hidden />

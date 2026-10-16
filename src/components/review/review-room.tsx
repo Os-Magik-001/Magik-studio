@@ -158,7 +158,7 @@ export function ReviewRoom(props: Props) {
       <div className="flex min-w-0 flex-col gap-3">
         {/* Version stack */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1 rounded-lg bg-surface-2 p-1" role="tablist" aria-label="Versions">
+          <div className="flex gap-1 rounded-md bg-surface-2 p-1" role="tablist" aria-label="Versions">
             {versions.map((v) => (
               <button
                 key={v.id}
@@ -185,7 +185,7 @@ export function ReviewRoom(props: Props) {
                   setCompareId(e.target.value || null);
                   mainRef.current?.pause();
                 }}
-                className="h-8 rounded-lg border border-line-strong bg-surface px-2 text-[13px]"
+                className="h-8 rounded-md border border-line-strong bg-surface px-2 text-[13px]"
               >
                 <option value="">Off</option>
                 {others.map((o) => (
@@ -199,7 +199,7 @@ export function ReviewRoom(props: Props) {
         </div>
 
         {/* Stage */}
-        <div className="rounded-xl bg-stage p-3 sm:p-4">
+        <div className="rounded-md border border-line bg-stage p-3 sm:p-4">
           <div className={cx("grid gap-3", compare && "sm:grid-cols-2")}>
             <Stage
               label={compare ? `v${version.number}` : undefined}
@@ -571,7 +571,7 @@ function CommentItem({
   onReply?: () => void;
 }) {
   return (
-    <div className={cx("rounded-lg p-2.5", active && "bg-surface-2", c.resolved && "opacity-60")}>
+    <div className={cx("rounded-md p-2.5", active && "bg-surface-2", c.resolved && "opacity-60")}>
       <div className="flex items-center gap-2 text-xs">
         <span className="font-medium text-ink">{c.authorName}</span>
         {c.authorIsClient && <Badge tone="danger">Client</Badge>}
@@ -634,7 +634,7 @@ function DecisionPanel({
           </p>
           <Textarea name="note" rows={3} placeholder="Anything else? (optional)" />
           {extra && (
-            <p className="rounded-lg bg-warning-soft px-3 py-2 text-[13px] text-warning">
+            <p className="rounded-md bg-warning-soft px-3 py-2 text-[13px] text-warning">
               This would be change round {nextRound}. Your plan includes {revisions.included}, so this round may be billed as extra work.
             </p>
           )}

@@ -41,13 +41,13 @@ export default async function ClientHome() {
         <div className="flex flex-col gap-8">
           {needsYou.length > 0 && (
             <section>
-              <h2 className="mb-3 text-[13px] font-medium text-ink-2">Waiting for you</h2>
+              <h2 className="kicker mb-3">Waiting for you</h2>
               <ul className="grid gap-3 sm:grid-cols-2">
                 {needsYou.map((v) => (
                   <li key={v.id}>
                     <Link
                       href={`/review/${v.id}${v.versionWaiting ? `?v=${v.versionWaiting.id}` : ""}`}
-                      className="block rounded-xl border border-accent/40 bg-accent-soft p-4 transition-colors hover:border-accent"
+                      className="block rounded-md border border-accent/40 bg-accent-soft p-4 transition-colors hover:border-accent"
                     >
                       <div className="font-medium text-ink">{v.title}</div>
                       <div className="mt-1 text-[13px] text-ink-2">
@@ -62,8 +62,8 @@ export default async function ClientHome() {
             </section>
           )}
           <section>
-            <h2 className="mb-3 text-[13px] font-medium text-ink-2">All videos</h2>
-            <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+            <h2 className="kicker mb-3">All videos</h2>
+            <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface">
               {rows.map((v) => (
                 <li key={v.id}>
                   <Link href={`/review/${v.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5 hover:bg-surface-2">

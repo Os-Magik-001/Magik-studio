@@ -1,26 +1,26 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Newsreader } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const montserrat = Montserrat({ variable: "--font-montserrat", subsets: ["latin"] });
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
 });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "Magik OS", template: "%s · Magik OS" },
   description: "The workspace that runs Magik Studio: shoot, edit with Claude, review and approve.",
 };
 
+export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} min-h-dvh antialiased`}
-      >
+      <body className={`${montserrat.variable} ${cormorant.variable} ${geistMono.variable} min-h-dvh antialiased`}>
         {children}
       </body>
     </html>
