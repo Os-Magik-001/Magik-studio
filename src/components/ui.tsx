@@ -8,17 +8,18 @@ export function cx(...parts: (string | false | null | undefined)[]) {
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 
 const variantClass: Record<Variant, string> = {
-  primary: "bg-accent text-accent-ink font-semibold hover:brightness-110 border border-transparent shadow-[0_0_0_1px_rgba(246,212,58,0.25),0_8px_24px_-12px_rgba(246,212,58,0.6)]",
-  secondary: "bg-transparent text-ink border border-line-strong hover:border-accent/60 hover:text-accent",
-  ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink border border-transparent",
-  danger: "bg-danger text-black font-semibold hover:brightness-110 border border-transparent",
-  success: "bg-success text-success-ink font-semibold hover:brightness-110 border border-transparent",
+  // Liquid Glass: only the primary action is tinted; everything else is clear glass or plain.
+  primary: "glass-tint font-semibold hover:brightness-110 active:scale-[0.98]",
+  secondary: "glass text-ink hover:text-accent active:scale-[0.98]",
+  ghost: "text-ink-2 hover:bg-white/8 hover:text-ink",
+  danger: "bg-danger text-black font-semibold hover:brightness-110 active:scale-[0.98]",
+  success: "bg-success text-success-ink font-semibold hover:brightness-110 active:scale-[0.98] shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
 };
 
 export function buttonClass(variant: Variant = "secondary", size: "sm" | "md" = "md") {
   return cx(
-    "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-[color,background-color,border-color,filter] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap",
-    size === "sm" ? "h-8 px-2.5 text-[13px]" : "h-9 px-3.5 text-sm",
+    "inline-flex items-center justify-center gap-1.5 rounded-full font-medium transition-[color,background-color,filter,transform] duration-200 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap",
+    size === "sm" ? "h-8 px-3.5 text-[13px]" : "h-10 px-5 text-sm",
     variantClass[variant],
   );
 }
@@ -42,10 +43,10 @@ export function LinkButton({
 }
 
 const fieldClass =
-  "w-full rounded-md border border-line bg-black px-3 text-sm text-ink placeholder:text-muted/80 transition-colors hover:border-line-strong focus:border-accent focus:outline-none";
+  "w-full rounded-xl border border-white/10 bg-black/55 px-3.5 text-sm text-ink shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] placeholder:text-muted/80 transition-colors hover:border-white/20 focus:border-accent focus:outline-none";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
-  return <input className={cx(fieldClass, "h-9", className)} {...props} />;
+  return <input className={cx(fieldClass, className?.includes("h-") ? undefined : "h-10", className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
@@ -53,13 +54,13 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {
-  return <select className={cx(fieldClass, "h-9 pr-8", className)} {...props} />;
+  return <select className={cx(fieldClass, "h-10 pr-8", className)} {...props} />;
 }
 
 export function Card({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
-      className={cx("rounded-md border border-line bg-surface", className)}
+      className={cx("frost rounded-[22px]", className)}
       {...props}
     />
   );
@@ -75,7 +76,7 @@ export function CardHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
       <div className="min-w-0">
         <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
         {description && <p className="mt-0.5 text-[13px] text-muted">{description}</p>}
@@ -88,8 +89,8 @@ export function CardHeader({
 type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
 
 const toneClass: Record<Tone, string> = {
-  neutral: "bg-surface-2 text-ink-2",
-  accent: "bg-accent-soft text-accent",
+  neutral: "bg-white/8 text-ink-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
+  accent: "bg-accent-soft text-accent shadow-[inset_0_0_0_1px_rgba(246,212,58,0.22)]",
   success: "bg-success-soft text-success",
   warning: "bg-warning-soft text-warning",
   danger: "bg-danger-soft text-danger",
@@ -137,7 +138,7 @@ export function PageHeader({
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
+    <div className="rounded-[20px] border border-dashed border-white/15 bg-black/30 px-6 py-10 text-center">
       <p className="text-sm font-medium text-ink">{title}</p>
       {children && <div className="mt-1 text-sm text-muted">{children}</div>}
     </div>

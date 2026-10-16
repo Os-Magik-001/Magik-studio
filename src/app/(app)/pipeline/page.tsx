@@ -53,14 +53,14 @@ export default async function PipelinePage() {
                     {s.label}
                     <span className="text-muted">{items.length}</span>
                   </h2>
-                  <div className="flex min-h-24 flex-col gap-2 rounded-md bg-surface-2/60 p-2">
+                  <div className="flex min-h-24 flex-col gap-2 rounded-[20px] bg-white/[0.03] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
                     {items.map((v) => {
                       const editor = v.editor ? displayName(v.editor) : null;
                       return (
                         <Link
                           key={v.id}
                           href={`/videos/${v.id}`}
-                          className="rounded-md border border-line bg-surface p-3 transition-colors hover:border-line-strong"
+                          className="rounded-xl frost p-3 transition-colors hover:border-line-strong"
                         >
                           <div className="text-xs text-muted">{v.client?.name}</div>
                           <div className="mt-0.5 text-sm font-medium text-ink">{v.title}</div>

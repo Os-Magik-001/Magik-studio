@@ -64,7 +64,7 @@ export default async function ShootsPage() {
           <ul className="flex flex-wrap gap-2">
             {waiting.map((v) => (
               <li key={v.id}>
-                <Link href={`/videos/${v.id}`} className="inline-flex rounded-md border border-line bg-surface px-3 py-2 text-[13px] hover:border-line-strong">
+                <Link href={`/videos/${v.id}`} className="inline-flex rounded-xl frost px-3 py-2 text-[13px] hover:border-line-strong">
                   {v.client?.name} · {v.title}
                 </Link>
               </li>

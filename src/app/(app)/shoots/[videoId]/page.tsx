@@ -62,7 +62,7 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
                       <button className="flex w-full items-start gap-3 px-5 py-3 text-left hover:bg-surface-2">
                         <span
                           className={cx(
-                            "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
+                            "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-xl border",
                             s.done ? "border-success bg-success text-white" : "border-line-strong",
                           )}
                           aria-hidden

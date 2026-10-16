@@ -47,7 +47,7 @@ export default async function ClientHome() {
                   <li key={v.id}>
                     <Link
                       href={`/review/${v.id}${v.versionWaiting ? `?v=${v.versionWaiting.id}` : ""}`}
-                      className="block rounded-md border border-accent/40 bg-accent-soft p-4 transition-colors hover:border-accent"
+                      className="block rounded-xl border border-accent/40 bg-accent-soft p-4 transition-colors hover:border-accent"
                     >
                       <div className="font-medium text-ink">{v.title}</div>
                       <div className="mt-1 text-[13px] text-ink-2">
@@ -63,7 +63,7 @@ export default async function ClientHome() {
           )}
           <section>
             <h2 className="kicker mb-3">All videos</h2>
-            <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface">
+            <ul className="divide-y divide-line overflow-hidden rounded-xl frost">
               {rows.map((v) => (
                 <li key={v.id}>
                   <Link href={`/review/${v.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5 hover:bg-surface-2">

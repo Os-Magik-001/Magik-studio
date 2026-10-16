@@ -38,7 +38,7 @@ export function ShootList({ shoots }: { shoots: ShootRow[] }) {
               <li key={s.id}>
                 <Link
                   href={`/shoots/${s.videoId}`}
-                  className="flex flex-col gap-2 rounded-md border border-line bg-surface p-4 transition-colors hover:border-line-strong sm:flex-row sm:items-center sm:gap-6"
+                  className="flex flex-col gap-2 rounded-xl frost p-4 transition-colors hover:border-line-strong sm:flex-row sm:items-center sm:gap-6"
                 >
                   <div className="flex w-40 shrink-0 items-center gap-1.5 text-sm font-medium text-ink">
                     <Clock size={14} className="text-muted" aria-hidden />

@@ -109,7 +109,7 @@ export function Uploader({ bucket, folder, accept = "video/*", multiple, label, 
           if (e.dataTransfer.files.length) start(Array.from(e.dataTransfer.files));
         }}
         className={cx(
-          "flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed px-6 py-8 text-center transition-colors",
+          "flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed px-6 py-8 text-center transition-colors",
           dragging ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2",
         )}
       >
@@ -133,7 +133,7 @@ export function Uploader({ bucket, folder, accept = "video/*", multiple, label, 
       {items.length > 0 && (
         <ul className="flex flex-col gap-2">
           {items.map((item) => (
-            <li key={item.id} className="rounded-md border border-line px-3 py-2">
+            <li key={item.id} className="rounded-xl border border-line px-3 py-2">
               <div className="flex items-center gap-3 text-[13px]">
                 <span className="min-w-0 flex-1 truncate text-ink">{item.file.name}</span>
                 <span className="shrink-0 text-muted">

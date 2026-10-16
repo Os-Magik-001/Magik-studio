@@ -20,11 +20,15 @@ export default function LoginPage({
       {/* The gold matrix corridor, calmed toward the centre so the card reads. */}
       <div aria-hidden className="fixed inset-0 -z-10">
         <Matrix variant="tunnel" />
-        <div className="absolute inset-0 bg-black/25 sm:bg-[radial-gradient(ellipse_42%_48%_at_50%_46%,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.7)_45%,rgba(0,0,0,0.15)_100%)]" />
+        <div className="absolute inset-0 bg-black/25 sm:bg-[radial-gradient(ellipse_42%_48%_at_50%_46%,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.35)_50%,rgba(0,0,0,0.1)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 hidden h-1/3 bg-gradient-to-t from-black via-black/60 to-transparent sm:block" />
+        {/* The light at the end of the corridor, for the glass card to catch. */}
+        <div className="absolute top-[46%] left-1/2 h-[70vh] w-[70vw] -translate-x-1/2 -translate-y-1/2">
+          <div className="ambient h-full w-full rounded-full bg-[radial-gradient(closest-side,rgba(246,212,58,0.26),rgba(246,212,58,0.07)_55%,transparent)] blur-2xl" />
+        </div>
       </div>
 
-      <div className="w-full max-w-[400px] rounded-md border border-line bg-black/70 p-7 shadow-[0_30px_120px_-40px_rgba(246,212,58,0.35)] backdrop-blur-[1.5px] sm:bg-black/75 sm:p-10 sm:backdrop-blur-md">
+      <div className="glass w-full max-w-[400px] rounded-[32px] p-7 sm:p-10">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
             src="/brand/magik-vertical.svg"
@@ -59,7 +63,7 @@ async function LoginBody({
   return (
     <>
       {error && ERRORS[error] && (
-        <p role="alert" className="mb-4 rounded-md bg-danger-soft px-3 py-2 text-[13px] text-danger">
+        <p role="alert" className="mb-4 rounded-xl bg-danger-soft px-3 py-2 text-[13px] text-danger">
           {ERRORS[error]}
         </p>
       )}

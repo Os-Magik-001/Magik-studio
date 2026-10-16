@@ -25,7 +25,7 @@ export type NavItem = {
 export function NavLinks({ items, children }: { items: NavItem[]; children?: ReactNode }) {
   const pathname = usePathname();
   return (
-    <nav className="relative flex gap-1 overflow-x-auto px-3 pb-2 md:flex-col md:overflow-visible md:px-4 md:pb-0">
+    <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible md:px-3 md:pb-0">
       {items.map((item) => {
         const Icon = ICONS[item.icon];
         const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -35,10 +35,10 @@ export function NavLinks({ items, children }: { items: NavItem[]; children?: Rea
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cx(
-              "relative flex h-10 shrink-0 items-center gap-3 rounded-md px-3 text-sm transition-colors",
+              "relative flex h-9 shrink-0 items-center gap-3 rounded-2xl px-3 text-sm transition-colors md:h-11",
               active
-                ? "bg-accent-soft font-semibold text-accent before:absolute before:top-2 before:bottom-2 before:left-0 before:w-0.5 before:rounded-full before:bg-accent"
-                : "text-ink-2 hover:bg-white/5 hover:text-ink",
+                ? "bg-accent/15 font-semibold text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_0_0_1px_rgba(246,212,58,0.22)]"
+                : "text-ink-2 hover:bg-white/8 hover:text-ink",
             )}
           >
             <Icon size={16} strokeWidth={1.75} aria-hidden />

@@ -104,7 +104,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
             />
             <div className="p-5">
               {script?.status === "changes_requested" && script.client_note && (
-                <div className="mb-4 rounded-md bg-danger-soft px-4 py-3 text-sm text-danger">
+                <div className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
                   <div className="font-medium">The client asked for changes</div>
                   <p className="mt-1 whitespace-pre-wrap">{script.client_note}</p>
                 </div>
@@ -115,7 +115,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                     Approved by the client
                     {script.approved_at && <LocalDate value={script.approved_at} preset="date" prefix=" on " />}.
                   </p>
-                  <div className="whitespace-pre-wrap rounded-md bg-surface-2 p-4 text-sm leading-relaxed text-ink">
+                  <div className="whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-sm leading-relaxed text-ink">
                     {script.body}
                   </div>
                   <ShotList shots={parseShotList(script.shot_list)} />
@@ -156,7 +156,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
               {(jobs ?? []).length > 0 && (
                 <ul className="flex flex-col gap-2">
                   {(jobs ?? []).slice(0, 6).map((j) => (
-                    <li key={j.id} className="rounded-md border border-line p-3">
+                    <li key={j.id} className="rounded-xl border border-line p-3">
                       <div className="flex flex-wrap items-center gap-2 text-[13px]">
                         <span className="font-medium text-ink">{JOB_SOURCE[j.source]}</span>
                         <Badge tone={JOB_STATUS[j.status].tone}>{JOB_STATUS[j.status].label}</Badge>
@@ -193,7 +193,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
               {openJobs.length > 0 && (
                 <>
                   <AutoRefresh seconds={6} />
-                  <details className="rounded-md bg-surface-2 p-4 text-[13px] text-ink-2">
+                  <details className="rounded-xl bg-surface-2 p-4 text-[13px] text-ink-2">
                     <summary className="cursor-pointer font-medium text-ink">Upload a render yourself instead</summary>
                     <p className="mt-2">
                       Claude is working on this edit; this page updates when the draft is ready. If you&apos;d rather cut
@@ -272,7 +272,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
             <CardHeader title="Shoot" />
             <div className="flex flex-col gap-4 p-5">
               {shoots?.map((s) => (
-                <div key={s.id} className="flex items-start gap-3 rounded-md border border-line p-3 text-[13px]">
+                <div key={s.id} className="flex items-start gap-3 rounded-xl border border-line p-3 text-[13px]">
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-ink">
                       <LocalDate value={s.starts_at} preset="datetime" />

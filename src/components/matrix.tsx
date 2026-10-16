@@ -5,7 +5,8 @@ import { cx } from "@/components/ui";
 
 // Vertical "matrix" glyph streams in Magik Gold.
 //  - tunnel: a 3D corridor of falling columns rushing toward the viewer (login)
-//  - rain:   flat vertical rain for narrow surfaces (sidebar)
+//  - rain:   flat vertical rain for narrow surfaces
+//  - field:  slow full-page rain behind the app's glass
 // Glyphs are pre-rendered into a sprite atlas and drawn with drawImage, capped
 // at 30 fps, paused in background tabs, and frozen for reduced-motion users.
 
@@ -64,7 +65,9 @@ function glow(c: Column, i: number) {
   return { a: 0.12 + 0.88 * (1 - d / c.trail), head: d < 1 };
 }
 
-export function Matrix({ variant = "tunnel", className }: { variant?: "tunnel" | "rain"; className?: string }) {
+type Variant = "tunnel" | "rain" | "field";
+
+export function Matrix({ variant = "tunnel", className }: { variant?: Variant; className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -95,7 +98,8 @@ export function Matrix({ variant = "tunnel", className }: { variant?: "tunnel" |
     let rain: Column[] = [];
     let rainRows = 0;
     // The corridor needs width; on portrait screens a tunnel falls back to full-screen rain.
-    let mode: "tunnel" | "rain" = variant;
+    let mode: "tunnel" | "rain" = variant === "tunnel" ? "tunnel" : "rain";
+    const fps = variant === "field" ? 20 : 30;
     let RAIN_SIZE = 13;
     let rainAlpha = 0.55;
 
@@ -106,9 +110,9 @@ export function Matrix({ variant = "tunnel", className }: { variant?: "tunnel" |
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      mode = variant === "tunnel" && H > W * 1.1 ? "rain" : variant;
-      RAIN_SIZE = variant === "rain" ? 13 : 17;
-      rainAlpha = variant === "rain" ? 0.55 : 0.75;
+      mode = variant === "tunnel" && H <= W * 1.1 ? "tunnel" : "rain";
+      RAIN_SIZE = variant === "rain" ? 13 : variant === "field" ? 18 : 17;
+      rainAlpha = variant === "rain" ? 0.55 : variant === "field" ? 0.6 : 0.75;
       if (mode === "tunnel") {
         const small = W < 700;
         WALL_DEPTH = small ? 30 : 56;
@@ -200,7 +204,7 @@ export function Matrix({ variant = "tunnel", className }: { variant?: "tunnel" |
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       acc += dt;
-      if (acc < 1 / 30) return; // cap at ~30 fps
+      if (acc < 1 / fps) return; // cap the frame rate
       const step = acc;
       acc = 0;
       if (document.hidden) return;
