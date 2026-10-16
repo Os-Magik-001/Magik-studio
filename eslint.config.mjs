@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The edit engine is a separate Node package with its own type check.
+    "engine/**",
   ]),
 ]);
 

@@ -267,8 +267,33 @@ export async function cancelEditJob(formData: FormData) {
   refresh();
 }
 
-// The editor (or, later, the Claude engine) attaches a rendered draft. It always
-// starts in "editor check": clients never see a draft the editor hasn't sent.
+export async function retryEditJob(formData: FormData) {
+  await requireRole("admin", "editor");
+  const supabase = await createClient();
+  const { data: job } = await supabase
+    .from("edit_jobs")
+    .select("id, video_id")
+    .eq("id", text(formData, "jobId"))
+    .eq("status", "failed")
+    .maybeSingle();
+  if (!job) return;
+  const admin = createAdminClient();
+  const { count } = await admin
+    .from("edit_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("video_id", job.video_id)
+    .in("status", ["queued", "running"]);
+  if (count) return;
+  await admin
+    .from("edit_jobs")
+    .update({ status: "queued", error: null, progress: null, finished_at: null })
+    .eq("id", job.id);
+  await setStatus(job.video_id, "editing");
+  refresh();
+}
+
+// The editor attaches a rendered draft by hand (the Claude engine records its own).
+// It always starts in "editor check": clients never see a draft the editor hasn't sent.
 export async function registerDraftVersion(input: {
   videoId: string;
   path: string;

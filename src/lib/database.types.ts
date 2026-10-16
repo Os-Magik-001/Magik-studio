@@ -166,38 +166,50 @@ export type Database = {
       }
       edit_jobs: {
         Row: {
+          attempts: number
           base_version_id: string | null
           created_at: string
+          error: string | null
           finished_at: string | null
           id: string
           instructions: string | null
+          progress: string | null
           requested_by: string | null
           result_version_id: string | null
           source: Database["public"]["Enums"]["edit_job_source"]
+          started_at: string | null
           status: Database["public"]["Enums"]["edit_job_status"]
           video_id: string
         }
         Insert: {
+          attempts?: number
           base_version_id?: string | null
           created_at?: string
+          error?: string | null
           finished_at?: string | null
           id?: string
           instructions?: string | null
+          progress?: string | null
           requested_by?: string | null
           result_version_id?: string | null
           source: Database["public"]["Enums"]["edit_job_source"]
+          started_at?: string | null
           status?: Database["public"]["Enums"]["edit_job_status"]
           video_id: string
         }
         Update: {
+          attempts?: number
           base_version_id?: string | null
           created_at?: string
+          error?: string | null
           finished_at?: string | null
           id?: string
           instructions?: string | null
+          progress?: string | null
           requested_by?: string | null
           result_version_id?: string | null
           source?: Database["public"]["Enums"]["edit_job_source"]
+          started_at?: string | null
           status?: Database["public"]["Enums"]["edit_job_status"]
           video_id?: string
         }
@@ -457,6 +469,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           decided_at: string | null
+          edit_plan: Json | null
           file_name: string
           id: string
           made_by: string
@@ -471,6 +484,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           decided_at?: string | null
+          edit_plan?: Json | null
           file_name: string
           id?: string
           made_by?: string
@@ -485,6 +499,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           decided_at?: string | null
+          edit_plan?: Json | null
           file_name?: string
           id?: string
           made_by?: string

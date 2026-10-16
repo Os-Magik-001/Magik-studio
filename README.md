@@ -27,15 +27,30 @@ The workspace that runs Magik Studio: videographers bring in the footage, Claude
 - **Supabase**: Postgres with row-level security, passwordless email auth, Storage with resumable (TUS) uploads
 - **Claude** (`claude-opus-5-5` via `@anthropic-ai/sdk`): drafts the script and shot list from the brief and brand kit
 
-## The Claude editing engine
+## The Claude editing engine (`engine/`)
 
-The video editing engine is Phase 1 of the plan (prove Claude edits like a pro in a blind test before building on it). The workspace is ready for it:
+A separate Node worker that turns raw footage into an edited draft. It runs anywhere with Node 24 and FFmpeg, not on Vercel.
 
-1. The engine claims rows in `edit_jobs` with `status = 'queued'` (each has `instructions`, `video_id` and an optional `base_version_id`).
-2. It reads the approved script (`scripts`), raw footage (`footage`, bucket `footage`) and the client's `brand_kits`.
-3. It renders the cut, uploads it to the `versions` bucket at `<video_id>/<file>` and records it the same way `registerDraftVersion` in `src/app/actions/workflow.ts` does. That closes the open jobs and moves the video to editor check.
+1. **Claims** the oldest queued `edit_jobs` row (one job per video at a time) and reports progress the editor sees live.
+2. **Gathers** the approved script and shot list, the brand kit and logo, and downloads the raw footage.
+3. **Watches** the footage: contact sheets of frames sampled across every clip. With whisper.cpp installed it also transcribes speech.
+4. **Plans** the cut with Claude (`claude-opus-5-5`, adaptive thinking): an edit decision list of shots, captions, titles and an end card. Revisions start from the previous cut's plan, with each comment pinned to the shot it falls on.
+5. **Validates** the plan against the real footage, then **renders** it with FFmpeg: crop to 9:16, 1:1 or 16:9, 30 fps, loudness-normalized audio, branded end card.
+6. **Hands off** the result as a new version in **editor check**, and notifies the editor. Failures show up on the video page with a plain reason and a Retry button.
 
-Until then, the editor uploads the draft render on the video page.
+```bash
+cd engine
+pnpm install --ignore-workspace
+pnpm once        # process one queued job and exit
+pnpm start       # keep polling for jobs
+pnpm test        # render + plan unit tests (ENGINE_INTEGRATION=1 also runs live jobs with a stand-in planner)
+```
+
+It reads `../.env.local` (or `engine/.env`): `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`) and `ANTHROPIC_API_KEY`. Optional: `WHISPER_CPP_MODEL` (path to a ggml model) to add transcripts, `ENGINE_MAX_FRAMES` (default 216) to cap how much footage Claude sees per job, and `ENGINE_MODEL`.
+
+To run it on a server, `engine/Dockerfile` builds an image with FFmpeg and fonts.
+
+Not there yet: music (the mood is in the brand kit, but there's no track library), and the Phase 1 blind test, where editors compare Claude's cut with a pro edit of the same footage.
 
 ## Local development
 

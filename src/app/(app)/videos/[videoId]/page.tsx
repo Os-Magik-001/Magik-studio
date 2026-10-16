@@ -10,7 +10,8 @@ import { claudeConfigured } from "@/lib/claude";
 import { FORMAT_LABEL, formatBytes, parseShotList } from "@/lib/workflow";
 import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClass } from "@/components/ui";
 import { ScriptStatusBadge, StatusStepper, VersionStatusBadge, VideoStatusBadge } from "@/components/status";
-import { deleteFootage, cancelEditJob } from "@/app/actions/workflow";
+import { deleteFootage, cancelEditJob, retryEditJob } from "@/app/actions/workflow";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { LocalDate } from "@/components/local-date";
 import { deleteShoot, deleteVideo } from "@/app/actions/studio";
 import {
@@ -26,6 +27,13 @@ import {
 export const metadata: Metadata = { title: "Video" };
 
 const JOB_SOURCE = { launch: "First edit", editor_fix: "Editor fixes", client_changes: "Client changes" } as const;
+const JOB_STATUS = {
+  queued: { label: "Waiting for Claude", tone: "accent" },
+  running: { label: "Claude is editing", tone: "accent" },
+  done: { label: "Done", tone: "success" },
+  failed: { label: "Failed", tone: "danger" },
+  cancelled: { label: "Cancelled", tone: "neutral" },
+} as const;
 
 export default async function VideoPage({ params }: { params: Promise<{ videoId: string }> }) {
   const { videoId } = await params;
@@ -151,13 +159,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                     <li key={j.id} className="rounded-lg border border-line p-3">
                       <div className="flex flex-wrap items-center gap-2 text-[13px]">
                         <span className="font-medium text-ink">{JOB_SOURCE[j.source]}</span>
-                        <Badge
-                          tone={
-                            j.status === "done" ? "success" : j.status === "failed" ? "danger" : j.status === "cancelled" ? "neutral" : "accent"
-                          }
-                        >
-                          {j.status === "queued" ? "Waiting for Claude" : j.status}
-                        </Badge>
+                        <Badge tone={JOB_STATUS[j.status].tone}>{JOB_STATUS[j.status].label}</Badge>
                         <span className="ml-auto text-xs text-muted">
                           <LocalDate value={j.created_at} preset="short" />
                         </span>
@@ -167,7 +169,20 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                             <button className="text-xs text-muted hover:text-danger">Cancel</button>
                           </form>
                         )}
+                        {j.status === "failed" && openJobs.length === 0 && (
+                          <form action={retryEditJob}>
+                            <input type="hidden" name="jobId" value={j.id} />
+                            <button className="text-xs font-medium text-accent hover:underline">Retry</button>
+                          </form>
+                        )}
                       </div>
+                      {j.status === "running" && j.progress && (
+                        <p className="mt-1.5 flex items-center gap-2 text-[13px] text-accent">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" aria-hidden />
+                          {j.progress}…
+                        </p>
+                      )}
+                      {j.status === "failed" && j.error && <p className="mt-1.5 text-[13px] text-danger">{j.error}</p>}
                       {j.instructions && (
                         <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap text-[13px] text-ink-2">{j.instructions}</p>
                       )}
@@ -176,16 +191,19 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 </ul>
               )}
               {openJobs.length > 0 && (
-                <div className="rounded-lg bg-accent-soft p-4 text-[13px] text-ink-2">
-                  <p className="font-medium text-ink">Waiting for the draft</p>
-                  <p className="mt-1">
-                    The Claude editing engine plugs in here once it passes the Phase 1 blind test. Until then, upload the
-                    draft render below. It goes to editor check, never straight to the client.
-                  </p>
-                  <div className="mt-3">
-                    <DraftUpload videoId={video.id} />
-                  </div>
-                </div>
+                <>
+                  <AutoRefresh seconds={6} />
+                  <details className="rounded-lg bg-surface-2 p-4 text-[13px] text-ink-2">
+                    <summary className="cursor-pointer font-medium text-ink">Upload a render yourself instead</summary>
+                    <p className="mt-2">
+                      Claude is working on this edit; this page updates when the draft is ready. If you&apos;d rather cut
+                      it by hand, upload the render here. Either way it goes to editor check, never straight to the client.
+                    </p>
+                    <div className="mt-3">
+                      <DraftUpload videoId={video.id} />
+                    </div>
+                  </details>
+                </>
               )}
             </div>
           </Card>
@@ -275,7 +293,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
           </Card>
 
           <Card>
-            <CardHeader title="Raw footage" description={`${footage?.length ?? 0} files`} />
+            <CardHeader title="Raw footage" description={`${footage?.length ?? 0} ${footage?.length === 1 ? "file" : "files"}`} />
             <div className="flex flex-col gap-3 p-5">
               {footage?.map((f) => (
                 <div key={f.id} className="flex items-center gap-2 text-[13px]">

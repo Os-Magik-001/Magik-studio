@@ -1,0 +1,26 @@
+{
+  "name": "magik-edit-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Claude editing engine for Magik OS: turns raw footage + approved script into an edited cut.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=../.env.local --env-file-if-exists=.env src/worker.ts",
+    "once": "node --env-file-if-exists=../.env.local --env-file-if-exists=.env src/worker.ts --once",
+    "typecheck": "tsc --noEmit",
+    "test": "node --env-file-if-exists=../.env.local --env-file-if-exists=.env --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.134.0",
+    "@napi-rs/canvas": "1.0.11",
+    "@supabase/supabase-js": "2.118.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "5.9.3"
+  }
+}
