@@ -5,6 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Input, Select } from "@/components/ui";
 import { Field } from "@/components/field";
 import { ROLE_LABEL } from "@/lib/workflow";
+import { NewPasswordField } from "@/components/password-tools";
 import { addTeamMember } from "@/app/actions/studio";
 
 export function AddMemberForm({ clients }: { clients: { id: string; name: string }[] }) {
@@ -40,6 +41,7 @@ export function AddMemberForm({ clients }: { clients: { id: string; name: string
           </Select>
         </Field>
       )}
+      <NewPasswordField />
       <SubmitButton pendingText="Adding…">Add to Magik OS</SubmitButton>
     </ActionForm>
   );

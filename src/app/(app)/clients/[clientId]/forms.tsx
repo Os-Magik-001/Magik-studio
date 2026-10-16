@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Link2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { Button, Input, Select, Textarea } from "@/components/ui";
+import { Input, Select, Textarea } from "@/components/ui";
 import { Field } from "@/components/field";
 import { Uploader } from "@/components/uploader";
 import { ASPECTS, FORMAT_LABEL } from "@/lib/workflow";
 import {
-  createSignInLink,
   createVideo,
   saveBrandKit,
   setBrandLogo,
@@ -183,35 +180,6 @@ export function EditorToggle({ clientId, userId, assigned }: { clientId: string;
       <input type="hidden" name="assign" value={assigned ? "0" : "1"} />
       <SubmitButton size="sm" variant={assigned ? "secondary" : "ghost"} pendingText="…">
         {assigned ? "Assigned" : "Assign"}
-      </SubmitButton>
-    </ActionForm>
-  );
-}
-
-export function SignInLinkButton({ userId, next }: { userId: string; next: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  return url ? (
-    <div className="flex items-center gap-2">
-      <Input readOnly value={url} className="h-8 text-xs" onFocus={(e) => e.currentTarget.select()} />
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={async () => {
-          await navigator.clipboard.writeText(url);
-          setCopied(true);
-        }}
-        aria-label="Copy link"
-      >
-        {copied ? <Check size={14} /> : <Copy size={14} />}
-      </Button>
-    </div>
-  ) : (
-    <ActionForm action={createSignInLink} onSuccess={(r) => r.data?.url && setUrl(r.data.url)}>
-      <input type="hidden" name="userId" value={userId} />
-      <input type="hidden" name="next" value={next} />
-      <SubmitButton size="sm" variant="ghost" pendingText="Creating…">
-        <Link2 size={14} aria-hidden /> One-click sign-in link
       </SubmitButton>
     </ActionForm>
   );

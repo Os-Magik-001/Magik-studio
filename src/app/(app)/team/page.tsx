@@ -3,7 +3,7 @@ import { requireRole, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ROLE_LABEL } from "@/lib/workflow";
 import { Avatar, Badge, Card, CardHeader, PageHeader } from "@/components/ui";
-import { SignInLinkButton } from "@/app/(app)/clients/[clientId]/forms";
+import { ResetPasswordButton } from "@/components/password-tools";
 import { AddMemberForm } from "./add-member-form";
 
 export const metadata: Metadata = { title: "Team" };
@@ -12,7 +12,7 @@ export default async function TeamPage() {
   await requireRole("admin");
   const supabase = await createClient();
   const [{ data: people }, { data: clients }] = await Promise.all([
-    supabase.from("profiles").select("id, full_name, email, role, client:clients(name)").order("role").order("full_name"),
+    supabase.from("profiles").select("id, full_name, email, role, client:clients!profiles_client_id_fkey(name)").order("role").order("full_name"),
     supabase.from("clients").select("id, name").order("name"),
   ]);
 
@@ -40,8 +40,8 @@ export default async function TeamPage() {
                     {p.client && ` · ${p.client.name}`}
                   </Badge>
                 </div>
-                <div className="sm:w-56">
-                  <SignInLinkButton userId={p.id} next="/" />
+                <div className="sm:w-auto">
+                  <ResetPasswordButton userId={p.id} />
                 </div>
               </li>
             ))}
@@ -50,7 +50,7 @@ export default async function TeamPage() {
         <Card className="h-fit">
           <CardHeader
             title="Add someone"
-            description="They sign in with their email; no password. You can also hand them a one-click link."
+            description="They sign in with their email and the password you set here."
           />
           <div className="p-5">
             <AddMemberForm clients={clients ?? []} />

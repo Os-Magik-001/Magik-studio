@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getViewer, displayName, type Role } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ROLE_LABEL } from "@/lib/workflow";
@@ -42,6 +43,9 @@ export async function Sidebar() {
         <span className="font-serif text-lg text-ink">Magik OS</span>
       </div>
       <NavLinks items={items}>
+        <Link href="/account" className="flex h-9 shrink-0 items-center rounded-lg px-2.5 text-sm text-ink-2 hover:bg-surface-2 md:hidden">
+          Account
+        </Link>
         <form action="/auth/signout" method="post" className="md:hidden">
           <button className="flex h-9 shrink-0 items-center rounded-lg px-2.5 text-sm text-muted hover:bg-surface-2">
             Sign out
@@ -49,13 +53,13 @@ export async function Sidebar() {
         </form>
       </NavLinks>
       <div className="mt-auto hidden border-t border-line p-4 md:block">
-        <div className="flex items-center gap-2.5">
+        <Link href="/account" className="-m-1.5 flex items-center gap-2.5 rounded-lg p-1.5 hover:bg-surface-2">
           <Avatar name={name} size={32} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-medium text-ink">{name}</div>
             <div className="truncate text-xs text-muted">{ROLE_LABEL[viewer.role]}</div>
           </div>
-        </div>
+        </Link>
         <form action="/auth/signout" method="post" className="mt-3">
           <button className="text-xs text-muted hover:text-ink">Sign out</button>
         </form>

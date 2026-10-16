@@ -24,7 +24,7 @@ The workspace that runs Magik Studio: videographers bring in the footage, Claude
 ## Stack
 
 - **Next.js 16** (App Router, Cache Components, server actions) on **Vercel**
-- **Supabase**: Postgres with row-level security, passwordless email auth, Storage with resumable (TUS) uploads
+- **Supabase**: Postgres with row-level security, email + password sign-in (invite-only), Storage with resumable (TUS) uploads
 - **Claude** (`claude-opus-5-5` via `@anthropic-ai/sdk`): drafts the script and shot list from the brief and brand kit
 
 ## The Claude editing engine (`engine/`)
@@ -63,7 +63,7 @@ vercel env pull .env.local      # Supabase URL + publishable key
 pnpm dev
 ```
 
-The first studio manager has to be created directly (sign-up is invite-only). After that, people are added from the Team page.
+The first studio manager has to be created directly (sign-up is invite-only). After that, the studio manager adds people from the Team page with a temporary password, and can reset anyone's password there. Everyone can change their own password on the Account page.
 
 ## Database
 
@@ -78,4 +78,4 @@ Run `supabase db advisors --linked` after schema changes.
 ## Limits to know
 
 - **Upload size**: Supabase Free caps each file at 50 MB. Real footage needs the Pro plan (files up to 500 GB).
-- **Sign-in emails**: Supabase's built-in email only reaches your Supabase team's own addresses and is rate-limited. Set up custom SMTP (e.g. Resend) before inviting clients by email. Until then, use the **one-click sign-in link** on the Team or Client page.
+- **Forgotten passwords**: there's no self-service reset email; the studio manager resets passwords on the Team page.

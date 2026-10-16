@@ -5,7 +5,6 @@ import { LoginForm } from "./login-form";
 export const metadata: Metadata = { title: "Sign in" };
 
 const ERRORS: Record<string, string> = {
-  "link-expired": "That sign-in link has expired or was already used. Request a new one.",
   "no-profile": "Your account isn't set up in Magik OS yet. Ask your studio manager to add you.",
 };
 
@@ -23,7 +22,7 @@ export default function LoginPage({
           </div>
           <h1 className="font-serif text-3xl text-ink">Sign in to Magik OS</h1>
           <p className="mt-2 text-sm text-muted">
-            We&apos;ll email you a one-time link. No password needed.
+            Forgot your password? Ask your studio manager to reset it.
           </p>
         </div>
         <Suspense>

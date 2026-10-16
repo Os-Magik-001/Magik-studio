@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
@@ -107,20 +106,34 @@ export async function setBrandLogo(input: { clientId: string; path: string }): P
 
 const ROLES: Role[] = ["admin", "editor", "videographer", "client"];
 
+const MIN_PASSWORD = 8;
+
+function passwordProblem(password: unknown) {
+  if (typeof password !== "string" || password.length < MIN_PASSWORD) {
+    return `Passwords need at least ${MIN_PASSWORD} characters.`;
+  }
+  if (password.length > 72) return "Passwords can be at most 72 characters.";
+  return null;
+}
+
 export async function addTeamMember(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin");
   const email = text(formData, "email").toLowerCase();
   const fullName = optionalText(formData, "fullName");
   const role = text(formData, "role") as Role;
   const clientId = optionalText(formData, "clientId");
+  const password = formData.get("password");
 
   if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Enter a valid email address.");
   if (!ROLES.includes(role)) return fail("Pick a role.");
   if (role === "client" && !clientId) return fail("Pick which client this person belongs to.");
+  const weak = passwordProblem(password);
+  if (weak) return fail(weak);
 
   const admin = createAdminClient();
   const { data: created, error } = await admin.auth.admin.createUser({
     email,
+    password: password as string,
     email_confirm: true,
     user_metadata: fullName ? { full_name: fullName } : undefined,
   });
@@ -128,7 +141,9 @@ export async function addTeamMember(_: ActionResult, formData: FormData): Promis
     return fail(
       error?.code === "email_exists"
         ? "Someone with that email already has an account."
-        : "Couldn't create the account.",
+        : error?.code === "weak_password"
+          ? "That password is too weak. Pick a longer one."
+          : "Couldn't create the account.",
     );
   }
 
@@ -144,40 +159,23 @@ export async function addTeamMember(_: ActionResult, formData: FormData): Promis
     return fail("Couldn't save the profile.");
   }
   refresh();
-  return done(`${fullName ?? email} can now sign in with their email.`);
+  return done(`${fullName ?? email} can now sign in with ${email} and the password you set. Share it with them privately.`);
 }
 
-export async function createSignInLink(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const viewer = await requireRole("admin", "editor");
+// Only the studio manager resets passwords; the person can change it on their Account page.
+export async function resetMemberPassword(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireRole("admin");
   const userId = text(formData, "userId");
-  const next = text(formData, "next") || "/";
+  const password = formData.get("password");
+  const weak = passwordProblem(password);
+  if (weak) return fail(weak);
 
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("email, role, client_id")
-    .eq("id", userId)
-    .single();
+  const { data: profile } = await admin.from("profiles").select("email").eq("id", userId).maybeSingle();
   if (!profile) return fail("Unknown person.");
-  // Editors may only hand out links to client users of clients they work with.
-  if (viewer.role === "editor") {
-    const supabase = await createClient();
-    const { data: canSee } = await supabase
-      .from("clients")
-      .select("id")
-      .eq("id", profile.client_id ?? "")
-      .maybeSingle();
-    if (profile.role !== "client" || !canSee) return fail("You can only share links with your clients.");
-  }
-
-  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email: profile.email });
-  if (error || !data.properties?.hashed_token) return fail("Couldn't create a link.");
-
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
-  const url = `${origin}/auth/confirm?token_hash=${data.properties.hashed_token}&type=magiclink&next=${encodeURIComponent(safeNext)}`;
-  return done("Link ready. It works once and expires in an hour.", { url });
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: password as string });
+  if (error) return fail(error.code === "weak_password" ? "That password is too weak." : "Couldn't reset the password.");
+  return done(`New password set for ${profile.email}. Share it with them privately.`);
 }
 
 // ---------------------------------------------------------------- videos

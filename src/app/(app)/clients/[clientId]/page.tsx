@@ -12,8 +12,8 @@ import {
   ClientSettingsForm,
   EditorToggle,
   NewVideoForm,
-  SignInLinkButton,
 } from "./forms";
+import { ResetPasswordButton } from "@/components/password-tools";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -178,7 +178,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
                         <div className="truncate text-xs text-muted">{u.email}</div>
                       </div>
                     </div>
-                    <SignInLinkButton userId={u.id} next="/review" />
+                    {viewer.role === "admin" && <ResetPasswordButton userId={u.id} />}
                   </li>
                 ))}
               </ul>
