@@ -108,3 +108,48 @@ test("transcripts mark fillers, stutters and pauses for the cut", () => {
   assert.match(out, /\[repeat "en" 0\.55–0\.60\]/);
   assert.match(out, /\[pause 0\.6s\]/);
 });
+
+test("cut times come from the words Claude quotes, not from its seconds", async () => {
+  const { findWords } = await import("../src/plan.ts");
+  const words = [
+    { text: "Les", start: 1.0, end: 1.2 }, { text: "boys,", start: 1.2, end: 1.6 }, { text: "on", start: 1.7, end: 1.8 }, { text: "lance", start: 1.8, end: 2.2 }, { text: "l'app.", start: 2.2, end: 2.8 },
+    { text: "Les", start: 9.0, end: 9.2 }, { text: "boys,", start: 9.2, end: 9.6 }, { text: "on", start: 9.7, end: 9.8 }, { text: "lance", start: 9.8, end: 10.2 }, { text: "l'app.", start: 10.2, end: 10.8 },
+  ];
+  // Two takes of the line: the one near where Claude placed the shot wins.
+  assert.deepEqual(findWords("Les boys, on lance l'app.", words, 8.5), { start: 9.0, end: 10.8 });
+  // Accents, punctuation and a dropped middle word don't break the match.
+  assert.deepEqual(findWords("les boys on lance l'app", words, 0.5), { start: 1.0, end: 2.8 });
+  assert.deepEqual(findWords("Les boys, lance l'app", words, 0.5), { start: 1.0, end: 2.8 });
+  assert.equal(findWords("Bonjour tout le monde", words, 0), null);
+});
+
+test("retakes of a line are grouped and director cues are flagged", async () => {
+  const { markTakes } = await import("../src/plan.ts");
+  const clip = (id: string, lines: [number, string][]) => ({
+    id, fileName: id, file: id, preview: id, duration: 60, width: 1080, height: 1920, fps: 30, hasAudio: true, sheets: [], interval: 1,
+    transcript: lines.map(([start, text]) => ({ start, end: start + 2, text, words: [] })),
+  });
+  const notes = markTakes([
+    clip("C4", [[0.5, "Tu fais 3, 2, 1"], [3, "L'équipe c'est une idée de malade et elle dépend vraiment de toi Rassim"], [9, "Non attends, refais"]]),
+    clip("C5", [[1, "L'équipe, c'est une idée de malade et vraiment cette idée elle dépend de Rassim."]]),
+  ]);
+  assert.match(notes.get("C4:1") ?? "", /take 1 of 2.*last take is C5 1\.0s/);
+  assert.match(notes.get("C5:0") ?? "", /take 2 of 2/);
+  assert.match(notes.get("C4:2") ?? "", /director cue/);
+});
+
+test("validatePlan sets a speech shot's cut from its quoted words", async () => {
+  const { validatePlan } = await import("../src/plan.ts");
+  const { CUT, EXTRAS, shot } = await import("./fixtures.ts");
+  const words = [["Racine,", 5.7, 6.1], ["tu", 6.15, 6.3], ["peux", 6.3, 6.5], ["le", 6.5, 6.6], ["faire", 6.6, 7.0]] as const;
+  const clip = {
+    id: "C5", fileName: "c5", file: "c5", preview: "c5", duration: 20, width: 1080, height: 1920, fps: 30, hasAudio: true, sheets: [], interval: 1,
+    transcript: [{ start: 5.7, end: 7.0, text: "Racine, tu peux le faire ?", words: words.map(([text, start, end]) => ({ text, start, end })) }],
+  };
+  const plan = { ...EXTRAS, look: "natural" as const, summary: "", on_screen_text: [], end_card: { include: false, headline: null, seconds: 0, transition: CUT }, open_questions: [],
+    segments: [shot("C5", 4.9, 7.9, "the ask", { say: "Racine, tu peux le faire ?" })] };
+  const { plan: out } = validatePlan(plan, [clip]);
+  // Claude's 4.9-7.9 was a second off; the words put the cut at 5.58-7.2.
+  assert.ok(Math.abs(out.segments[0].start - 5.58) < 0.035, `start ${out.segments[0].start}`);
+  assert.ok(Math.abs(out.segments[0].end - 7.2) < 0.035, `end ${out.segments[0].end}`);
+});

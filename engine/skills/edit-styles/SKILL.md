@@ -2,6 +2,7 @@
 name: edit-styles
 description: Numeric pacing profiles; pick one per video and apply its numbers consistently
 formats: all
+style: dynamic
 ---
 
 Pick one style before planning, and keep its numbers across the whole video. Mixing styles is what makes an edit feel off.

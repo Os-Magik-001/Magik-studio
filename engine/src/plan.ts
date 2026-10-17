@@ -18,8 +18,12 @@ const Transition = z.object({
 
 const Segment = z.object({
   clip: z.string().describe("Clip id from the footage list, e.g. C2"),
-  start: z.number().describe("Seconds into that clip where this shot starts"),
+  start: z.number().describe("Seconds into that clip where this shot starts (approximate for shots with speech: the engine times them from `say`)"),
   end: z.number().describe("Seconds into that clip where this shot ends"),
+  say: z
+    .string()
+    .default("")
+    .describe("For a shot with speech: the exact words kept in this shot, copied from the transcript, from the first word to the last. The engine finds them and sets the in and out points from their measured timing, so you choose words, not seconds. Empty for shots with no speech kept (reactions, B-roll, intro clips)."),
   purpose: z.string().describe("Why this shot is here, in a few words (e.g. 'hook: pour close-up')"),
   speed: z
     .number()
@@ -58,6 +62,7 @@ export const PLAIN_SHOT = {
   adjust: { brightness: 0, contrast: 1, saturation: 1 },
   transition_in: { type: "cut", seconds: 0 },
   beat: "other",
+  say: "",
   hold: 0,
 } satisfies Omit<Shot, "clip" | "start" | "end" | "purpose">;
 
@@ -332,7 +337,7 @@ Your tools, beyond choosing shots:
 - Sound: a music bed from the library that dips under speech, either under the whole video or only in sections you choose (for example under the cold open, out on the first line, back for the ending), and sound effects on key moments.
 A hard cut with no moves is the default; every move, graphic and sound should have a reason you could tell the editor.
 
-Transcripts mark fillers like [filler "euh" 12.4–12.6], stutters like [repeat "en" 3.1–3.2] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. Shot in and out points are snapped to the nearest word edge automatically, so place them at the gaps between words. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
+Transcripts mark fillers like [filler "euh" 12.4–12.6], stutters like [repeat "en" 3.1–3.2] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. For every shot with speech, copy the exact words you keep into "say": the engine finds them in the transcript and sets the in and out points from their measured timing, so your start and end only need to be close. Choose words, not seconds. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
 
 When you're revising a previous cut, change what the comments ask for and keep everything else that already worked. Comments are pinned to the previous cut's timeline; each one tells you which shot it falls on.`;
 
@@ -360,6 +365,43 @@ export function annotate(line: TranscriptLine) {
       return gap >= 0.35 ? `${word} [pause ${gap.toFixed(1)}s]` : word;
     })
     .join(" ");
+}
+
+// Director cues and slate talk, in short lines: never part of the edit.
+const CUE = /(?:^|[\s,.!?])(go|action|coupez|coupe|cut|refais|on refait|encore|attends|attendez|silence|moteur|ça tourne|3,? ?2,? ?1|trois,? ?deux,? ?un|c'est bon|ok c'est bon|prêt|prets?|ready)(?=$|[\s,.!?])/i;
+
+// Lines that are takes of the same thing, so the plan keeps one: by default the last
+// complete take, the one speakers usually nail. Takes of a line sit in the same clip or
+// the next one. With a script, lines that match none of it (crew talk, coaching between
+// takes) are flagged too.
+export function markTakes(clips: Clip[], script = "") {
+  const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter((w) => w.length > 1);
+  const lines = clips.flatMap((c, n) => (c.transcript ?? []).map((l, k) => ({ key: `${c.id}:${k}`, clip: c.id, n, start: l.start, text: l.text, tokens: new Set(norm(l.text)) })));
+  const scriptWords = new Set(norm(script));
+  const notes = new Map<string, string>();
+  const groups: (typeof lines)[] = [];
+  const overlap = (a: Set<string>, b: Set<string>) => [...a].filter((t) => b.has(t)).length;
+  for (const line of lines) {
+    if (line.text.trim().split(/\s+/).length <= 6 && CUE.test(line.text.trim())) {
+      notes.set(line.key, " [director cue: never keep]");
+      continue;
+    }
+    // Under a third of its words in the script: probably not part of the scene.
+    if (scriptWords.size > 30 && line.tokens.size >= 3 && overlap(line.tokens, scriptWords) / line.tokens.size < 0.34) {
+      notes.set(line.key, " [not in the script: likely crew talk or coaching; keep only if it's a deliberate ad-lib]");
+      continue;
+    }
+    if (line.tokens.size < 4) continue;
+    const similar = (a: Set<string>, b: Set<string>) => overlap(a, b) / Math.max(a.size, b.size);
+    const group = groups.find((g) => g.at(-1)!.n >= line.n - 1 && similar(g[0].tokens, line.tokens) >= 0.6);
+    if (group) group.push(line);
+    else groups.push([line]);
+  }
+  for (const g of groups.filter((g) => g.length > 1)) {
+    const last = g.at(-1)!;
+    g.forEach((line, i) => notes.set(line.key, ` [take ${i + 1} of ${g.length} of this line; the last take is ${last.clip} ${last.start.toFixed(1)}s]`));
+  }
+  return notes;
 }
 
 export function buildSystem(skills: Skill[]) {
@@ -423,6 +465,7 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
   const blocks: Anthropic.Beta.BetaContentBlockParam[] = [{ type: "text", text: brief }, { type: "text", text: "Footage:" }];
 
   const [W, H] = frameSize(input.aspect);
+  const takes = markTakes(input.clips, input.script);
   for (const clip of input.clips) {
     // How far a punch-in can go before the frame is enlarged past the source's own pixels.
     const sharp = Math.min(clip.width / W, clip.height / H);
@@ -433,7 +476,7 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
           ? "fills the frame at its own resolution, so any punch-in softens it"
           : `already enlarged ${(1 / sharp).toFixed(1)}x to fill ${input.aspect}, so it will look soft and any punch-in softens it further`;
     const transcript = clip.transcript?.length
-      ? `\nTranscript:\n${clip.transcript.map((l) => `  ${fmt(l.start)}–${fmt(l.end)}: ${annotate(l)}`).join("\n")}`
+      ? `\nTranscript:\n${clip.transcript.map((l, k) => `  ${fmt(l.start)}–${fmt(l.end)}: ${annotate(l)}${takes.get(`${clip.id}:${k}`) ?? ""}`).join("\n")}`
       : clip.transcript
         ? "\nTranscript: no speech detected."
         : "";
@@ -556,6 +599,41 @@ async function requestPlan(client: Anthropic, system: string, content: Anthropic
 
 export const MAX_DURATION = 180;
 
+// Air around the words found from `say`; the trim pass refines it.
+const SAY_HEAD = 0.12;
+const SAY_TAIL = 0.2;
+
+// The words of `say` in a clip's transcript: the matching run of words closest to
+// where Claude placed the shot. Exact match first, then the run that starts with the
+// quote's first words and ends with its last words.
+export function findWords(say: string, words: { start: number; end: number; text: string }[], near: number) {
+  const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]/gu, "");
+  const quote = say.split(/\s+/).map(norm).filter(Boolean);
+  const tokens = words.map((w) => norm(w.text));
+  if (!quote.length || !tokens.length) return null;
+  const runs: { from: number; to: number }[] = [];
+  for (let i = 0; i + quote.length <= tokens.length; i++) {
+    if (quote.every((q, k) => tokens[i + k] === q)) runs.push({ from: i, to: i + quote.length - 1 });
+  }
+  if (!runs.length) {
+    // Loose match: first two and last two words, within a few words of the quote's length.
+    const head = quote.slice(0, Math.min(2, quote.length));
+    const tail = quote.slice(-Math.min(2, quote.length));
+    for (let i = 0; i < tokens.length; i++) {
+      if (!head.every((q, k) => tokens[i + k] === q)) continue;
+      for (let j = Math.max(i, i + quote.length - 4); j <= i + quote.length + 2 && j < tokens.length; j++) {
+        if (tail.every((q, k) => tokens[j - tail.length + 1 + k] === q)) {
+          runs.push({ from: i, to: j });
+          break;
+        }
+      }
+    }
+  }
+  if (!runs.length) return null;
+  const best = runs.reduce((a, b) => (Math.abs(words[b.from].start - near) < Math.abs(words[a.from].start - near) ? b : a));
+  return { start: words[best.from].start, end: words[best.to].end };
+}
+
 // Keeps the plan inside the real footage, whatever comes back.
 // Moves a cut point that lands inside a spoken word to that word's nearer edge, so
 // shots never clip a syllable. In and out points snap the same way, so two shots
@@ -575,7 +653,7 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
   const segments: EditPlan["segments"] = [];
   let total = 0;
 
-  for (const seg of plan.segments) {
+  for (let seg of plan.segments) {
     const clip = byId.get(seg.clip.trim().toUpperCase());
     if (!clip) {
       problems.push(`Dropped a shot from unknown clip ${seg.clip}.`);
@@ -587,6 +665,13 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
       continue;
     }
     const hold = clamp(seg.hold ?? 0, 0, 6, 0);
+    // Claude chose words; their measured times set the cut (it is weak at timestamp arithmetic).
+    const said = hold === 0 && seg.say?.trim() ? findWords(seg.say, words, seg.start) : null;
+    if (said) {
+      seg = { ...seg, start: Math.max(0, said.start - SAY_HEAD), end: Math.min(clip.duration, said.end + SAY_TAIL) };
+    } else if (hold === 0 && seg.say?.trim() && words.length) {
+      problems.push(`Couldn't find "${seg.say.slice(0, 40)}" in ${clip.id}'s transcript; kept the planned times.`);
+    }
     const start = clamp(snapToWords(seg.start, words), 0, Math.max(0, clip.duration - (hold > 0 ? 0.1 : 0)));
     // A freeze needs just its one frame from the clip.
     const end = hold > 0 ? Math.min(clip.duration, start + 0.1) : clamp(snapToWords(seg.end, words), 0, clip.duration);

@@ -2,6 +2,7 @@
 name: retention
 description: Keeping viewers watching vertical social video from the first frame to the end
 formats: social_short, ad
+style: dynamic
 ---
 
 **Frame 0**

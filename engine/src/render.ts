@@ -239,7 +239,9 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     const freeze = seg.hold > 0 ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB,trim=duration=${seconds.toFixed(3)},` : "";
     filters.push(`[${v}:v]${vTrim}${freeze}${shotVideo(seg, clip, W, H, plan.look, frameCount)}[v${i}]`);
     if (clip.hasAudio && seg.audio === "keep" && seg.hold === 0) {
-      filters.push(`[${v}:a]atrim=start=${(seg.start - from).toFixed(4)}:duration=${(seg.end - seg.start).toFixed(4)}[as${i}]`);
+      // 15 ms fades at both ends: a hard audio cut clicks and jumps in room tone.
+      const fadeOut = Math.max(0, (seg.end - seg.start) - 0.015);
+      filters.push(`[${v}:a]atrim=start=${(seg.start - from).toFixed(4)}:duration=${(seg.end - seg.start).toFixed(4)},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st=${fadeOut.toFixed(4)}:d=0.015[as${i}]`);
       filters.push(normA(`as${i}`, `a${i}`, seconds, atempo(seg.speed)));
     } else filters.push(normA(`${addSilence(seconds)}:a`, `a${i}`, seconds));
     pieces.push({ seconds, transition: seg.transition_in });

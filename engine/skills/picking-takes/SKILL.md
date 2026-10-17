@@ -6,7 +6,7 @@ formats: all
 
 **Rebuild the script from the takes**
 - People repeat a line until it lands. A whole-line retake can come 5–60s after the first attempt.
-- Match takes to the script's lines using each line's first few words.
+- Transcript lines carry take notes (`[take 2 of 3 of this line; the last take is ...]`, `[director cue]`, `[not in the script]`). Use them; check against the script's lines when they look wrong.
 - Drop slate talk ("okay, again", "take two", "let me redo that") and abandoned starts.
 - Use the **last complete, clean take** of each line: no stumble, no restart, no trailing off.
   - Choose an earlier take when it's clearly better, or when the later one lost a lead-in or context the earlier one had.
@@ -20,15 +20,14 @@ formats: all
 - A line that seems said twice may have been merged into one by the transcriber. Check whether its length makes sense.
 
 **Pad around speech**
-- Transcript times are per line and can be off by 0.1–0.4s, usually ending late or early around silence.
-- Start 0.1–0.15s before the first word, and end 0.15–0.3s after the last word, so consonants and breaths finish naturally.
+- Copy the exact words of each speech shot into `say`. The engine sets the in and out points from the words' measured timing (about 0.12s before the first word, 0.2s after the last), which is more precise than any time you could write.
 - A clipped first or last syllable is the most noticeable mistake in a speech edit.
 - No shot of speech shorter than 0.35s unless it's a needed connecting word.
 
 **Pauses and fillers**
-- Compress pauses rather than removing them. The gap kept between phrases depends on the edit style (see edit-styles), usually 0.2–0.4s. Speech with no gaps sounds frantic.
-- Long pauses (over about 0.8s) shrink to the style's gap.
-- Never cut out laughter, a gasp or a one-word punchline. After a punchline, keep a 0.4–0.6s beat.
+- Compress pauses rather than removing them: keep 0.25–0.45s between phrases (measured sitcom dialogue keeps 275–540 ms). Speech with no gaps sounds frantic.
+- Long pauses (over about 0.8s) shrink to that gap.
+- Never cut out laughter, a gasp or a one-word punchline. Mark punchlines `beat: punchline`, so their beat before and after is kept.
 - Cut filler where the line allows: um, uh, "like", "you know", "I mean", "basically", and weak openers such as "so", "okay so" and "anyway".
   - Keep a single filler when it's the only bridge between thoughts, or carries the speaker's warmth.
 - Always keep negations, numbers, names and deliberate repetition, even when tightening hard.

@@ -2,6 +2,7 @@
 name: social-short
 description: Structure and pacing for Reels, TikTok and Shorts
 formats: social_short
+style: dynamic
 ---
 
 See retention for the first frame, hooks and keeping viewers watching. See edit-styles for pacing numbers.

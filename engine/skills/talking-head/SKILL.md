@@ -2,6 +2,7 @@
 name: talking-head
 description: Editing someone speaking to camera so it looks like a studio interview, not a selfie
 formats: all
+style: dynamic
 ---
 
 Use this whenever a clip is mostly one person speaking to camera, in any format.

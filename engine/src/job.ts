@@ -223,6 +223,7 @@ const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you ar
 - Keep every line the script needs and the jokes' timing: keep the beat before a punchline, never cut away from a punchline before its last syllable, hold the reaction after it until it peaks (usually 0.6 to 1.2 s). Label each shot's beat (setup, punchline, reaction).
 - Freezes for character intros 2.2 to 2.8 s, a comic freeze 0.8 to 1.2 s.
 - Where it sags, tighten it: a tighter cut, a cut to the listener's reaction, a punch-in or a cutaway (or a motion graphic, unless the editing style is clean).
+- Keep copying each speech shot's exact words into say: the engine times the cut from them.
 - If a note is wrong (a deliberate pause), keep it as it is. Don't change what already works.`;
 
 // Trim pass after validation; logs what it changed.
