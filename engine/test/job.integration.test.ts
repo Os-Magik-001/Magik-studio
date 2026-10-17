@@ -8,7 +8,7 @@ import { after, before, test } from "node:test";
 import { db } from "../src/config.ts";
 import { processJob, type Job } from "../src/job.ts";
 import type { EditPlan, PlanInput } from "../src/plan.ts";
-import { CUT, makeClip, makeLogo, shot } from "./fixtures.ts";
+import { CUT, EXTRAS, makeClip, makeLogo, shot, txt } from "./fixtures.ts";
 
 const enabled = process.env.ENGINE_INTEGRATION === "1";
 const tag = `engine-it-${Date.now().toString(36)}`;
@@ -67,13 +67,14 @@ after(async () => {
 });
 
 const firstCut: EditPlan = {
+  ...EXTRAS,
   look: "natural",
   summary: "Pour hook, then the barista, then the end card.",
   segments: [
     shot("C1", 0.5, 2.5, "hook: pour"),
     shot("C2", 0, 2, "barista"),
   ],
-  on_screen_text: [{ text: "Pumpkin latte is back", start: 0, end: 2, style: "title", position: "top" }],
+  on_screen_text: [txt("Pumpkin latte is back", 0, 2, "title", "top")],
   end_card: { include: true, headline: "Available now", seconds: 1.5, transition: CUT },
   open_questions: ["Is the barista shot bright enough?"],
 };

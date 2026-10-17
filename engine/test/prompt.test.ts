@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildContent, buildSystem, parseStoredPlan, type EditPlan, type PlanInput } from "../src/plan.ts";
-import { CUT, shot } from "./fixtures.ts";
+import { CUT, EXTRAS, shot, txt } from "./fixtures.ts";
 
 const plan: EditPlan = {
+  ...EXTRAS,
   look: "natural",
   summary: "",
   segments: [
@@ -89,7 +90,7 @@ test("skills are added to Claude's instructions", () => {
 });
 
 test("each clip says how far it can be punched in before it goes soft", async () => {
-  const clip = (id: string, width: number, height: number) => ({ id, fileName: `${id}.mp4`, file: "", duration: 5, width, height, fps: 30, hasAudio: false, sheets: [], interval: 1, transcript: null });
+  const clip = (id: string, width: number, height: number) => ({ id, fileName: `${id}.mp4`, file: "", preview: "", duration: 5, width, height, fps: 30, hasAudio: false, sheets: [], interval: 1, transcript: null });
   const blocks = await buildContent({ ...input, aspect: "9:16", previous: null, clips: [clip("C1", 2160, 3840), clip("C2", 1080, 1920), clip("C3", 1920, 1080)] });
   const text = blocks.map((b) => (b.type === "text" ? b.text : "")).join("\n");
   assert.match(text, /Clip C1 .*stays sharp up to zoom 2\.00/);

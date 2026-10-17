@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { config } from "./config.ts";
 import { frameSize, SHEET_COLS, SHEET_ROWS } from "./media.ts";
@@ -52,19 +51,102 @@ export const PLAIN_SHOT = {
   transition_in: { type: "cut", seconds: 0 },
 } satisfies Omit<Shot, "clip" | "start" | "end" | "purpose">;
 
+export const TEXT_STYLES = ["caption", "title", "hero", "serif", "stacked", "boxed", "label"] as const;
+export const TEXT_ANIMATIONS = ["none", "pop", "fade", "slide_up", "typewriter"] as const;
+export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal"] as const;
+export const GRAPHICS = ["comment_cta", "follow_pill", "progress_bar", "counter", "emoji", "circle"] as const;
+export const SFX = ["whoosh", "pop", "hit", "riser", "click", "ding"] as const;
+
+const Hex = z.string().describe("A hex color like #FFD84D");
+
 const OnScreenText = z.object({
-  text: z.string().describe("Exactly what appears on screen. Keep captions short: one or two lines."),
+  text: z.string().describe("Exactly what appears on screen. Short: 1 to 6 words for titles."),
   start: z.number().describe("Seconds on the finished video's timeline"),
   end: z.number().describe("Seconds on the finished video's timeline"),
-  style: z.enum(["caption", "title"]).describe("caption = subtitle-style line; title = large headline text"),
+  style: z
+    .enum(TEXT_STYLES)
+    .describe(
+      "caption = subtitle line (only when captions.mode is manual); title = large bold headline; hero = huge 1 to 3 word keyword, the reel's big idea of the moment; serif = big elegant italic serif; stacked = 2 to 3 line headline built line by line (use \\n between lines); boxed = pinned header in a solid box (e.g. a call to action); label = small aside or kicker text",
+    ),
   position: z.enum(["top", "center", "bottom"]),
+  animation: z.enum(TEXT_ANIMATIONS).describe("How it comes in. pop = scales in with a bounce (energetic); slide_up; fade (calm); typewriter (letters appear); none."),
+  color: Hex.nullable().describe("Text color; null = white (or the brand's first light color)"),
+  accent: z
+    .string()
+    .nullable()
+    .describe("One word or short phrase from `text` drawn in the highlight color and italic serif, e.g. 'did.' in 'Claude did.'; null for none"),
+  behind_subject: z
+    .boolean()
+    .describe("Draw it behind the person, so the head overlaps the letters (the premium creator look). Only for hero/title/serif at top or center while a person fills the frame; keep at least 70% of each letter visible."),
+});
+
+const Captions = z.object({
+  mode: z
+    .enum(["auto", "manual", "off"])
+    .describe("auto = the engine captions every kept spoken word, timed exactly from the audio (use whenever there is speech); manual = only the caption items you write; off = none"),
+  preset: z
+    .enum(CAPTION_PRESETS)
+    .describe("bold_pop = heavy white sans, words pop in one by one, keywords in the highlight color (energetic creator reels); editorial = clean white sans with italic serif keywords (premium, brand); karaoke_box = serif in a dark box, spoken words light up (calm, readable); classic = boxed white subtitle lines; minimal = small white text with a soft shadow"),
+  words_per_screen: z.number().describe("1 to 4 words on screen at a time; 2 to 3 for vertical social"),
+  case: z.enum(["as_spoken", "lower", "upper"]),
+  position: z.enum(["top", "center", "bottom"]).describe("center = chest height, the creator-reel standard"),
+  size: z.enum(["small", "medium", "large"]),
+  color: Hex,
+  highlight_color: Hex.describe("Color for highlight words and the word being spoken"),
+  highlight_words: z.array(z.string()).describe("Keywords to emphasize whenever they're spoken (product, numbers, payoffs), as spoken"),
+});
+
+const Graphic = z.object({
+  kind: z
+    .enum(GRAPHICS)
+    .describe("comment_cta = an Instagram comment bubble typing the keyword (call to action); follow_pill = a Follow button that turns into Following; progress_bar = thin bar across the top that fills over its time; counter = a number or time counting from a to b (proof: views, raw vs final length); emoji = one emoji popping in; circle = a hand-drawn circle drawing itself around a point (show what you say)"),
+  start: z.number().describe("Seconds on the finished timeline"),
+  end: z.number(),
+  text: z
+    .string()
+    .describe("comment_cta: the keyword; follow_pill: the @handle or empty; counter: 'from|to' like '1:16|0:55' or '0|351000'; emoji: one emoji; circle/progress_bar: empty"),
+  x: z.number().describe("Horizontal center, 0 to 1"),
+  y: z.number().describe("Vertical center, 0 to 1 (keep 0.12 to 0.75 on vertical video)"),
+  size: z.number().describe("Scale, 0.5 to 2 (1 = standard)"),
+});
+
+const Overlay = z.object({
+  kind: z
+    .enum(["cutaway", "card"])
+    .describe("cutaway = another clip fills the frame while the main shot's sound continues (B-roll over the voice, J/L cut); card = a clip or still floats in a rounded card over the shot (proof, screenshots, examples)"),
+  clip: z.string().describe("Clip id of the overlay footage"),
+  start: z.number().describe("Seconds into that clip"),
+  end: z.number().describe("Seconds into that clip (ignored for stills except for length)"),
+  at: z.number().describe("Seconds on the finished timeline where it appears"),
+  still: z.boolean().describe("Freeze on the frame at `start` (a screenshot) instead of playing"),
+  focus: z.object({ x: z.number(), y: z.number() }).describe("What to keep in frame from the overlay clip, 0 to 1"),
+  x: z.number().describe("card: horizontal center 0 to 1"),
+  y: z.number().describe("card: vertical center 0 to 1"),
+  width: z.number().describe("card: width as a fraction of the frame, 0.25 to 0.9"),
+  tilt: z.number().describe("card: rotation in degrees, -10 to 10 (a few degrees looks hand-placed)"),
+});
+
+const Music = z.object({
+  track: z.string().nullable().describe("Track id from the music library, or null for no music"),
+  start: z.number().describe("Seconds into the track to start from (a strong section or the first beat)"),
+  volume: z.enum(["low", "medium", "high"]).describe("Bed level under speech: low for talking, medium for mixed, high for montage with little speech. It dips automatically under speech."),
+});
+
+const Sfx = z.object({
+  kind: z.enum(SFX).describe("whoosh = transitions and fast moves; pop = text or graphics appearing; hit = a big reveal or punchline; riser = builds into a drop (put it 1.5 to 2 s before); click = UI and typing; ding = a positive result"),
+  at: z.number().describe("Seconds on the finished timeline"),
 });
 
 export const EditPlan = z.object({
   summary: z.string().describe("Two or three sentences for the editor: the story of the cut and the key choices."),
   look: z.enum(LOOKS).describe("Color grade over every shot (not the end card). natural = untouched."),
   segments: z.array(Segment).describe("The shots in playback order."),
-  on_screen_text: z.array(OnScreenText),
+  captions: Captions,
+  on_screen_text: z.array(OnScreenText).describe("Titles and other text you place. In captions auto mode, don't add caption items: the engine writes those."),
+  graphics: z.array(Graphic),
+  overlays: z.array(Overlay),
+  music: Music,
+  sfx: z.array(Sfx).describe("Sound effects, sparingly: a few per video, on the moments that deserve them"),
   end_card: z.object({
     include: z.boolean(),
     headline: z.string().nullable().describe("Short line under the logo, e.g. 'Available now'"),
@@ -78,13 +160,34 @@ export const EditPlan = z.object({
 
 export type EditPlan = z.infer<typeof EditPlan>;
 
+// What older plans, saved before automatic captions existed, mean: their captions were written by hand.
+export const DEFAULT_CAPTIONS = {
+  mode: "manual",
+  preset: "classic",
+  words_per_screen: 3,
+  case: "as_spoken",
+  position: "bottom",
+  size: "medium",
+  color: "#FFFFFF",
+  highlight_color: "#FFD84D",
+  highlight_words: [],
+} satisfies z.infer<typeof Captions>;
+
 // Reads a plan saved on a version, filling in moves that older plans don't have.
 export function parseStoredPlan(raw: unknown): EditPlan | null {
   if (!raw || typeof raw !== "object") return null;
   const p = raw as Record<string, unknown> & { segments?: unknown; end_card?: Record<string, unknown> };
   const upgraded = {
     look: "natural",
+    captions: DEFAULT_CAPTIONS,
+    graphics: [],
+    overlays: [],
+    music: { track: null, start: 0, volume: "low" },
+    sfx: [],
     ...p,
+    on_screen_text: Array.isArray(p.on_screen_text)
+      ? p.on_screen_text.map((t) => ({ animation: "none", color: null, accent: null, behind_subject: false, ...t }))
+      : p.on_screen_text,
     segments: Array.isArray(p.segments) ? p.segments.map((s) => ({ ...PLAIN_SHOT, ...s })) : p.segments,
     end_card: p.end_card && { transition: PLAIN_SHOT.transition_in, ...p.end_card },
   };
@@ -118,6 +221,8 @@ export type Clip = {
   id: string;
   fileName: string;
   file: string;
+  // A small copy for watching and listening (contact sheets, transcription); the file itself otherwise.
+  preview: string;
   duration: number;
   width: number;
   height: number;
@@ -150,6 +255,8 @@ export type PlanInput = {
   skills: Skill[];
   clips: Clip[];
   previous: { number: number; plan: EditPlan; comments: { timecodeMs: number | null; body: string; fromClient: boolean }[] } | null;
+  // The music library, described for planning; empty when there is none.
+  music?: string;
 };
 
 const SYSTEM = `You are the editor at Magik Studio, a video studio that makes short videos for brands. You cut raw footage into a finished video that a human editor will check before the client sees it.
@@ -166,12 +273,37 @@ How to cut:
 - Only use clip ids and time ranges that exist in the footage list.
 - Captions and titles use the finished video's timeline: a shot lasts (end - start) / speed, each transition overlaps the two shots it joins by its length, and the end card comes after the last shot.
 
-Your tools, beyond choosing shots: transitions between shots, speed changes, punch-ins and slow pushes, reframing with the focus point, per-shot exposure and color fixes, and an overall look. A hard cut with no moves is the default; every move should have a reason you could tell the editor. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
+Your tools, beyond choosing shots:
+- Picture: transitions, speed changes, punch-ins and slow pushes, reframing with the focus point, per-shot exposure and color fixes, an overall look.
+- Captions: in auto mode the engine captions every kept spoken word with exact word timing; you choose the style, size, position, colors and the keywords to highlight.
+- Text you place: titles, hero words, serif accents, stacked headlines, boxed headers and labels, each with an entrance animation, an optional accent word, and optionally drawn behind the person.
+- Graphics: comment call-to-action bubbles, follow buttons, progress bars, counters, emojis, hand-drawn circles.
+- Overlays: B-roll that covers the picture while the voice continues (cutaway), and floating cards of other clips or stills.
+- Sound: a music bed from the library that dips under speech, and sound effects on key moments.
+A hard cut with no moves is the default; every move, graphic and sound should have a reason you could tell the editor.
+
+Transcripts mark fillers like [filler "euh" 12.4–12.6] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. Shot in and out points are snapped to the nearest word edge automatically, so place them at the gaps between words. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
 
 When you're revising a previous cut, change what the comments ask for and keep everything else that already worked. Comments are pinned to the previous cut's timeline; each one tells you which shot it falls on.`;
 
 function fmt(s: number) {
   return `${s.toFixed(1)}s`;
+}
+
+const FILLERS = new Set(["um", "umm", "uh", "uhm", "er", "erm", "ah", "eh", "ehm", "hmm", "mm", "euh", "heu", "hum", "bah", "ben", "beh", "este", "eee", "äh", "ähm"]);
+const bare = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}']/gu, "");
+
+// A transcript line with its fillers and pauses marked, so the cut can remove them.
+export function annotate(line: TranscriptLine) {
+  if (!line.words?.length) return line.text;
+  return line.words
+    .map((w, i) => {
+      const next = line.words[i + 1];
+      const gap = next ? next.start - w.end : 0;
+      const word = FILLERS.has(bare(w.text)) ? `[filler "${w.text.replace(/[,.]$/, "")}" ${w.start.toFixed(2)}–${w.end.toFixed(2)}]` : w.text;
+      return gap >= 0.35 ? `${word} [pause ${gap.toFixed(1)}s]` : word;
+    })
+    .join(" ");
 }
 
 export function buildSystem(skills: Skill[]) {
@@ -217,7 +349,7 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
     kit &&
       `Brand kit:\n${[
         kit.styleRules && `Style rules: ${kit.styleRules}`,
-        kit.musicMood && `Music mood: ${kit.musicMood} (no music library yet: keep the clips' own sound)`,
+        kit.musicMood && `Music mood: ${kit.musicMood}`,
         kit.colors.length && `Colors: ${kit.colors.join(", ")}`,
         kit.fonts.length && `Fonts: ${kit.fonts.join(", ")}`,
         `Logo available for the end card: ${kit.hasLogo ? "yes" : "no"}`,
@@ -227,6 +359,7 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
     input.source === "launch" && input.instructions && `Editor's notes for this edit:\n${input.instructions}`,
     input.previous && describePrevious(input.previous),
     input.source !== "launch" && input.instructions && `What was asked for this revision:\n${input.instructions}`,
+    input.music ? `Music library (choose a track id, or null):\n${input.music}` : "Music library: none available, so set music.track to null.",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -244,7 +377,7 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
           ? "fills the frame at its own resolution, so any punch-in softens it"
           : `already enlarged ${(1 / sharp).toFixed(1)}x to fill ${input.aspect}, so it will look soft and any punch-in softens it further`;
     const transcript = clip.transcript?.length
-      ? `\nTranscript:\n${clip.transcript.map((l) => `  ${fmt(l.start)}–${fmt(l.end)}: ${l.text}`).join("\n")}`
+      ? `\nTranscript:\n${clip.transcript.map((l) => `  ${fmt(l.start)}–${fmt(l.end)}: ${annotate(l)}`).join("\n")}`
       : clip.transcript
         ? "\nTranscript: no speech detected."
         : "";
@@ -268,8 +401,8 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
     type: "text",
     text:
       input.source === "launch"
-        ? "Plan the edit."
-        : "Plan the revised edit. Address every open comment, and keep what already worked.",
+        ? `Plan the edit, then submit it with ${SUBMIT}.`
+        : `Plan the revised edit. Address every open comment, and keep what already worked. Submit it with ${SUBMIT}.`,
   });
   return blocks;
 }
@@ -291,29 +424,52 @@ export async function planEdit(input: PlanInput): Promise<{ plan: EditPlan; usag
   }
 }
 
-async function requestPlan(client: Anthropic, system: string, content: Anthropic.Beta.BetaContentBlockParam[]) {
-  const message = await client.beta.messages
-    .stream({
-      model: config.model,
-      max_tokens: 32000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      thinking: { type: "adaptive" },
-      output_config: { effort: "high", format: betaZodOutputFormat(EditPlan) },
-      system,
-      messages: [{ role: "user", content }],
-    })
-    .finalMessage();
+// The plan comes back as the input of one tool call. The schema is too big to compile
+// into a strict grammar, so it isn't enforced by the API: the engine checks it, and a
+// plan that doesn't fit goes back to Claude once with what was wrong.
+const SUBMIT = "submit_edit_plan";
+const planSchema = (() => {
+  const { $schema: _, ...schema } = z.toJSONSchema(EditPlan) as Record<string, unknown>;
+  return schema as Anthropic.Beta.BetaTool.InputSchema;
+})();
 
-  if (message.stop_reason === "refusal") throw new Error("Claude declined to plan this edit.");
-  if (message.stop_reason === "max_tokens" || !message.parsed_output) {
-    throw new Error("Claude's edit plan came back incomplete.");
+async function requestPlan(client: Anthropic, system: string, content: Anthropic.Beta.BetaContentBlockParam[]) {
+  const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content }];
+  let used = { input: 0, output: 0 };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const message = await client.beta.messages
+      .stream({
+        model: config.model,
+        max_tokens: 64000,
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        thinking: { type: "adaptive" },
+        output_config: { effort: "high" },
+        system,
+        tools: [{ name: SUBMIT, description: "Submit the finished edit plan. Call it exactly once, with the complete plan.", input_schema: planSchema, eager_input_streaming: true }],
+        tool_choice: { type: "auto" },
+        messages,
+      })
+      .finalMessage();
+    used = { input: used.input + message.usage.input_tokens, output: used.output + message.usage.output_tokens };
+
+    if (message.stop_reason === "refusal") throw new Error("Claude declined to plan this edit.");
+    if (message.stop_reason === "max_tokens") throw new Error("Claude's edit plan came back incomplete.");
+    const call = message.content.find((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use" && b.name === SUBMIT);
+    const parsed = EditPlan.safeParse(call?.input);
+    if (parsed.success) return { plan: parsed.data, usage: `${message.model}: ${used.input} in, ${used.output} out${attempt ? " (2 tries)" : ""}` };
+
+    // Second try: the same conversation, with what was wrong (the turn so far is kept as is).
+    const problem = call
+      ? `The plan doesn't match the schema: ${parsed.error.issues.slice(0, 12).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}. Fix these and call ${SUBMIT} again with the complete plan.`
+      : `Call ${SUBMIT} with the complete plan; don't write it as text.`;
+    messages.push({ role: "assistant", content: message.content });
+    messages.push({
+      role: "user",
+      content: call ? [{ type: "tool_result", tool_use_id: call.id, is_error: true, content: problem }] : [{ type: "text", text: problem }],
+    });
   }
-  const u = message.usage;
-  return {
-    plan: message.parsed_output,
-    usage: `${message.model}: ${u.input_tokens} in, ${u.output_tokens} out`,
-  };
+  throw new Error("Claude's edit plan didn't match the format twice.");
 }
 
 // ---------------------------------------------------------------- validation
@@ -321,7 +477,16 @@ async function requestPlan(client: Anthropic, system: string, content: Anthropic
 export const MAX_DURATION = 180;
 
 // Keeps the plan inside the real footage, whatever comes back.
-export function validatePlan(plan: EditPlan, clips: Clip[]) {
+// Moves a cut point that lands inside a spoken word to that word's nearer edge, so
+// shots never clip a syllable. In and out points snap the same way, so two shots
+// that meet in the middle of a word still meet without repeating a sound.
+export function snapToWords(t: number, words: { start: number; end: number }[]) {
+  const w = words.find((x) => t > x.start && t < x.end);
+  if (!w) return t;
+  return t - w.start <= w.end - t ? w.start : w.end;
+}
+
+export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = []) {
   const byId = new Map(clips.map((c) => [c.id.toUpperCase(), c]));
   const problems: string[] = [];
   const segments: EditPlan["segments"] = [];
@@ -333,8 +498,9 @@ export function validatePlan(plan: EditPlan, clips: Clip[]) {
       problems.push(`Dropped a shot from unknown clip ${seg.clip}.`);
       continue;
     }
-    const start = clamp(seg.start, 0, clip.duration);
-    const end = clamp(seg.end, 0, clip.duration);
+    const words = seg.audio === "keep" ? (clip.transcript ?? []).flatMap((l) => l.words ?? []) : [];
+    const start = clamp(snapToWords(seg.start, words), 0, clip.duration);
+    const end = clamp(snapToWords(seg.end, words), 0, clip.duration);
     const speed = clamp(seg.speed, 0.25, 4, 1);
     const length = (end - start) / speed;
     if (length < 0.3) {
@@ -381,16 +547,96 @@ export function validatePlan(plan: EditPlan, clips: Clip[]) {
   };
   const fixed = { ...plan, look: LOOKS.includes(plan.look) ? plan.look : "natural", segments, end_card: endCard } satisfies EditPlan;
   const { length } = timelineOf(fixed);
+  const span = <T extends { start: number; end: number }>(x: T) => ({ ...x, start: round(clamp(x.start, 0, length)), end: round(clamp(x.end, 0, length)) });
+
+  const c = plan.captions;
+  const captions = {
+    ...c,
+    words_per_screen: Math.round(clamp(c.words_per_screen, 1, 4, 3)),
+    color: hex(c.color) ?? "#FFFFFF",
+    highlight_color: hex(c.highlight_color) ?? "#FFD84D",
+    highlight_words: c.highlight_words.map((w) => w.trim()).filter(Boolean).slice(0, 40),
+  };
+  const BEHIND = new Set(["hero", "title", "serif", "stacked"]);
   const on_screen_text = plan.on_screen_text
-    .map((t) => ({ ...t, text: t.text.trim(), start: round(Math.max(0, t.start)), end: round(Math.min(length, t.end)) }))
-    .filter((t) => t.text && t.end - t.start >= 0.2);
+    .map((t) => ({
+      ...span(t),
+      text: t.text.trim(),
+      color: hex(t.color),
+      accent: t.accent && t.text.includes(t.accent.trim()) ? t.accent.trim() : null,
+      behind_subject: t.behind_subject && BEHIND.has(t.style),
+    }))
+    // In auto mode the engine writes the captions; hand-written ones would double them.
+    .filter((t) => t.text && t.end - t.start >= 0.2 && !(captions.mode === "auto" && t.style === "caption"));
+
+  const graphics = plan.graphics
+    .map((g) => ({ ...span(g), text: g.text.trim(), x: round(clamp(g.x, 0.05, 0.95, 0.5)), y: round(clamp(g.y, 0.05, 0.95, 0.5)), size: round(clamp(g.size, 0.5, 2, 1)) }))
+    .filter((g) => g.end - g.start >= 0.3 && (g.kind !== "emoji" || g.text) && (g.kind !== "counter" || g.text.includes("|")));
+
+  const overlays: EditPlan["overlays"] = [];
+  for (const o of plan.overlays) {
+    const clip = byId.get(o.clip.trim().toUpperCase());
+    if (!clip) {
+      problems.push(`Dropped an overlay from unknown clip ${o.clip}.`);
+      continue;
+    }
+    const start = clamp(o.start, 0, clip.duration);
+    const wanted = o.still ? (o.end > o.start ? o.end - o.start : 2) : clamp(o.end, 0, clip.duration) - start;
+    const at = clamp(o.at, 0, length);
+    const seconds = Math.min(wanted, length - at);
+    if (seconds < 0.3) continue;
+    overlays.push({
+      ...o,
+      clip: clip.id,
+      start: round(start),
+      // For a still, end - start is how long the screenshot stays up.
+      end: round(start + seconds),
+      at: round(at),
+      focus: { x: round(clamp(o.focus.x, 0, 1, 0.5)), y: round(clamp(o.focus.y, 0, 1, 0.5)) },
+      x: round(clamp(o.x, 0.1, 0.9, 0.5)),
+      y: round(clamp(o.y, 0.1, 0.9, 0.5)),
+      width: round(clamp(o.width, 0.25, 0.9, 0.6)),
+      tilt: round(clamp(o.tilt, -12, 12, 0)),
+    });
+  }
+
+  const music = {
+    track: plan.music.track && tracks.includes(plan.music.track) ? plan.music.track : null,
+    start: round(Math.max(0, plan.music.start || 0)),
+    volume: plan.music.volume,
+  };
+  if (plan.music.track && !music.track) problems.push(`Dropped unknown music track ${plan.music.track}.`);
+  const sfx = plan.sfx.filter((x) => x.at >= 0 && x.at < length).slice(0, 24).map((x) => ({ ...x, at: round(x.at) }));
 
   return {
-    plan: { ...fixed, on_screen_text } satisfies EditPlan,
+    plan: { ...fixed, captions, on_screen_text, graphics, overlays, music, sfx } satisfies EditPlan,
     problems,
     length: round(length),
   };
 }
+
+// Every kept spoken word on the finished timeline: what automatic captions show.
+export function timelineWords(plan: EditPlan, clips: Clip[]) {
+  const byId = new Map(clips.map((c) => [c.id, c]));
+  const out: { text: string; start: number; end: number }[] = [];
+  for (const shot of timelineOf(plan).shots) {
+    const { seg } = shot;
+    if (seg.audio !== "keep") continue;
+    for (const line of byId.get(seg.clip)?.transcript ?? []) {
+      for (const w of line.words ?? []) {
+        if (w.start < seg.start - 0.02 || w.start >= seg.end) continue;
+        out.push({
+          text: w.text,
+          start: shot.start + (Math.max(w.start, seg.start) - seg.start) / seg.speed,
+          end: shot.start + (Math.min(w.end, seg.end) - seg.start) / seg.speed,
+        });
+      }
+    }
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
+
+const hex = (c: string | null | undefined) => (c && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c.trim()) ? c.trim() : null);
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const clamp = (n: number, min: number, max: number, fallback = min) => (Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback);

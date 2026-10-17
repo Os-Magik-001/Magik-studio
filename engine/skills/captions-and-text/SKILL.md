@@ -4,8 +4,8 @@ description: Writing and timing captions, titles and end cards
 formats: all
 ---
 
-**Captions** (`style: caption`)
-- When there's speech, caption it throughout. Most social video is watched muted.
+**Captions**
+- When there's speech, caption it throughout, because most social video is watched muted. Use `captions.mode: auto`: the engine places every kept word at its exact time. The rules below are for choosing `words_per_screen`, `case` and `position`, and for any manual captions.
 - Captions are always one line:
   - **Vertical video:** 2–5 words and about 22 characters at most.
   - **1:1 and 16:9:** up to 6–8 words and about 42 characters.

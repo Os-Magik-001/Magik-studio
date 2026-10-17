@@ -23,7 +23,14 @@ A skill with broken front matter is skipped, and the engine log says why. The lo
 
 ## Writing a good skill
 
-- **Write only what the engine can do.** It can cut, add transitions (crossfade, dip to black or white, slide, wipe, zoom, circle), change speed, punch in or push in, reframe on a focus point, fix exposure and color per shot, apply an overall look, add captions and titles, and add a branded end card. If a skill asks for music, sound effects or J/L cuts, Claude can't deliver them yet.
+- **Write only what the engine can do.**
+  - **Picture:** cut, add transitions (crossfade, dip to black or white, slide, wipe, zoom, circle), change speed, punch in or push in, reframe on a focus point, fix exposure and color per shot, apply an overall look.
+  - **Text:** word-timed automatic captions in five styles, animated titles, hero words, serif accents and stacked or boxed headlines, optionally behind the person.
+  - **Graphics:** comment bubbles, follow buttons, progress bars, counters, emojis, drawn circles.
+  - **Overlays:** B-roll cutaways over the voice, floating clip or screenshot cards.
+  - **Sound:** a music bed from the library that dips under speech, synthesized sound effects.
+  - **Ending:** a branded end card.
+  - **Not possible:** fully animated scenes such as 3D or app mock-ups.
 - **Use concrete numbers.** "Hold the product 1.5s after it lands" works; "let it breathe" doesn't.
 - **Expect to be overridden.** The brand kit, the script and the editor's notes always beat a skill.
 - **Keep each skill short and on one topic.** All matching skills go into every edit's instructions, so long skills cost tokens on every job.

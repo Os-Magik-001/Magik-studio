@@ -16,6 +16,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { config } from "./config.ts";
+import { run } from "./exec.ts";
 import { probe } from "./media.ts";
 
 type ServiceAccount = { client_email: string; private_key: string };
@@ -113,19 +114,24 @@ const ENCODE =
 // Part of every cached file name: bump it when ENCODE changes so old copies aren't reused.
 const COPY_VERSION = "q70";
 
-function transcode(input: string, output: string, duration: number, onProgress: (fraction: number) => void) {
+// The same pass also writes a small preview copy (960 px, 10 fps) for contact sheets
+// and transcription: decoding the 4K copy again for those took minutes.
+const PREVIEW = "scale='if(gte(iw,ih),960,-2)':'if(gte(iw,ih),-2,960)',fps=10";
+const PREVIEW_ENCODE = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "28", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k"];
+
+export const previewOf = (file: string) => file.replace(/\.mp4$/, ".preview.mp4");
+
+function transcode(input: string, output: string, preview: string, duration: number, onProgress: (fraction: number) => void) {
   return new Promise<void>((resolve, reject) => {
     const ff = spawn(config.ffmpeg, [
       "-v", "error", "-nostats", "-y",
       "-reconnect", "1", "-reconnect_on_network_error", "1", "-reconnect_on_http_error", "5xx", "-reconnect_delay_max", "30",
       "-i", input,
-      "-map", "0:v:0", "-map", "0:a:0?",
       // Long side capped at 3840: enough for 9:16 crops and punch-ins from 4K.
-      "-vf", "scale='if(gte(iw,ih),min(3840,iw),-2)':'if(gte(iw,ih),-2,min(3840,ih))'",
-      ...ENCODE, "-pix_fmt", "yuv420p",
-      "-c:a", "aac", "-b:a", "192k",
+      "-filter_complex", `[0:v:0]split=2[h][l];[h]scale='if(gte(iw,ih),min(3840,iw),-2)':'if(gte(iw,ih),-2,min(3840,ih))'[hq];[l]${PREVIEW}[lo]`,
       "-progress", "pipe:1",
-      output,
+      "-map", "[hq]", "-map", "0:a:0?", ...ENCODE, "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", output,
+      "-map", "[lo]", "-map", "0:a:0?", ...PREVIEW_ENCODE, preview,
     ], { stdio: ["ignore", "pipe", "pipe"] });
     let err = "";
     ff.stderr.on("data", (d) => (err = (err + d).slice(-4000)));
@@ -140,6 +146,29 @@ function transcode(input: string, output: string, duration: number, onProgress: 
   });
 }
 
+// Every video file behind a Drive link: the file itself, or a folder's videos (and its subfolders').
+export async function listDriveVideos(id: string): Promise<{ id: string; name: string }[]> {
+  const get = async (q: string) => {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/${q}`, { headers: { authorization: `Bearer ${await accessToken()}` } });
+    if (!res.ok) throw new Error(`Google Drive returned ${res.status}: share the footage with ${serviceAccount()?.client_email}.`);
+    return res.json();
+  };
+  const root = await get(`files/${id}?supportsAllDrives=true&fields=id,name,mimeType`);
+  const isVideo = (f: { name: string; mimeType: string }) => f.mimeType.startsWith("video/") || /\.(mp4|mov|m4v|mxf|mts|avi|mkv)$/i.test(f.name);
+  if (root.mimeType !== "application/vnd.google-apps.folder") return isVideo(root) ? [root] : [];
+  const out: { id: string; name: string }[] = [];
+  const queue = [root.id as string];
+  while (queue.length && out.length < 200) {
+    const folder = queue.shift()!;
+    const page = await get(`files?q=${encodeURIComponent(`'${folder}' in parents and trashed = false`)}&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=1000&orderBy=name&fields=files(id,name,mimeType)`);
+    for (const f of page.files) {
+      if (f.mimeType === "application/vnd.google-apps.folder") queue.push(f.id);
+      else if (isVideo(f)) out.push({ id: f.id, name: f.name });
+    }
+  }
+  return out;
+}
+
 // The working copy of a Drive file, made on first use. Keyed by the file's checksum,
 // so replacing the file in Drive makes a fresh copy.
 export async function driveWorkingCopy(id: string, onProgress: (fraction: number) => void = () => {}) {
@@ -147,13 +176,13 @@ export async function driveWorkingCopy(id: string, onProgress: (fraction: number
   const version = (meta.md5Checksum ?? meta.modifiedTime ?? "v").replace(/[^\w]/g, "").slice(0, 16);
   await mkdir(config.cacheDir, { recursive: true });
   const file = path.join(config.cacheDir, `${id}-${version}-${COPY_VERSION}.mp4`);
-  try {
-    await stat(file);
+  if (await stat(file).catch(() => null)) {
+    // Copies cached before previews existed get one made from the copy (slower, once).
+    if (!(await stat(previewOf(file)).catch(() => null))) await makePreview(file);
     const now = new Date();
     await utimes(file, now, now); // mark as recently used
-    return { file, name: meta.name, cached: true };
-  } catch {
-    // not cached yet
+    await utimes(previewOf(file), now, now);
+    return { file, preview: previewOf(file), name: meta.name, cached: true };
   }
 
   const source = await relay(id);
@@ -162,18 +191,32 @@ export async function driveWorkingCopy(id: string, onProgress: (fraction: number
   } finally {
     await source.close();
   }
-  return { file, name: meta.name, cached: false };
+  return { file, preview: previewOf(file), name: meta.name, cached: false };
+}
+
+async function makePreview(file: string) {
+  const partial = `${previewOf(file)}.partial.mp4`;
+  try {
+    await run(config.ffmpeg, ["-v", "error", "-y", "-i", file, "-map", "0:v:0", "-map", "0:a:0?", "-vf", PREVIEW, ...PREVIEW_ENCODE, partial]);
+    await rename(partial, previewOf(file));
+  } catch (err) {
+    await rm(partial, { force: true });
+    throw err;
+  }
 }
 
 // Streams `input` (a URL or file) into a working copy at `output`, atomically.
 export async function workingCopy(input: string, output: string, onProgress: (fraction: number) => void = () => {}) {
   const partial = `${output}.partial.mp4`;
+  const partialPreview = `${previewOf(output)}.partial.mp4`;
   try {
     const { duration } = await probe(input);
-    await transcode(input, partial, duration, onProgress);
+    await transcode(input, partial, partialPreview, duration, onProgress);
+    await rename(partialPreview, previewOf(output));
     await rename(partial, output);
   } catch (err) {
     await rm(partial, { force: true });
+    await rm(partialPreview, { force: true });
     throw err;
   }
 }

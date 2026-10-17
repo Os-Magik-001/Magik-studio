@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { createCanvas } from "@napi-rs/canvas";
-import { PLAIN_SHOT, type EditPlan } from "../src/plan.ts";
+import { DEFAULT_CAPTIONS, PLAIN_SHOT, type EditPlan } from "../src/plan.ts";
 
 export type FixtureClip = { file: string; label: string; w: number; h: number; seconds: number; tone: number | null; color: string };
 
@@ -68,3 +68,18 @@ export function shot(clip: string, start: number, end: number, purpose: string, 
 }
 
 export const CUT = PLAIN_SHOT.transition_in;
+
+type Text = EditPlan["on_screen_text"][number];
+
+export function txt(text: string, start: number, end: number, style: Text["style"], position: Text["position"], extra: Partial<Text> = {}): Text {
+  return { text, start, end, style, position, animation: "none", color: null, accent: null, behind_subject: false, ...extra };
+}
+
+// The parts of a plan most tests don't care about.
+export const EXTRAS = {
+  captions: DEFAULT_CAPTIONS,
+  graphics: [],
+  overlays: [],
+  music: { track: null, start: 0, volume: "low" },
+  sfx: [],
+} satisfies Partial<EditPlan>;

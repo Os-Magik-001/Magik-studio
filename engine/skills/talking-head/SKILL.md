@@ -16,7 +16,7 @@ Use this whenever a clip is mostly one person speaking to camera, in any format.
 **Keep the speaker on screen**
 - The face should be on screen at least 65% of the runtime. Viewers stay for the person.
 - Use at most 3 cutaways per minute, each 1–2.5s, with at least 1.5s of face between two cutaways.
-- Each shot plays its own sound, so a cutaway can't carry the speaker's voice yet. Place cutaways in the gaps between sentences, never over a line.
+- Use `cutaway` overlays for B-roll: the speaker's voice carries on underneath, so a cutaway can cover a jump cut in the middle of a sentence.
 - Short evidence beats work well in 20–40s pieces: two or more full-screen shots of the result, product or proof, returning to the speaker between them.
 - Leave blinks and quick glances (under 0.5s) alone. Only hide a real look-away, cheapest fix first: trim it, then punch in, then a cutaway.
 - On the pivot lines where the argument turns, give the speaker a clean full-frame moment with no text.

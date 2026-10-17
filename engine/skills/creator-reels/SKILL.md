@@ -18,13 +18,11 @@ Use this when the brief or the editor's notes ask for a "creator reel", a "reel 
 - **End card:** usually none. End on the speaker within 0.5–1s of the last word, so the loop restarts cleanly. Set `end_card.include` to false, unless the brand kit or the editor's notes want a card. If they do, use the comment keyword as its headline.
 
 **Text, mapped to our tools**
-- **Captions:**
-  - 1–3 words per caption, back to back, each on screen about 0.35–0.7s. That's roughly one caption per spoken word pair.
-  - Use `center` position (chest height), not `bottom`. They read as part of the frame.
-  - Leave out "um", but caption every kept word.
-- **Hero words:** each 2–4s, lift the key word of the line (a number, a promise, a payoff) into a `title` of 1–3 words at `top`.
-  - Show it as the word is spoken, and hold it 1.5–2.5s.
-  - Use at most one hero title at a time. Hide the matching caption while it's up.
+- **Captions:** `captions.mode: auto`, preset `bold_pop` (or `editorial` for premium brands), 2–3 words per screen, `lower`, `center` (chest height), keywords in `highlight_words`. The engine times every word; leave out nothing that's kept.
+- **Hero words:** each 2–4s, lift the key word of the line (a number, a promise, a payoff) into a `hero` of 1–3 words, `pop` in.
+  - Show it as the word is spoken, and hold it 1.5–2.5s. Use one at a time; the matching caption hides itself.
+  - Put 2–4 of them `behind_subject` when the speaker's head fills the upper frame: the signature look of these reels.
+  - Use an `accent` word in italic serif on the hook and the proof line ("Claude *did.*").
 - **Countdown device:** when the script lists items or several speakers each add one ("FIVE of us… FOUR states… THREE hours… TWO things… ONE night"), make each number a hero title. The countdown pulls viewers to the end.
 - **Asides** ("no, seriously", "not techy? cool") get a caption of their own, so the joke lands on its own beat.
 
@@ -66,13 +64,14 @@ Use this when the brief or the editor's notes ask for a "creator reel", a "reel 
    - One `top` caption for the whole video: a short reaction line, for example "Claude ate with this one", from the brief.
    - No other text, and no end card.
 
-**Flag what we can't make yet** (in `open_questions`, briefly)
-Some reels rely on things this engine doesn't render:
-- word-by-word animated captions with colored keywords or a second font
-- text behind the speaker's head
-- floating cards, screenshots or UI mock-ups over the shot
-- B-roll over the voice
-- music beds and sound effects
-- fully animated graphics (logo stings, 3D, kinetic type)
+**Graphics, overlays and sound** (see graphics-and-sound)
+- **Show what you say** with `cutaway` overlays: the B-roll plays while the voice continues. Use `card` overlays for proof, such as screenshots, earlier reels or results, tilted a few degrees above or beside the head.
+- **Call to action:** a `comment_cta` bubble with the keyword, plus a `boxed` title, held to the end. Add a `follow_pill` in the last 2s for organic reels.
+- **Proof numbers** get a `counter`: raw length against final length, views.
+- **Sound:** a music bed at `low` under talking (upbeat or hip-hop for energy, chill for lifestyle). Add a `whoosh` on whips, a `pop` on hero words, and a `hit` on the hook payoff and the proof line.
 
-If the brief asks for one of these, deliver the closest version with the tools above, and name what's missing.
+**Flag what we can't make yet** (in `open_questions`, briefly)
+- Fully animated graphics: logo stings, 3D scenes, animated app mock-ups.
+- Footage that was never filmed.
+
+Deliver the closest version with real footage and the tools above, and name what's missing.

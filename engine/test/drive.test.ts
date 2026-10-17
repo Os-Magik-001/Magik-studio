@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { config } from "../src/config.ts";
-import { pruneCache, workingCopy } from "../src/drive.ts";
+import { previewOf, pruneCache, workingCopy } from "../src/drive.ts";
 import { run } from "../src/exec.ts";
 import { probe } from "../src/media.ts";
 
@@ -57,6 +57,10 @@ test("makes a working copy straight from a ranged URL, keeping frame rate and so
   assert.ok(rangeRequests > 0, "read the source by byte ranges");
   assert.ok(seen.length > 0 && seen.at(-1)! > 0.9, `progress reported: ${seen.at(-1)}`);
   assert.deepEqual((await readdir(dir)).filter((f) => f.includes("partial")), []);
+  const preview = await probe(previewOf(out));
+  assert.equal(Math.max(preview.width, preview.height), 960);
+  assert.ok(Math.abs(preview.fps - 10) < 0.5, `preview fps ${preview.fps}`);
+  assert.equal(preview.hasAudio, true);
 });
 
 test("a failed copy leaves nothing behind", async () => {
@@ -66,7 +70,9 @@ test("a failed copy leaves nothing behind", async () => {
 });
 
 test("the cache drops least recently used copies, never ones in use", async () => {
-  const cache = config.cacheDir;
+  // Its own folder: pruning with a tiny cap must never touch real working copies.
+  const real = config.cacheDir;
+  const cache = (config.cacheDir = path.join(dir, "cache"));
   const mk = async (name: string, mb: number, ageMin: number) => {
     const file = path.join(cache, name);
     await writeFile(file, Buffer.alloc(mb * 1024 * 1024));
@@ -91,5 +97,6 @@ test("the cache drops least recently used copies, never ones in use", async () =
     await rm(newest);
   } finally {
     config.cacheBytes = before;
+    config.cacheDir = real;
   }
 });

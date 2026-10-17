@@ -1,13 +1,14 @@
 // One edit job: gather inputs, have Claude plan the cut, render, hand to the editor.
 
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { config, db } from "./config.ts";
 import { contactSheets, download, probe } from "./media.ts";
 import { driveWorkingCopy, pruneCache } from "./drive.ts";
-import { parseStoredPlan, planEdit, validatePlan, type BrandKit, type Clip } from "./plan.ts";
-import { render } from "./render.ts";
+import { describeLibrary, loadLibrary, trackFile } from "./music.ts";
+import { parseStoredPlan, planEdit, timelineWords, validatePlan, type BrandKit, type Clip, type PlanInput } from "./plan.ts";
+import { render, type Brand } from "./render.ts";
 import { loadSkills } from "./skills.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
@@ -85,13 +86,112 @@ async function notify(videoId: string, title: string, body?: string) {
 
 // ---------------------------------------------------------------- one job
 
+// ---------------------------------------------------------------- the edit itself
+
+export type Source = { name: string; drive?: string | null; storage?: string | null; file?: string | null };
+type Step = (text: string) => unknown;
+type Note = (text: string) => void;
+
+// Fetches (Drive), downloads (Storage) or takes (local files) every source, skipping
+// anything that isn't video.
+export async function prepareClips(sources: Source[], dir: string, step: Step, note: Note, cached: Set<string>) {
+  const clips: Clip[] = [];
+  for (const [i, f] of sources.entries()) {
+    let file: string;
+    let preview: string | null = null;
+    if (f.drive) {
+      const label = `Fetching ${f.name} from Google Drive (${i + 1} of ${sources.length})`;
+      await step(label);
+      let shown = 0;
+      const copy = await driveWorkingCopy(f.drive, (fraction) => {
+        const pct = Math.floor(fraction * 100);
+        if (pct >= shown + 5) {
+          shown = pct;
+          void step(`${label}: ${pct}%`);
+        }
+      });
+      if (copy.cached) note(`using the cached copy of ${f.name}`);
+      file = copy.file;
+      preview = copy.preview;
+      cached.add(file).add(preview);
+    } else if (f.storage) {
+      file = path.join(dir, "footage", `${i}-${path.basename(f.storage)}`);
+      await step(`Downloading footage ${i + 1} of ${sources.length}`);
+      await download("footage", f.storage, file);
+    } else if (f.file) file = f.file;
+    else continue;
+    const p = await probe(file);
+    if (!p.hasVideo || p.duration < 0.5) {
+      note(`Skipping ${f.name}: not a usable video`);
+      continue;
+    }
+    clips.push({ id: `C${clips.length + 1}`, fileName: f.name, file, preview: preview ?? file, duration: p.duration, width: p.width, height: p.height, fps: p.fps, hasAudio: p.hasAudio, sheets: [], interval: 1, transcript: null });
+  }
+  if (!clips.length) throw new Error("None of the footage files could be read as video.");
+  return clips;
+}
+
+// How Claude watches and listens: contact sheets sampled so the whole shoot fits in
+// one look, and transcripts primed with the names it would otherwise mishear.
+export async function watchClips(clips: Clip[], dir: string, hint: string, step: Step) {
+  const total = clips.reduce((s, c) => s + c.duration, 0);
+  const interval = Math.max(0.5, Math.ceil((total / config.maxFrames) * 2) / 2);
+  await step("Watching the footage");
+  for (const clip of clips) {
+    clip.interval = interval;
+    clip.sheets = await contactSheets(clip.preview, path.join(dir, "sheets", clip.id), interval);
+    if (clip.hasAudio && (await transcriptionAvailable())) {
+      await step(`Transcribing ${clip.id}`);
+      clip.transcript = await transcribe(clip.preview, dir, hint);
+    }
+  }
+}
+
+export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand };
+
+// Claude plans the cut, the plan is checked against the real footage, and the edit
+// renders to `output`.
+export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit) {
+  const { formatKey, brand, ...input } = req;
+  const skills = await loadSkills(formatKey, undefined, note);
+  note(`skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
+  await step("Claude is planning the cut");
+  const library = await loadLibrary().catch(() => []);
+  const { plan: raw, usage } = await planner({ ...input, skills, clips, music: library.length ? describeLibrary(library) : undefined });
+  note(usage);
+  let checked;
+  try {
+    checked = validatePlan(raw, clips, library.map((t) => t.id));
+  } catch (err) {
+    // Keep what Claude sent, so a rejected plan can be looked at afterwards.
+    const keep = path.join(config.workDir, "rejected", `${path.basename(dir)}.json`);
+    await mkdir(path.dirname(keep), { recursive: true });
+    await writeFile(keep, JSON.stringify(raw, null, 1));
+    note(`rejected plan (saved to ${keep}): ${raw.segments.map((s) => `${s.clip} ${s.start}-${s.end}`).join(", ") || "no shots"}`);
+    throw err;
+  }
+  const { plan, problems, length } = checked;
+  problems.forEach((p) => note(`plan fix: ${p}`));
+
+  await step(`Rendering ${length.toFixed(1)}s`);
+  const track = library.find((t) => t.id === plan.music.track);
+  // A music download that fails shouldn't sink the edit: it goes out without music.
+  const musicFile = track ? await trackFile(track).catch((err) => (note(`music unavailable: ${err.message}`), null)) : null;
+  await render({ plan, clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(plan, clips), musicFile });
+  return { plan, length };
+}
+
+// ---------------------------------------------------------------- one job
+
 // `planner` is injectable so tests can run the whole pipeline without calling Claude.
 export async function processJob(job: Job, planner: typeof planEdit = planEdit) {
   const dir = path.join(config.workDir, job.id);
   await mkdir(dir, { recursive: true });
   const cachedFiles = new Set<string>();
+  const step = (text: string) => progress(job.id, text);
+  const note = (text: string) => log(job.id, text);
   try {
-    await progress(job.id, "Gathering the script, brand kit and footage");
+    await step("Gathering the script, brand kit and footage");
     const { data: video } = await db.from("videos").select("*").eq("id", job.video_id).single();
     if (!video) throw new Error("The video no longer exists.");
     const [{ data: client }, { data: kit }, { data: script }, { data: footage }] = await Promise.all([
@@ -103,50 +203,14 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     // For now Claude can edit before the script is approved, or with no script (brief and footage only).
     if (!footage?.length) throw new Error("There's no footage on this video.");
 
-    // Download and inspect every file; skip anything that isn't video.
-    const clips: Clip[] = [];
-    for (const [i, f] of footage.entries()) {
-      let file: string;
-      if (f.source === "drive" && f.drive_file_id) {
-        const label = `Fetching ${f.file_name} from Google Drive (${i + 1} of ${footage.length})`;
-        await progress(job.id, label);
-        let shown = 0;
-        const copy = await driveWorkingCopy(f.drive_file_id, (fraction) => {
-          const pct = Math.floor(fraction * 100);
-          if (pct >= shown + 5) {
-            shown = pct;
-            void progress(job.id, `${label}: ${pct}%`);
-          }
-        });
-        if (copy.cached) log(job.id, `using the cached copy of ${f.file_name}`);
-        file = copy.file;
-        cachedFiles.add(file);
-      } else if (f.storage_path) {
-        file = path.join(dir, "footage", `${i}-${path.basename(f.storage_path)}`);
-        await progress(job.id, `Downloading footage ${i + 1} of ${footage.length}`);
-        await download("footage", f.storage_path, file);
-      } else continue;
-      const p = await probe(file);
-      if (!p.hasVideo || p.duration < 0.5) {
-        log(job.id, `Skipping ${f.file_name}: not a usable video`);
-        continue;
-      }
-      clips.push({ id: `C${clips.length + 1}`, fileName: f.file_name, file, duration: p.duration, width: p.width, height: p.height, fps: p.fps, hasAudio: p.hasAudio, sheets: [], interval: 1, transcript: null });
-    }
-    if (!clips.length) throw new Error("None of the footage files could be read as video.");
-
-    // Sample frames so the whole shoot fits in one look.
-    const total = clips.reduce((s, c) => s + c.duration, 0);
-    const interval = Math.max(0.5, Math.ceil((total / config.maxFrames) * 2) / 2);
-    await progress(job.id, "Watching the footage");
-    for (const clip of clips) {
-      clip.interval = interval;
-      clip.sheets = await contactSheets(clip.file, path.join(dir, "sheets", clip.id), interval);
-      if (clip.hasAudio && (await transcriptionAvailable())) {
-        await progress(job.id, `Transcribing ${clip.id}`);
-        clip.transcript = await transcribe(clip.file, dir, `${client?.name ?? ""}. ${video.title}. ${script?.body ?? ""}`);
-      }
-    }
+    const clips = await prepareClips(
+      footage.map((f) => ({ name: f.file_name, drive: f.source === "drive" ? f.drive_file_id : null, storage: f.storage_path })),
+      dir,
+      step,
+      note,
+      cachedFiles,
+    );
+    await watchClips(clips, dir, `${client?.name ?? ""}. ${video.title}. ${script?.body ?? ""}`, step);
 
     // Revisions start from the previous cut and its open comments.
     let previous = null;
@@ -177,36 +241,34 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     const brandKit: BrandKit | null = kit
       ? { colors: kit.colors, fonts: kit.fonts, musicMood: kit.music_mood, styleRules: kit.style_rules, hasLogo: !!logoFile }
       : null;
-
-    const skills = await loadSkills(video.format, undefined, (msg) => log(job.id, msg));
-    log(job.id, `skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
-
-    await progress(job.id, "Claude is planning the cut");
     const shots = Array.isArray(script?.shot_list)
       ? (script.shot_list as { text?: string }[]).map((s) => s?.text ?? "").filter(Boolean)
       : [];
-    const { plan: raw, usage } = await planner({
-      clientName: client?.name ?? "Client",
-      title: video.title,
-      format: video.format.replace("_", " "),
-      aspect: video.aspect,
-      brief: video.brief,
-      script: script?.body ?? "",
-      shots,
-      brandKit,
-      instructions: job.instructions,
-      source: job.source,
-      skills,
-      clips,
-      previous,
-    });
-    log(job.id, usage);
-    const { plan, problems, length } = validatePlan(raw, clips);
-    problems.forEach((p) => log(job.id, `plan fix: ${p}`));
 
-    await progress(job.id, `Rendering ${length.toFixed(1)}s`);
     const out = path.join(dir, "cut.mp4");
-    await render({ plan, clips, aspect: video.aspect, brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile }, workDir: dir, output: out });
+    const { plan } = await planAndRender(
+      {
+        formatKey: video.format,
+        brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile },
+        clientName: client?.name ?? "Client",
+        title: video.title,
+        format: video.format.replace("_", " "),
+        aspect: video.aspect,
+        brief: video.brief,
+        script: script?.body ?? "",
+        shots,
+        brandKit,
+        instructions: job.instructions,
+        source: job.source,
+        previous,
+      },
+      clips,
+      dir,
+      out,
+      step,
+      note,
+      planner,
+    );
     const rendered = await probe(out);
 
     // The editor may have cancelled while Claude was working.

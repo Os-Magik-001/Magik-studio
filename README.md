@@ -42,11 +42,9 @@ A separate Node worker that turns raw footage into an edited draft. It runs anyw
    - captions, titles and an end card
 
    Claude follows the studio's editing skills in [`engine/skills/`](engine/skills/README.md), Markdown files matched to the video's format. Revisions start from the previous cut's plan, with each comment pinned to the shot it falls on.
-5. **Validates** the plan against the real footage, then **renders** it with FFmpeg:
-   - crops to 9:16, 1:1 or 16:9 around each shot's focus point
-   - 30 fps, loudness-normalized audio
-   - keeps text clear of the app's own buttons and labels on vertical video
-   - adds a branded end card
+5. **Validates** the plan against the real footage, snapping cut points to word edges, then **renders** it in two passes:
+   - **Picture:** shots cropped to 9:16, 1:1 or 16:9 around each focus point, transitions, speed, punch-ins, looks, B-roll cutaways over the voice, and floating cards.
+   - **Finishing:** a graphics layer drawn frame by frame (word-timed captions in five styles, animated titles and hero words, comment and follow buttons, progress bars, counters, emojis), text behind the person (a person cut-out made with Apple Vision on macOS), a royalty-free music bed that dips under speech (`engine/music/library.json`, CC0), synthesized sound effects, and -14 LUFS loudness.
 6. **Hands off** the result as a new version in **editor check**, and notifies the editor. Failures show up on the video page with a plain reason and a Retry button.
 
 Footage from Google Drive needs a Google Cloud service account with the Drive API turned on.
@@ -63,6 +61,14 @@ M="$HOME/Library/Application Support/Magik Edit Engine/models"; mkdir -p "$M"
 curl -L -o "$M/ggml-large-v3-turbo-q5_0.bin" https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin
 curl -L -o "$M/ggml-silero-v5.1.2.bin" https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v5.1.2.bin
 # then set WHISPER_CPP_MODEL and WHISPER_VAD_MODEL in .env.local to those two paths
+```
+
+To try an edit on this machine without touching the database (on a real video, or on any local files or Drive links):
+
+```bash
+cd engine
+node --env-file=../.env.local scripts/try-edit.ts --video <video id> --fix "more cards, more dynamic" --out cut.mp4
+node --env-file=../.env.local scripts/try-edit.ts --clips a.mp4 https://drive.google.com/drive/folders/… --brief "…" --notes "creator reel, recipe 1" --out cut.mp4
 ```
 
 ```bash

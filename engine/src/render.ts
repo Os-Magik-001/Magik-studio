@@ -1,10 +1,13 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
 import { frameSize } from "./media.ts";
+import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
 import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
+import { personMatte, segmentationAvailable } from "./segment.ts";
+import { sfxFile, sfxLead } from "./sfx.ts";
 
 const FPS = 30;
 
@@ -105,45 +108,6 @@ function wrap(ctx: SKRSContext2D, text: string, maxWidth: number) {
   return lines;
 }
 
-// Text is drawn to transparent full-frame PNGs and overlaid, so rendering doesn't
-// depend on how ffmpeg was built.
-async function textOverlay(item: EditPlan["on_screen_text"][number], W: number, H: number, brand: Brand, file: string) {
-  const canvas = createCanvas(W, H);
-  const ctx = canvas.getContext("2d");
-  const caption = item.style === "caption";
-  const size = Math.round(Math.min(W, H) * (caption ? 0.05 : 0.08));
-  ctx.font = `${caption ? 700 : 800} ${size}px ${fontStack(brand)}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const lines = wrap(ctx, item.text, W * 0.8);
-  const lineH = size * 1.25;
-  const blockH = lines.length * lineH;
-  const anchor = item.position === "top" ? H * 0.14 : item.position === "center" ? H * 0.5 : H * (W < H ? 0.72 : 0.84);
-  // Vertical video plays under the app's own UI (Reels, TikTok, Shorts): the header
-  // covers the top ~220px and the caption, audio row and buttons everything below
-  // y 1470, so text is kept between them.
-  const [safeTop, safeBottom] = W < H ? [H * 0.125, H * 0.765] : [H * 0.06, H * 0.94];
-  const pad = caption ? size * 0.35 : 0;
-  const top = Math.min(Math.max(anchor - blockH / 2, safeTop + pad), safeBottom - pad - blockH);
-
-  if (caption) {
-    const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
-    const padX = size * 0.6;
-    const padY = size * 0.35;
-    ctx.fillStyle = "rgba(0,0,0,0.62)";
-    ctx.beginPath();
-    ctx.roundRect(W / 2 - widest / 2 - padX, top - padY, widest + padX * 2, blockH + padY * 2, size * 0.35);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-  } else {
-    ctx.shadowColor = "rgba(0,0,0,0.55)";
-    ctx.shadowBlur = size * 0.4;
-    ctx.fillStyle = "#ffffff";
-  }
-  lines.forEach((l, i) => ctx.fillText(l, W / 2, top + lineH * (i + 0.5)));
-  await writeFile(file, await canvas.encode("png"));
-}
-
 async function endCard(plan: EditPlan, W: number, H: number, brand: Brand, file: string) {
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
@@ -182,18 +146,46 @@ async function endCard(plan: EditPlan, W: number, H: number, brand: Brand, file:
   await writeFile(file, await canvas.encode("png"));
 }
 
-export async function render(opts: {
-  plan: EditPlan;
-  clips: Clip[];
-  aspect: string;
-  brand: Brand;
-  workDir: string;
-  output: string;
-}) {
-  const { plan, clips, brand, workDir, output } = opts;
-  const [W, H] = frameSize(opts.aspect);
-  const byId = new Map(clips.map((c) => [c.id, c]));
+// A rounded card frame (white border and soft shadow) and the matching mask for
+// the clip inside it, drawn once per card.
+async function cardArt(w: number, h: number, dir: string, k: number) {
+  const border = Math.round(Math.min(w, h) * 0.025) + 4;
+  const radius = Math.round(Math.min(w, h) * 0.07);
+  const pad = border * 3;
+  const frame = createCanvas(w + 2 * pad, h + 2 * pad);
+  const fx = frame.getContext("2d");
+  fx.shadowColor = "rgba(0,0,0,0.45)";
+  fx.shadowBlur = pad * 0.8;
+  fx.shadowOffsetY = pad * 0.25;
+  fx.fillStyle = "#ffffff";
+  fx.beginPath();
+  fx.roundRect(pad - border, pad - border, w + 2 * border, h + 2 * border, radius + border);
+  fx.fill();
+  const mask = createCanvas(w, h);
+  const mx = mask.getContext("2d");
+  mx.fillStyle = "#000000";
+  mx.fillRect(0, 0, w, h);
+  mx.fillStyle = "#ffffff";
+  mx.beginPath();
+  mx.roundRect(0, 0, w, h, radius);
+  mx.fill();
+  const files = { frame: path.join(dir, `card-${k}-frame.png`), mask: path.join(dir, `card-${k}-mask.png`), pad };
+  await writeFile(files.frame, await frame.encode("png"));
+  await writeFile(files.mask, await mask.encode("png"));
+  return files;
+}
 
+// Fills a w x h box from a clip, centered on its focus point.
+function fillBox(clip: Clip, w: number, h: number, focus: { x: number; y: number }) {
+  const fill = Math.max(w / clip.width, h / clip.height);
+  return `scale=${even(clip.width * fill)}:${even(clip.height * fill)},crop=${w}:${h}:x='clip(${focus.x}*iw-${w / 2},0,iw-${w})':y='clip(${focus.y}*ih-${h / 2},0,ih-${h})',setsar=1`;
+}
+
+// Pass 1, the picture edit: shots, moves, transitions, the end card and video
+// overlays (cutaways and cards), with the shots' own sound.
+async function pictureEdit(opts: RenderOptions, W: number, H: number, file: string) {
+  const { plan, clips, brand, workDir } = opts;
+  const byId = new Map(clips.map((c) => [c.id, c]));
   const args: string[] = ["-v", "error", "-y"];
   const filters: string[] = [];
   let input = 0;
@@ -249,27 +241,171 @@ export async function render(opts: {
     length += p.seconds - overlap;
   });
 
-  let last = vc;
-  for (const [k, item] of plan.on_screen_text.entries()) {
-    const png = path.join(workDir, `text-${k}.png`);
-    await textOverlay(item, W, H, brand, png);
-    args.push("-i", png);
-    const o = input++;
-    const out = `t${k}`;
-    filters.push(`[${last}][${o}:v]overlay=0:0:enable='between(t,${item.start},${item.end})'[${out}]`);
-    last = out;
+  // Overlays sit on top of the joined picture; the voice underneath carries on.
+  const look = LOOK_FILTERS[plan.look] ? `,${LOOK_FILTERS[plan.look]}` : "";
+  for (const [k, o] of plan.overlays.entries()) {
+    const clip = byId.get(o.clip)!;
+    const seconds = o.end - o.start;
+    const at = o.at.toFixed(3);
+    const until = (o.at + seconds).toFixed(3);
+    args.push("-ss", o.start.toFixed(3), "-t", (o.still ? 0.2 : seconds).toFixed(3), "-i", clip.file);
+    const v = input++;
+    // A still repeats its first frame for the card's whole time.
+    const timing = o.still
+      ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB`
+      : `setpts=PTS-STARTPTS,fps=${FPS}`;
+    if (o.kind === "cutaway") {
+      filters.push(`[${v}:v]${timing},${fillBox(clip, W, H, o.focus)}${look},format=yuv420p,setpts=PTS+${at}/TB[ov${k}]`);
+      filters.push(`[${vc}][ov${k}]overlay=0:0:eof_action=pass:enable='between(t,${at},${until})'[oc${k}]`);
+    } else {
+      const w = even(W * o.width);
+      const h = even(Math.min(w * (clip.height / clip.width), H * 0.5));
+      const art = await cardArt(w, h, workDir, k);
+      args.push("-loop", "1", "-framerate", String(FPS), "-t", seconds.toFixed(3), "-i", art.frame);
+      const frameIn = input++;
+      args.push("-loop", "1", "-framerate", String(FPS), "-t", seconds.toFixed(3), "-i", art.mask);
+      const maskIn = input++;
+      const fade = `fade=t=in:st=0:d=0.18:alpha=1,fade=t=out:st=${Math.max(0, seconds - 0.15).toFixed(3)}:d=0.15:alpha=1`;
+      const rotate = o.tilt ? `,rotate=${((o.tilt * Math.PI) / 180).toFixed(4)}:ow=rotw(${((o.tilt * Math.PI) / 180).toFixed(4)}):oh=roth(${((o.tilt * Math.PI) / 180).toFixed(4)}):c=none` : "";
+      filters.push(
+        `[${v}:v]${timing},${fillBox(clip, w, h, o.focus)}${look},format=rgba[cv${k}]`,
+        `[${maskIn}:v]format=gray,setsar=1[cm${k}]`,
+        `[cv${k}][cm${k}]alphamerge[ca${k}]`,
+        `[${frameIn}:v]format=rgba,setsar=1[cf${k}]`,
+        `[cf${k}][ca${k}]overlay=${art.pad}:${art.pad}:shortest=1,format=rgba${rotate},${fade},setpts=PTS+${at}/TB[ov${k}]`,
+        `[${vc}][ov${k}]overlay=x='${(o.x * W).toFixed(1)}-w/2':y='${(o.y * H).toFixed(1)}-h/2':eof_action=pass:enable='between(t,${at},${until})'[oc${k}]`,
+      );
+    }
+    vc = `oc${k}`;
   }
-  filters.push(`[${ac}]loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[aout]`);
 
-  const graph = path.join(workDir, "filter.txt");
+  const graph = path.join(workDir, "picture.txt");
   await writeFile(graph, filters.join(";\n"));
   args.push(
     "-/filter_complex", graph,
-    "-map", `[${last}]`, "-map", "[aout]",
-    "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-r", String(FPS),
-    "-c:a", "aac", "-b:a", "160k",
+    "-map", `[${vc}]`, "-map", `[${ac}]`,
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "15", "-pix_fmt", "yuv420p", "-r", String(FPS),
+    "-c:a", "aac", "-b:a", "256k",
+    file,
+  );
+  await run(config.ffmpeg, args);
+  return length;
+}
+
+export type RenderOptions = {
+  plan: EditPlan;
+  clips: Clip[];
+  aspect: string;
+  brand: Brand;
+  workDir: string;
+  output: string;
+  // Kept spoken words on the finished timeline (automatic captions).
+  words?: Word[];
+  // The chosen music track, already downloaded and normalized.
+  musicFile?: string | null;
+};
+
+const MUSIC_LEVEL = { low: 0.16, medium: 0.28, high: 0.5 };
+
+// Pass 2, finishing: the graphics layer (text behind people too), music that dips
+// under speech, sound effects, and loudness for social.
+export async function render(opts: RenderOptions) {
+  const { workDir, output } = opts;
+  const [W, H] = frameSize(opts.aspect);
+  await mkdir(workDir, { recursive: true });
+  const base = path.join(workDir, "picture.mp4");
+  const length = await pictureEdit(opts, W, H, base);
+
+  // Without the cut-out tool, text meant to sit behind people is drawn in front.
+  const matte = opts.plan.on_screen_text.some((t) => t.behind_subject) && (await segmentationAvailable());
+  const plan = matte ? opts.plan : { ...opts.plan, on_screen_text: opts.plan.on_screen_text.map((t) => ({ ...t, behind_subject: false })) };
+  const gfx: GraphicsInput = { plan, words: opts.words ?? [], W, H, length, fps: FPS, brand: opts.brand };
+  const args: string[] = ["-v", "error", "-y", "-i", base];
+  const filters: string[] = [];
+  let input = 1;
+  let v = "0:v";
+
+  // Text behind the person: draw it, then lay a cut-out of the person back on top
+  // wherever it shows.
+  if (matte) {
+    const layer = await renderLayer(gfx, "behind", path.join(workDir, "gfx"));
+    args.push("-f", "concat", "-safe", "0", "-i", layer.list);
+    filters.push(`[${input}:v]fps=${FPS},format=rgba[bl]`, `[${v}][bl]overlay=0:0:eof_action=pass:format=auto[vb]`);
+    input++;
+    v = "vb";
+    const spans = mergeSpans(layerSpans(gfx, "behind"), length);
+    filters.push(`[0:v]split=${spans.length}${spans.map((_, i) => `[bc${i}]`).join("")}`);
+    for (const [i, span] of spans.entries()) {
+      const mask = path.join(workDir, `matte-${i}.mov`);
+      await personMatte(base, span.start, span.end - span.start, FPS, mask);
+      args.push("-i", mask);
+      filters.push(
+        `[bc${i}]trim=start=${span.start.toFixed(4)}:end=${span.end.toFixed(4)},setpts=PTS-STARTPTS,format=rgba[bs${i}]`,
+        `[${input}:v]format=gray,scale=${W}:${H}[bm${i}]`,
+        `[bs${i}][bm${i}]alphamerge,setpts=PTS+${span.start.toFixed(4)}/TB[bp${i}]`,
+        `[${v}][bp${i}]overlay=0:0:eof_action=pass:enable='between(t,${span.start.toFixed(4)},${span.end.toFixed(4)})'[vp${i}]`,
+      );
+      input++;
+      v = `vp${i}`;
+    }
+  }
+  if (hasLayer(gfx, "front")) {
+    const layer = await renderLayer(gfx, "front", path.join(workDir, "gfx"));
+    args.push("-f", "concat", "-safe", "0", "-i", layer.list);
+    filters.push(`[${input}:v]fps=${FPS},format=rgba[fl]`, `[${v}][fl]overlay=0:0:eof_action=pass:format=auto[vf]`);
+    input++;
+    v = "vf";
+  }
+  filters.push(`[${v}]format=yuv420p[vout]`);
+
+  // Sound: the edit's own audio, the music bed ducked under it, and effects.
+  const mix: string[] = [];
+  if (opts.musicFile && plan.music.track) {
+    filters.push(`[0:a]asplit=2[dlg][side]`);
+    args.push("-ss", plan.music.start.toFixed(3), "-i", opts.musicFile);
+    const fadeOut = Math.max(0, length - 1.5).toFixed(3);
+    filters.push(
+      `[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=duration=${length.toFixed(3)},afade=t=in:d=0.5,afade=t=out:st=${fadeOut}:d=1.5,volume=${MUSIC_LEVEL[plan.music.volume]}[mus]`,
+      `[mus][side]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=400:makeup=1[duck]`,
+    );
+    input++;
+    mix.push("[dlg]", "[duck]");
+  } else mix.push("[0:a]");
+  for (const [k, fx] of plan.sfx.entries()) {
+    args.push("-i", await sfxFile(fx.kind));
+    const delay = Math.max(0, Math.round((fx.at - sfxLead[fx.kind]) * 1000));
+    filters.push(`[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,adelay=${delay}|${delay},volume=0.45[fx${k}]`);
+    input++;
+    mix.push(`[fx${k}]`);
+  }
+  filters.push(
+    mix.length > 1 ? `${mix.join("")}amix=inputs=${mix.length}:duration=first:normalize=0[mixed]` : `${mix[0]}anull[mixed]`,
+    `[mixed]loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[aout]`,
+  );
+
+  const graph = path.join(workDir, "finish.txt");
+  await writeFile(graph, filters.join(";\n"));
+  args.push(
+    "-/filter_complex", graph,
+    "-map", "[vout]", "-map", "[aout]",
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", String(FPS),
+    "-c:a", "aac", "-b:a", "192k",
+    "-t", length.toFixed(3),
     "-movflags", "+faststart",
     output,
   );
   await run(config.ffmpeg, args);
+}
+
+// Overlapping or touching ranges become one, so each needs a single cut-out pass.
+function mergeSpans(spans: { start: number; end: number }[], length: number) {
+  const sorted = spans.map((s) => ({ start: Math.max(0, s.start), end: Math.min(length, s.end) })).sort((a, b) => a.start - b.start);
+  const out: { start: number; end: number }[] = [];
+  for (const s of sorted) {
+    const last = out.at(-1);
+    if (last && s.start <= last.end + 0.1) last.end = Math.max(last.end, s.end);
+    else out.push({ ...s });
+  }
+  // Frame-aligned, so the cut-out lines up with the picture frame for frame.
+  return out.map((s) => ({ start: Math.floor(s.start * FPS) / FPS, end: Math.ceil(s.end * FPS) / FPS })).filter((s) => s.end - s.start > 0.1);
 }

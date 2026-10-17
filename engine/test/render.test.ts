@@ -4,9 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { contactSheets, probe } from "../src/media.ts";
-import { validatePlan, type Clip, type EditPlan } from "../src/plan.ts";
+import { timelineWords, validatePlan, type Clip, type EditPlan } from "../src/plan.ts";
 import { render } from "../src/render.ts";
-import { CUT, makeClip, makeLogo, shot } from "./fixtures.ts";
+import { CUT, EXTRAS, makeClip, makeLogo, shot, txt } from "./fixtures.ts";
 
 let dir: string;
 let clips: Clip[];
@@ -24,7 +24,7 @@ before(async () => {
     const file = path.join(dir, `clip${i + 1}.mp4`);
     await makeClip({ ...s, file });
     const p = await probe(file);
-    clips.push({ id: `C${i + 1}`, fileName: path.basename(file), file, duration: p.duration, width: p.width, height: p.height, fps: p.fps, hasAudio: p.hasAudio, sheets: [], interval: 1, transcript: null });
+    clips.push({ id: `C${i + 1}`, fileName: path.basename(file), file, preview: file, duration: p.duration, width: p.width, height: p.height, fps: p.fps, hasAudio: p.hasAudio, sheets: [], interval: 1, transcript: null });
   }
   logo = path.join(dir, "logo.png");
   await makeLogo(logo);
@@ -47,6 +47,7 @@ test("contact sheets sample every clip", async () => {
 
 test("validatePlan keeps shots inside the footage", () => {
   const plan: EditPlan = {
+    ...EXTRAS,
     look: "natural",
     summary: "",
     segments: [
@@ -55,7 +56,7 @@ test("validatePlan keeps shots inside the footage", () => {
       shot("C2", 4.9, 99, "runs past the end"),
       shot("C3", 1, 1.1, "too short"),
     ],
-    on_screen_text: [{ text: "  ", start: 0, end: 1, style: "caption", position: "bottom" }],
+    on_screen_text: [txt("  ", 0, 1, "caption", "bottom")],
     end_card: { include: true, headline: " ", seconds: 30, transition: CUT },
     open_questions: [],
   };
@@ -73,6 +74,7 @@ test("validatePlan keeps shots inside the footage", () => {
 
 test("renders a vertical cut with captions, a title and a branded end card", async () => {
   const plan: EditPlan = {
+    ...EXTRAS,
     look: "natural",
     summary: "test",
     segments: [
@@ -81,8 +83,8 @@ test("renders a vertical cut with captions, a title and a branded end card", asy
       shot("C3", 0, 2, "wide"),
     ],
     on_screen_text: [
-      { text: "Pumpkin latte is back", start: 0, end: 2.5, style: "title", position: "top" },
-      { text: "Made fresh every morning, with real pumpkin and a little cinnamon", start: 2.5, end: 7, style: "caption", position: "bottom" },
+      txt("Pumpkin latte is back", 0, 2.5, "title", "top"),
+      txt("Made fresh every morning, with real pumpkin and a little cinnamon", 2.5, 7, "caption", "bottom"),
     ],
     end_card: { include: true, headline: "Available now", seconds: 2, transition: CUT },
     open_questions: [],
@@ -104,6 +106,7 @@ test("renders a vertical cut with captions, a title and a branded end card", asy
 
 test("renders every move: transitions, speed, punch-ins, reframing, fixes and a look", async () => {
   const plan: EditPlan = {
+    ...EXTRAS,
     look: "warm",
     summary: "moves",
     segments: [
@@ -112,7 +115,7 @@ test("renders every move: transitions, speed, punch-ins, reframing, fixes and a 
       shot("C3", 0, 3, "sped up, static punch-in", { speed: 2, zoom: { start: 1.3, end: 1.3 }, adjust: { brightness: 0.05, contrast: 1.1, saturation: 1.2 }, transition_in: { type: "slide_left", seconds: 0.3 } }),
       shot("C1", 3, 5, "hard cut back"),
     ],
-    on_screen_text: [{ text: "Moves", start: 0, end: 2, style: "title", position: "center" }],
+    on_screen_text: [txt("Moves", 0, 2, "title", "center")],
     end_card: { include: true, headline: "The end", seconds: 1.5, transition: { type: "dip_to_black", seconds: 0.4 } },
     open_questions: [],
   };
@@ -135,6 +138,7 @@ test("renders every move: transitions, speed, punch-ins, reframing, fixes and a 
 
 test("validatePlan reins in moves", () => {
   const plan: EditPlan = {
+    ...EXTRAS,
     look: "natural",
     summary: "",
     segments: [
@@ -157,4 +161,62 @@ test("validatePlan reins in moves", () => {
   assert.deepEqual(b.transition_in, { type: "crossfade", seconds: 0.4 });
   assert.equal(c.speed, 0.25);
   assert.deepEqual(fixed.end_card.transition, CUT);
+});
+
+test("finishing pass: auto captions, animated text, graphics, overlays and sound effects", async () => {
+  const words = [
+    { text: "Pumpkin", start: 0.2, end: 0.6 },
+    { text: "latte", start: 0.6, end: 1.0 },
+    { text: "is", start: 1.1, end: 1.3 },
+    { text: "back.", start: 1.3, end: 1.8 },
+  ];
+  const withWords = clips.map((c) => (c.id === "C1" ? { ...c, transcript: [{ start: 0.2, end: 1.8, text: "Pumpkin latte is back.", words }] } : c));
+  const plan: EditPlan = {
+    ...EXTRAS,
+    look: "warm",
+    summary: "everything",
+    segments: [shot("C1", 0, 3, "hook"), shot("C2", 0, 2, "barista"), shot("C3", 0, 2, "wide", { transition_in: { type: "slide_left", seconds: 0.3 } })],
+    captions: { ...EXTRAS.captions, mode: "auto", preset: "bold_pop", position: "center", highlight_words: ["latte"] },
+    on_screen_text: [
+      txt("Claude did.", 0, 1.5, "title", "top", { animation: "pop", accent: "did." }),
+      txt("BACK", 1.4, 2.6, "hero", "top", { behind_subject: true }),
+      txt("we roast it\nevery morning", 3.0, 5.0, "stacked", "top", { animation: "slide_up" }),
+      txt("Comment LATTE", 5.2, 6.7, "boxed", "top", { animation: "typewriter" }),
+    ],
+    graphics: [
+      { kind: "progress_bar", start: 0, end: 6.7, text: "", x: 0.5, y: 0.02, size: 1 },
+      { kind: "counter", start: 3.0, end: 4.5, text: "0|351000", x: 0.5, y: 0.5, size: 1 },
+      { kind: "comment_cta", start: 5.2, end: 6.7, text: "latte", x: 0.5, y: 0.65, size: 1 },
+      { kind: "circle", start: 1.0, end: 2.0, text: "", x: 0.5, y: 0.45, size: 1 },
+    ],
+    overlays: [
+      { kind: "card", clip: "C3", start: 1, end: 2.5, at: 3.2, still: true, focus: { x: 0.5, y: 0.5 }, x: 0.5, y: 0.3, width: 0.5, tilt: -4 },
+      { kind: "cutaway", clip: "C2", start: 2, end: 3, at: 1.9, still: false, focus: { x: 0.5, y: 0.5 }, x: 0.5, y: 0.5, width: 1, tilt: 0 },
+    ],
+    sfx: [{ kind: "whoosh", at: 5 }, { kind: "pop", at: 1.4 }, { kind: "hit", at: 3 }],
+    end_card: { include: false, headline: null, seconds: 0, transition: CUT },
+    open_questions: [],
+  };
+  const { plan: valid, length, problems } = validatePlan(plan, withWords);
+  assert.deepEqual(problems, []);
+  assert.equal(valid.on_screen_text.length, 4);
+  const output = path.join(dir, "finish.mp4");
+  await render({ plan: valid, clips: withWords, aspect: "9:16", brand: { colors: ["#1E1D1B"], fonts: [], logoFile: null }, workDir: path.join(dir, "finish"), output, words: timelineWords(valid, withWords) });
+  const out = await probe(output);
+  assert.equal(out.width, 1080);
+  assert.equal(out.hasAudio, true);
+  assert.ok(Math.abs(out.duration - length) < 0.25, `duration ${out.duration} vs planned ${length}`);
+  if (process.env.KEEP_RENDER) {
+    const { copyFile } = await import("node:fs/promises");
+    await copyFile(output, process.env.KEEP_RENDER.replace(/(\.mp4)?$/, "-finish.mp4"));
+  }
+});
+
+test("timeline words follow the cut, speed and muting", () => {
+  const words = [{ text: "a", start: 1.0, end: 1.2 }, { text: "b", start: 2.0, end: 2.2 }, { text: "c", start: 3.5, end: 3.7 }];
+  const withWords = clips.map((c) => (c.id === "C1" ? { ...c, transcript: [{ start: 1, end: 3.7, text: "a b c", words }] } : c));
+  const plan: EditPlan = { ...EXTRAS, look: "natural", summary: "", segments: [shot("C1", 1.5, 3, "slow", { speed: 0.5 }), shot("C1", 3.4, 4, "muted", { audio: "mute" })], on_screen_text: [], end_card: { include: false, headline: null, seconds: 0, transition: CUT }, open_questions: [] };
+  const tw = timelineWords(plan, withWords);
+  assert.deepEqual(tw.map((w) => w.text), ["b"]);
+  assert.ok(Math.abs(tw[0].start - 1.0) < 0.01, `b at ${tw[0].start}`); // (2.0 - 1.5) / 0.5
 });
