@@ -44,7 +44,7 @@ A separate Node worker that turns raw footage into an edited draft. It runs anyw
    Claude follows the studio's editing skills in [`engine/skills/`](engine/skills/README.md), Markdown files matched to the video's format. Revisions start from the previous cut's plan, with each comment pinned to the shot it falls on.
 5. **Validates** the plan against the real footage, snapping cut points to word edges, then **renders** it in two passes:
    - **Picture:** shots cropped to 9:16, 1:1 or 16:9 around each focus point, transitions, speed, punch-ins, looks, B-roll cutaways over the voice, and floating cards.
-   - **Finishing:** a graphics layer drawn frame by frame (word-timed captions in five styles, animated titles and hero words, comment and follow buttons, progress bars, counters, emojis), text behind the person (a person cut-out made with Apple Vision on macOS), a royalty-free music bed that dips under speech (`engine/music/library.json`, CC0), synthesized sound effects, and -14 LUFS loudness.
+   - **Finishing:** a graphics layer drawn frame by frame (word-timed captions in six styles, English subtitles translated from other languages, animated titles, hero words and dripping series logos, comment and follow buttons, progress bars, counters, emojis), text behind the person (a person cut-out made with Apple Vision on macOS), a royalty-free music bed that dips under speech (`engine/music/library.json`, CC0), synthesized sound effects, and -14 LUFS loudness.
 6. **Hands off** the result as a new version in **editor check**, and notifies the editor. Failures show up on the video page with a plain reason and a Retry button.
 
 Footage from Google Drive needs a Google Cloud service account with the Drive API turned on.

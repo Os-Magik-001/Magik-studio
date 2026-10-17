@@ -24,8 +24,11 @@ A skill with broken front matter is skipped, and the engine log says why. The lo
 ## Writing a good skill
 
 - **Write only what the engine can do.**
-  - **Picture:** cut, add transitions (crossfade, dip to black or white, slide, wipe, zoom, circle), change speed, punch in or push in, reframe on a focus point, fix exposure and color per shot, apply an overall look.
-  - **Text:** word-timed automatic captions in five styles, animated titles, hero words, serif accents and stacked or boxed headlines, optionally behind the person.
+  - **Picture:** cut, add transitions (crossfade, dip to black or white, slide, wipe, zoom, circle, glitch), change speed, punch in or push in, reframe on a focus point, fix exposure and color per shot, apply an overall look.
+  - **Text:**
+    - word-timed automatic captions in six styles, including TV-series subtitles
+    - English subtitles translated from speech in another language, built up word by word
+    - animated titles, hero words, serif accents, stacked or boxed headlines, and dripping series logos, optionally behind the person
   - **Graphics:** comment bubbles, follow buttons, progress bars, counters, emojis, drawn circles.
   - **Overlays:** B-roll cutaways over the voice, floating clip or screenshot cards.
   - **Sound:** a music bed from the library that dips under speech, synthesized sound effects.

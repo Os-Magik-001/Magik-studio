@@ -6,6 +6,7 @@ import { after, before, test } from "node:test";
 import { contactSheets, probe } from "../src/media.ts";
 import { timelineWords, validatePlan, type Clip, type EditPlan } from "../src/plan.ts";
 import { render } from "../src/render.ts";
+import { translatedScreens } from "../src/graphics.ts";
 import { CUT, EXTRAS, makeClip, makeLogo, shot, txt } from "./fixtures.ts";
 
 let dir: string;
@@ -209,6 +210,52 @@ test("finishing pass: auto captions, animated text, graphics, overlays and sound
   if (process.env.KEEP_RENDER) {
     const { copyFile } = await import("node:fs/promises");
     await copyFile(output, process.env.KEEP_RENDER.replace(/(\.mp4)?$/, "-finish.mp4"));
+  }
+});
+
+test("series episode: translated subtitles, a dripping logo and a glitch transition", async () => {
+  // French speech, English subtitles: the translated words build up over the French ones.
+  const words = [
+    { text: "Les", start: 0.2, end: 0.4 },
+    { text: "gars,", start: 0.4, end: 0.8 },
+    { text: "on", start: 0.9, end: 1.0 },
+    { text: "lance", start: 1.0, end: 1.4 },
+    { text: "l'app.", start: 1.4, end: 1.9 },
+  ];
+  const withWords = clips.map((c) => (c.id === "C1" ? { ...c, transcript: [{ start: 0.2, end: 1.9, text: "Les gars, on lance l'app.", words }] } : c));
+  const plan: EditPlan = {
+    ...EXTRAS,
+    look: "natural",
+    summary: "episode",
+    segments: [shot("C1", 0, 2.5, "dialogue"), shot("C3", 0, 2, "new character", { transition_in: { type: "glitch", seconds: 0.6 } })],
+    captions: { ...EXTRAS.captions, mode: "translate", preset: "subtitle", words_per_screen: 12, position: "bottom", size: "medium" },
+    on_screen_text: [
+      txt("Guys, we're launching the app.", 0.2, 2.1, "caption", "bottom"),
+      txt("THE BOYZ\nEPISODE 14", 0, 2.0, "drip", "top", { behind_subject: true }),
+      txt("ERU", 2.6, 4.0, "hero", "center", { animation: "pop" }),
+    ],
+    end_card: { include: false, headline: null, seconds: 0, transition: CUT },
+    open_questions: [],
+  };
+  const { plan: valid, length, problems } = validatePlan(plan, withWords);
+  assert.deepEqual(problems, []);
+  assert.equal(valid.captions.words_per_screen, 8);
+  assert.deepEqual(valid.segments[1].transition_in, { type: "glitch", seconds: 0.35 });
+  assert.equal(valid.on_screen_text.filter((t) => t.style === "caption").length, 1, "translate mode keeps the written subtitles");
+  assert.equal(valid.on_screen_text.find((t) => t.style === "drip")?.behind_subject, true);
+
+  const screens = translatedScreens(valid.on_screen_text.filter((t) => t.style === "caption"), timelineWords(valid, withWords));
+  assert.equal(screens.length, 1);
+  assert.deepEqual(screens[0].words.map((w) => w.start), [0.2, 0.4, 0.9, 1.0, 1.4], "five English words spread over five French ones");
+
+  const output = path.join(dir, "episode.mp4");
+  await render({ plan: valid, clips: withWords, aspect: "9:16", brand: { colors: [], fonts: [], logoFile: null }, workDir: path.join(dir, "episode"), output, words: timelineWords(valid, withWords) });
+  const out = await probe(output);
+  assert.equal(out.height, 1920);
+  assert.ok(Math.abs(out.duration - length) < 0.25, `duration ${out.duration} vs planned ${length}`);
+  if (process.env.KEEP_RENDER) {
+    const { copyFile } = await import("node:fs/promises");
+    await copyFile(output, process.env.KEEP_RENDER.replace(/(\.mp4)?$/, "-episode.mp4"));
   }
 });
 

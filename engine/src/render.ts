@@ -23,7 +23,22 @@ const XFADE: Record<Shot["transition_in"]["type"], string> = {
   wipe_left: "wipeleft",
   zoom_in: "zoomin",
   circle_open: "circleopen",
+  glitch: "custom",
 };
+
+// A digital glitch: the frame breaks into horizontal bands that jump sideways with
+// the red and blue channels split apart, and the bands flip to the next shot one by
+// one. xfade's progress P runs from 1 to 0. Written without st()/ld() registers,
+// which xfade's slice threads would share.
+const GLITCH = (() => {
+  const q = "(1-P)";
+  const raw = `sin(floor(Y*18/H)*12.9898+floor(${q}*12)*78.233)*43758.5453`;
+  const roll = `(${raw}-floor(${raw}))`;
+  const amp = `sin(${q}*PI)`;
+  const x = `clip(X+(${roll}-0.5)*W*0.22*${amp}*gt(${roll},0.55)+W*0.025*${amp}*(eq(PLANE,2)-eq(PLANE,1)),0,W-1)`;
+  const pick = (s: string) => `if(eq(PLANE,0),${s}0(${x},Y),if(eq(PLANE,1),${s}1(${x},Y),${s}2(${x},Y)))`;
+  return `if(lt(${roll},${q}),${pick("b")},${pick("a")})`;
+})();
 
 const LOOK_FILTERS: Record<EditPlan["look"], string | null> = {
   natural: null,
@@ -228,7 +243,15 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
   pieces.slice(1).forEach((p, k) => {
     const i = k + 1;
     const overlap = overlapOf(p.transition);
-    if (overlap) {
+    if (overlap && p.transition.type === "glitch") {
+      // The glitch samples each plane on its own, so it runs on full-resolution RGB.
+      filters.push(
+        `[${vc}]format=gbrp[ga${i}]`,
+        `[v${i}]format=gbrp[gb${i}]`,
+        `[ga${i}][gb${i}]xfade=transition=custom:expr='${GLITCH}':duration=${overlap.toFixed(3)}:offset=${(length - overlap).toFixed(3)},format=yuv420p[jv${i}]`,
+        `[${ac}][a${i}]acrossfade=d=${overlap.toFixed(3)}:c1=tri:c2=tri[ja${i}]`,
+      );
+    } else if (overlap) {
       filters.push(
         `[${vc}][v${i}]xfade=transition=${XFADE[p.transition.type]}:duration=${overlap.toFixed(3)}:offset=${(length - overlap).toFixed(3)}[jv${i}]`,
         `[${ac}][a${i}]acrossfade=d=${overlap.toFixed(3)}:c1=tri:c2=tri[ja${i}]`,

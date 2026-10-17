@@ -23,6 +23,7 @@ const FONT_FILES: [string, string][] = [
   ["DMSerifDisplay-Italic.ttf", "Magik Display Italic"],
   ["PermanentMarker-Regular.ttf", "Magik Marker"],
   ["SpaceMono-Bold.ttf", "Magik Mono"],
+  ["Creepster-Regular.ttf", "Magik Drip"],
 ];
 for (const [file, family] of FONT_FILES) GlobalFonts.registerFromPath(path.join(FONTS_DIR, file), family);
 
@@ -80,6 +81,28 @@ export function captionScreens(words: Word[], perScreen: number, maxChars: numbe
     screens[i].end = next && next.start - screens[i].end < 0.5 ? next.start : screens[i].end + 0.25;
   }
   return screens;
+}
+
+// Translated subtitles: each line Claude wrote becomes one screen, and its words are
+// spread over the source words spoken in that time, so the translation builds up
+// as the person talks.
+export function translatedScreens(items: { text: string; start: number; end: number }[], words: Word[]): Screen[] {
+  return items
+    .map((item) => {
+      const parts = item.text.split(/\s+/).filter(Boolean);
+      const spoken = words.filter((w) => w.start >= item.start - 0.05 && w.start < item.end);
+      const span = Math.max(0.2, item.end - item.start);
+      return {
+        start: item.start,
+        end: item.end,
+        words: parts.map((text, k) => {
+          const at = spoken.length ? spoken[Math.min(spoken.length - 1, Math.floor((k * spoken.length) / parts.length))].start : item.start + (span * 0.7 * k) / parts.length;
+          return { text, start: Math.max(item.start, at), end: item.end };
+        }),
+      };
+    })
+    .filter((s) => s.words.length)
+    .sort((a, b) => a.start - b.start);
 }
 
 // ---------------------------------------------------------------- drawing
@@ -170,20 +193,23 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
   const { W, H, plan, brand } = input;
   const c = plan.captions;
   const base = Math.min(W, H);
-  const size = base * { small: 0.052, medium: 0.068, large: 0.088 }[c.size] * (c.preset === "minimal" ? 0.8 : 1);
+  const size = base * { small: 0.052, medium: 0.068, large: 0.088 }[c.size] * (c.preset === "minimal" ? 0.8 : c.preset === "subtitle" ? 0.72 : 1);
   const highlights = new Set(c.highlight_words.flatMap((w) => w.split(/\s+/)).map(bare));
   const spokenIdx = screen.words.findLastIndex((w) => w.start <= t);
-  const shown = c.preset === "bold_pop" ? screen.words.slice(0, Math.max(1, spokenIdx + 1)) : screen.words;
+  const builds = c.preset === "bold_pop" || c.preset === "subtitle";
+  const shown = builds ? screen.words.slice(0, Math.max(1, spokenIdx + 1)) : screen.words;
   const fonts = {
     bold_pop: font("Magik Sans Black", size, brand.fonts),
     editorial: font("Magik Sans SemiBold", size, brand.fonts),
     karaoke_box: font("Magik Serif", size * 1.1),
     classic: font("Magik Sans SemiBold", size * 0.85, brand.fonts),
     minimal: font("Magik Sans Medium", size, brand.fonts),
+    subtitle: font("Magik Sans SemiBold", size, brand.fonts),
   };
   const runs: Run[] = shown.map((w, i) => {
     const hl = highlights.has(bare(w.text));
-    const text = caseOf(c.preset === "classic" || c.preset === "karaoke_box" ? w.text : w.text.replace(/[.,;:]+$/, ""), c.case);
+    const keepsPunctuation = c.preset === "classic" || c.preset === "karaoke_box" || c.preset === "subtitle";
+    const text = caseOf(keepsPunctuation ? w.text : w.text.replace(/[.,;:]+$/, ""), c.case);
     if (c.preset === "karaoke_box") {
       const spoken = i <= spokenIdx;
       return { text, font: fonts.karaoke_box, color: hl && spoken ? c.highlight_color : spoken ? "#F7F2E8" : "rgba(247,242,232,0.42)" };
@@ -193,8 +219,10 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
   });
   const lines = layoutRuns(ctx, runs, W * 0.8);
   const lineH = size * 1.22;
+  // A subtitle that builds word by word keeps its first line where the whole phrase puts it.
+  const full = c.preset === "subtitle" ? layoutRuns(ctx, screen.words.map((w) => ({ text: w.text, font: fonts.subtitle, color: c.color })), W * 0.8) : lines;
   const blockH = lines.length * lineH;
-  const top = anchorY(c.position, blockH, W, H);
+  const top = anchorY(c.position, full.length * lineH, W, H);
 
   ctx.save();
   if (c.preset === "classic" || c.preset === "karaoke_box") {
@@ -241,7 +269,7 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
       });
     } else drawRuns(ctx, lines, W / 2, top, lineH, size * 0.08);
   } else {
-    shadow(ctx, size * 0.4, c.preset === "minimal" ? 0.7 : 0.55);
+    shadow(ctx, size * 0.4, c.preset === "minimal" || c.preset === "subtitle" ? 0.75 : 0.55);
     drawRuns(ctx, lines, W / 2, top, lineH);
   }
   ctx.restore();
@@ -262,7 +290,7 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
   const { W, H, brand, plan, fps } = input;
   const base = Math.min(W, H);
   const p = phase(t, item.start, item.end, fps);
-  const color = item.color ?? "#FFFFFF";
+  const color = item.color ?? (item.style === "drip" ? "#D9161E" : "#FFFFFF");
   const accentColor = plan.captions.highlight_color;
   const spec = {
     caption: { family: "Magik Sans SemiBold", size: 0.05, upper: false },
@@ -272,6 +300,7 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
     stacked: { family: "Magik Sans ExtraBold", size: 0.078, upper: false },
     boxed: { family: "Magik Sans SemiBold", size: 0.048, upper: false },
     label: { family: "Magik Sans Medium", size: 0.036, upper: false },
+    drip: { family: "Magik Drip", size: 0.22, upper: true },
   }[item.style];
   let size = base * spec.size;
   const display = { ...item, text: spec.upper ? item.text.toUpperCase() : item.text, accent: item.accent && spec.upper ? item.accent.toUpperCase() : item.accent };
@@ -281,21 +310,25 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
   if (p.outro >= 0) alpha *= clamp01(p.outroP);
   ctx.globalAlpha = alpha;
 
-  const lineTexts = item.style === "stacked" ? display.text.split(/\\n|\n/) : [display.text];
+  const lineTexts = item.style === "stacked" || item.style === "drip" ? display.text.split(/\\n|\n/) : [display.text];
+  // A drip logo's first line is the logo; any lines under it are a smaller kicker ("EPISODE 10").
+  const KICKER = 0.42;
   // Shrink to fit: hero words fill the width but never overflow it.
-  const fitW = W * (item.style === "hero" ? 0.9 : 0.82);
+  const big = item.style === "hero" || item.style === "drip";
+  const fitW = W * (big ? 0.9 : 0.82);
   for (let i = 0; i < 8; i++) {
     ctx.font = font(spec.family, size, brand.fonts);
-    const widest = Math.max(...lineTexts.map((l) => ctx.measureText(l).width));
-    if (item.style !== "hero" && item.style !== "serif") break;
+    const widest = Math.max(...(item.style === "drip" ? lineTexts.slice(0, 1) : lineTexts).map((l) => ctx.measureText(l).width));
+    if (!big && item.style !== "serif") break;
     if (widest <= fitW) break;
     size *= 0.9;
   }
-  const lineH = size * (item.style === "hero" ? 1.0 : 1.18);
-  const allLines = lineTexts.flatMap((l) => layoutRuns(ctx, textRuns({ ...display, text: l, accent: display.accent && l.includes(display.accent) ? display.accent : null }, spec.family, size, color, accentColor, brand.fonts), fitW));
+  const lineH = size * (big ? 1.0 : 1.18);
+  const allLines = lineTexts.flatMap((l, i) => layoutRuns(ctx, textRuns({ ...display, text: l, accent: display.accent && l.includes(display.accent) ? display.accent : null }, spec.family, item.style === "drip" && i > 0 ? size * KICKER : size, color, accentColor, brand.fonts), fitW));
+  const kickers = item.style === "drip" ? allLines.length - 1 : 0;
   // Stacked headlines build line by line; typewriter reveals letters.
   const visibleLines = item.style === "stacked" ? allLines.slice(0, Math.max(1, Math.floor((t - item.start) / 0.28) + 1)) : allLines;
-  const blockH = allLines.length * lineH;
+  const blockH = kickers ? lineH + kickers * size * KICKER * 1.1 : allLines.length * lineH;
   // Behind the person, a top title sits lower so the head overlaps its lower part.
   const top = item.behind_subject && item.position === "top" ? Math.max(H * 0.13, H * 0.27 - blockH / 2) : anchorY(item.position, blockH, W, H);
   const cx = W / 2;
@@ -336,9 +369,12 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
     noShadow(ctx);
     if (item.style === "boxed" && !item.color) lines = lines.map((l) => ({ ...l, runs: l.runs.map((r) => ({ ...r, color: luminance(ctx.fillStyle as string) > 0.6 ? "#141413" : "#FFFFFF" })) }));
   } else {
-    shadow(ctx, size * (item.style === "hero" ? 0.25 : 0.35), item.style === "label" ? 0.7 : 0.55);
+    shadow(ctx, size * (item.style === "hero" ? 0.25 : item.style === "drip" ? 0.12 : 0.35), item.style === "label" ? 0.7 : item.style === "drip" ? 0.35 : 0.55);
   }
-  drawRuns(ctx, lines, cx, top, lineH);
+  if (kickers) {
+    drawRuns(ctx, lines.slice(0, 1), cx, top, lineH);
+    drawRuns(ctx, lines.slice(1), cx, top + lineH * 0.98, size * KICKER * 1.1);
+  } else drawRuns(ctx, lines, cx, top, lineH);
   ctx.restore();
   return `${p.intro},${p.outro},${visibleLines.length},${lines.reduce((n, l) => n + l.runs.reduce((m, r) => m + r.text.length, 0), 0)}`;
 }
@@ -495,9 +531,14 @@ function drawGraphic(ctx: Ctx, input: GraphicsInput, g: Graphic, t: number) {
 // ---------------------------------------------------------------- layers
 
 function itemsFor(input: GraphicsInput, layer: Layer) {
-  const texts = input.plan.on_screen_text.filter((t) => (layer === "behind") === t.behind_subject);
+  const { mode, preset, words_per_screen } = input.plan.captions;
+  // In translate mode the caption items are the subtitles, drawn in the caption preset's look.
+  const translated = mode === "translate";
+  const texts = input.plan.on_screen_text.filter((t) => (layer === "behind") === t.behind_subject && !(translated && t.style === "caption"));
   const graphics = layer === "front" ? input.plan.graphics : [];
-  const captions = layer === "front" && input.plan.captions.mode === "auto" ? captionScreens(input.words, input.plan.captions.words_per_screen, input.W < input.H ? 22 : 42) : [];
+  const maxChars = input.W < input.H ? (preset === "subtitle" ? 34 : 22) : preset === "subtitle" ? 60 : 42;
+  const captions =
+    layer !== "front" ? [] : mode === "auto" ? captionScreens(input.words, words_per_screen, maxChars) : translated ? translatedScreens(input.plan.on_screen_text.filter((t) => t.style === "caption"), input.words) : [];
   return { texts, graphics, captions };
 }
 

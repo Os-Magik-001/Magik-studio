@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { exists, run } from "../src/exec.ts";
-import { transcribe, transcriptionAvailable } from "../src/transcribe.ts";
+import { namesIn, transcribe, transcriptionAvailable } from "../src/transcribe.ts";
 
 const ready = (await transcriptionAvailable()) && (await exists("say"));
 
@@ -24,4 +24,10 @@ test("transcribes speech into timed phrases", { skip: !ready }, async () => {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("only names and terms from the hint prime Whisper, never sentences", () => {
+  assert.equal(namesIn("Magik test. Series episode test. A short episode of our web series, from a talk between two founders."), "Magik, Series");
+  assert.equal(namesIn("IG Patrimoine. Les placements de Jean-Marc Tremblay chez Desjardins en 2026, avec iPhone et @magik."), "IG, Patrimoine, Jean-Marc, Tremblay, Desjardins, 2026, iPhone, @magik");
+  assert.equal(namesIn(""), "");
 });

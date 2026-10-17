@@ -8,12 +8,12 @@ import type { TranscriptLine } from "./transcribe.ts";
 
 // ---------------------------------------------------------------- the edit decision list
 
-export const TRANSITIONS = ["cut", "crossfade", "dip_to_black", "dip_to_white", "slide_left", "slide_up", "wipe_left", "zoom_in", "circle_open"] as const;
+export const TRANSITIONS = ["cut", "crossfade", "dip_to_black", "dip_to_white", "slide_left", "slide_up", "wipe_left", "zoom_in", "circle_open", "glitch"] as const;
 export const LOOKS = ["natural", "warm", "cool", "punchy", "cinematic", "black_and_white", "vintage"] as const;
 
 const Transition = z.object({
   type: z.enum(TRANSITIONS),
-  seconds: z.number().describe("How long the transition takes, usually 0.2 to 0.6. 0 for a cut."),
+  seconds: z.number().describe("How long the transition takes, usually 0.2 to 0.6 (glitch: 0.2 to 0.35, a digital break-up for reveals and new characters). 0 for a cut."),
 });
 
 const Segment = z.object({
@@ -51,9 +51,9 @@ export const PLAIN_SHOT = {
   transition_in: { type: "cut", seconds: 0 },
 } satisfies Omit<Shot, "clip" | "start" | "end" | "purpose">;
 
-export const TEXT_STYLES = ["caption", "title", "hero", "serif", "stacked", "boxed", "label"] as const;
+export const TEXT_STYLES = ["caption", "title", "hero", "serif", "stacked", "boxed", "label", "drip"] as const;
 export const TEXT_ANIMATIONS = ["none", "pop", "fade", "slide_up", "typewriter"] as const;
-export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal"] as const;
+export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal", "subtitle"] as const;
 export const GRAPHICS = ["comment_cta", "follow_pill", "progress_bar", "counter", "emoji", "circle"] as const;
 export const SFX = ["whoosh", "pop", "hit", "riser", "click", "ding"] as const;
 
@@ -66,7 +66,7 @@ const OnScreenText = z.object({
   style: z
     .enum(TEXT_STYLES)
     .describe(
-      "caption = subtitle line (only when captions.mode is manual); title = large bold headline; hero = huge 1 to 3 word keyword, the reel's big idea of the moment; serif = big elegant italic serif; stacked = 2 to 3 line headline built line by line (use \\n between lines); boxed = pinned header in a solid box (e.g. a call to action); label = small aside or kicker text",
+      "caption = subtitle line (only when captions.mode is manual or translate); title = large bold headline; hero = huge 1 to 3 word keyword, the reel's big idea of the moment; serif = big elegant italic serif; stacked = 2 to 3 line headline built line by line (use \\n between lines); boxed = pinned header in a solid box (e.g. a call to action); label = small aside or kicker text; drip = a series logo in a bold horror font with dripping letters, red unless a color is set (show titles like 'THE BOYZ')",
     ),
   position: z.enum(["top", "center", "bottom"]),
   animation: z.enum(TEXT_ANIMATIONS).describe("How it comes in. pop = scales in with a bounce (energetic); slide_up; fade (calm); typewriter (letters appear); none."),
@@ -77,17 +77,17 @@ const OnScreenText = z.object({
     .describe("One word or short phrase from `text` drawn in the highlight color and italic serif, e.g. 'did.' in 'Claude did.'; null for none"),
   behind_subject: z
     .boolean()
-    .describe("Draw it behind the person, so the head overlaps the letters (the premium creator look). Only for hero/title/serif at top or center while a person fills the frame; keep at least 70% of each letter visible."),
+    .describe("Draw it behind the person, so the head overlaps the letters (the premium creator look). Only for hero/title/serif/stacked/drip at top or center while a person fills the frame; keep at least 70% of each letter visible."),
 });
 
 const Captions = z.object({
   mode: z
-    .enum(["auto", "manual", "off"])
-    .describe("auto = the engine captions every kept spoken word, timed exactly from the audio (use whenever there is speech); manual = only the caption items you write; off = none"),
+    .enum(["auto", "manual", "translate", "off"])
+    .describe("auto = the engine captions every kept spoken word, timed exactly from the audio (use whenever there is speech); translate = subtitles in another language than the one spoken: you write each translated line as an on_screen_text item with style caption, timed on the finished timeline to when that line is said, and the engine reveals its words as the person speaks, in the preset's look; manual = only the caption items you write, shown whole; off = none"),
   preset: z
     .enum(CAPTION_PRESETS)
-    .describe("bold_pop = heavy white sans, words pop in one by one, keywords in the highlight color (energetic creator reels); editorial = clean white sans with italic serif keywords (premium, brand); karaoke_box = serif in a dark box, spoken words light up (calm, readable); classic = boxed white subtitle lines; minimal = small white text with a soft shadow"),
-  words_per_screen: z.number().describe("1 to 4 words on screen at a time; 2 to 3 for vertical social"),
+    .describe("bold_pop = heavy white sans, words pop in one by one, keywords in the highlight color (energetic creator reels); editorial = clean white sans with italic serif keywords (premium, brand); karaoke_box = serif in a dark box, spoken words light up (calm, readable); classic = boxed white subtitle lines; minimal = small white text with a soft shadow; subtitle = TV-series subtitles: whole phrases in small white sentence-case text with a soft shadow, built up word by word as they're spoken (sitcoms, mockumentaries, skits, dialogue)"),
+  words_per_screen: z.number().describe("1 to 4 words on screen at a time; 2 to 3 for vertical social. The subtitle preset shows whole phrases: 4 to 8."),
   case: z.enum(["as_spoken", "lower", "upper"]),
   position: z.enum(["top", "center", "bottom"]).describe("center = chest height, the creator-reel standard"),
   size: z.enum(["small", "medium", "large"]),
@@ -275,8 +275,8 @@ How to cut:
 
 Your tools, beyond choosing shots:
 - Picture: transitions, speed changes, punch-ins and slow pushes, reframing with the focus point, per-shot exposure and color fixes, an overall look.
-- Captions: in auto mode the engine captions every kept spoken word with exact word timing; you choose the style, size, position, colors and the keywords to highlight.
-- Text you place: titles, hero words, serif accents, stacked headlines, boxed headers and labels, each with an entrance animation, an optional accent word, and optionally drawn behind the person.
+- Captions: in auto mode the engine captions every kept spoken word with exact word timing; you choose the style, size, position, colors and the keywords to highlight. In translate mode you write the translated lines and the engine times their words to the speech.
+- Text you place: titles, hero words, serif accents, stacked headlines, boxed headers, labels and dripping series logos, each with an entrance animation, an optional accent word, and optionally drawn behind the person.
 - Graphics: comment call-to-action bubbles, follow buttons, progress bars, counters, emojis, hand-drawn circles.
 - Overlays: B-roll that covers the picture while the voice continues (cutaway), and floating cards of other clips or stills.
 - Sound: a music bed from the library that dips under speech, and sound effects on key moments.
@@ -426,6 +426,7 @@ export async function planEdit(input: PlanInput): Promise<{ plan: EditPlan; usag
     if (err instanceof Anthropic.RateLimitError) throw new Error("Claude is busy right now (rate limited). Retry in a minute.");
     if (err instanceof Anthropic.APIConnectionError) throw new Error("The engine couldn't reach Claude. Check its network connection, then retry.");
     if (err instanceof Anthropic.APIError) throw new Error(`Claude returned an error (${err.status}): ${err.message}`);
+    if (err instanceof Anthropic.AnthropicError) throw new Error(`The connection to Claude kept dropping while it planned (${err.message}). Retry in a minute.`);
     throw err;
   }
 }
@@ -439,24 +440,38 @@ const planSchema = (() => {
   return schema as Anthropic.Beta.BetaTool.InputSchema;
 })();
 
+// The SDK retries a request that fails to start, but not a stream that drops halfway
+// (a reset connection after minutes of thinking), so those are retried here.
+async function streamPlan(client: Anthropic, system: string, messages: Anthropic.Beta.BetaMessageParam[]) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await client.beta.messages
+        .stream({
+          model: config.model,
+          max_tokens: 64000,
+          betas: ["server-side-fallback-2026-07-01"],
+          fallbacks: "default",
+          thinking: { type: "adaptive" },
+          output_config: { effort: "high" },
+          system,
+          tools: [{ name: SUBMIT, description: "Submit the finished edit plan. Call it exactly once, with the complete plan.", input_schema: planSchema, eager_input_streaming: true }],
+          tool_choice: { type: "auto" },
+          messages,
+        })
+        .finalMessage();
+    } catch (err) {
+      const dropped = err instanceof Anthropic.APIConnectionError || (err instanceof Anthropic.AnthropicError && !(err instanceof Anthropic.APIError) && /terminated|ECONNRESET|socket/i.test(`${err.message} ${(err as { cause?: unknown }).cause ?? ""}`));
+      if (!dropped || attempt >= 3) throw err;
+      console.warn(`Claude's stream dropped (${err.message}); retrying (${attempt + 1}/3)`);
+    }
+  }
+}
+
 async function requestPlan(client: Anthropic, system: string, content: Anthropic.Beta.BetaContentBlockParam[]) {
   const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content }];
   let used = { input: 0, output: 0 };
   for (let attempt = 0; attempt < 2; attempt++) {
-    const message = await client.beta.messages
-      .stream({
-        model: config.model,
-        max_tokens: 64000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        thinking: { type: "adaptive" },
-        output_config: { effort: "high" },
-        system,
-        tools: [{ name: SUBMIT, description: "Submit the finished edit plan. Call it exactly once, with the complete plan.", input_schema: planSchema, eager_input_streaming: true }],
-        tool_choice: { type: "auto" },
-        messages,
-      })
-      .finalMessage();
+    const message = await streamPlan(client, system, messages);
     used = { input: used.input + message.usage.input_tokens, output: used.output + message.usage.output_tokens };
 
     if (message.stop_reason === "refusal") throw new Error("Claude declined to plan this edit.");
@@ -537,7 +552,7 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
 
   // A transition overlaps the shots it joins, so it can't eat more than part of either.
   const fitTransition = (t: EditPlan["end_card"]["transition"], before: number, after: number) => {
-    const seconds = Math.min(clamp(t.seconds, 0, 2), before * 0.4, after * 0.4);
+    const seconds = Math.min(clamp(t.seconds, 0, t.type === "glitch" ? 0.35 : 2), before * 0.4, after * 0.4);
     return t.type === "cut" || seconds < 0.1 ? { type: "cut" as const, seconds: 0 } : { type: t.type, seconds: round(seconds) };
   };
   segments.forEach((seg, i) => {
@@ -558,12 +573,12 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
   const c = plan.captions;
   const captions = {
     ...c,
-    words_per_screen: Math.round(clamp(c.words_per_screen, 1, 4, 3)),
+    words_per_screen: Math.round(clamp(c.words_per_screen, 1, c.preset === "subtitle" ? 8 : 4, 3)),
     color: hex(c.color) ?? "#FFFFFF",
     highlight_color: hex(c.highlight_color) ?? "#FFD84D",
     highlight_words: c.highlight_words.map((w) => w.trim()).filter(Boolean).slice(0, 40),
   };
-  const BEHIND = new Set(["hero", "title", "serif", "stacked"]);
+  const BEHIND = new Set(["hero", "title", "serif", "stacked", "drip"]);
   const on_screen_text = plan.on_screen_text
     .map((t) => ({
       ...span(t),
@@ -575,8 +590,12 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
     // In auto mode the engine writes the captions; hand-written ones would double them.
     .filter((t) => t.text && t.end - t.start >= 0.2 && !(captions.mode === "auto" && t.style === "caption"));
 
+  // Bottom captions sit around 0.7 of the height: a button or bubble there would cover them.
+  const captionLine = captions.mode !== "off" && captions.position === "bottom";
+  const clearOfCaptions = (g: EditPlan["graphics"][number], y: number) =>
+    captionLine && (g.kind === "follow_pill" || g.kind === "comment_cta") && Math.abs(y - 0.7) < 0.08 ? 0.58 : y;
   const graphics = plan.graphics
-    .map((g) => ({ ...span(g), text: g.text.trim(), x: round(clamp(g.x, 0.05, 0.95, 0.5)), y: round(clamp(g.y, 0.05, 0.95, 0.5)), size: round(clamp(g.size, 0.5, 2, 1)) }))
+    .map((g) => ({ ...span(g), text: g.text.trim(), x: round(clamp(g.x, 0.05, 0.95, 0.5)), y: round(clearOfCaptions(g, clamp(g.y, 0.05, 0.95, 0.5))), size: round(clamp(g.size, 0.5, 2, 1)) }))
     .filter((g) => g.end - g.start >= 0.3 && (g.kind !== "emoji" || g.text) && (g.kind !== "counter" || g.text.includes("|")));
 
   const overlays: EditPlan["overlays"] = [];

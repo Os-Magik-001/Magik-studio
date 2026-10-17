@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.ts";
 import { exists, run } from "./exec.ts";
@@ -52,11 +52,13 @@ export async function transcribe(file: string, workDir: string, hint?: string): 
   const base = path.join(workDir, path.basename(file) + ".speech");
   await run(config.ffmpeg, ["-v", "error", "-y", "-i", file, "-vn", "-ac", "1", "-ar", "16000", `${base}.wav`]);
   // Short, word-aligned segments give phrase-level lines; the full JSON adds per-word timing.
-  const args = ["-m", config.whisperModel!, "-f", `${base}.wav`, "-l", config.whisperLanguage, "-ml", "48", "-sow", "-ojf", "-of", base, "-np"];
+  const language = config.whisperLanguage === "auto" ? await detectLanguage(`${base}.wav`) : config.whisperLanguage;
+  const args = ["-m", config.whisperModel!, "-f", `${base}.wav`, "-l", language, "-ml", "48", "-sow", "-ojf", "-of", base, "-np"];
   const dtw = dtwPreset(config.whisperModel!);
   if (dtw) args.push("-nfa", "--dtw", dtw);
   if (config.whisperVadModel) args.push("--vad", "-vm", config.whisperVadModel);
-  if (hint) args.push("--prompt", hint.slice(0, 600));
+  const names = hint && namesIn(hint);
+  if (names) args.push("--prompt", names);
   await run(config.whisperBin, args);
   const json = JSON.parse(await readFile(`${base}.json`, "utf8")) as { transcription?: Segment[] };
   return (json.transcription ?? [])
@@ -65,6 +67,43 @@ export async function transcribe(file: string, workDir: string, hint?: string): 
       return { ...line, words: config.whisperVadModel ? anchor(wordsOf(s), line) : wordsOf(s) };
     })
     .filter((s) => s.text && !/^\[.*\]$/.test(s.text));
+}
+
+// The language is detected from the audio alone before transcribing: with "auto" and a
+// hint prompt, Whisper takes the hint's language as the spoken one, so an English brief
+// over French speech came back as a looping English paraphrase. Detection listens to
+// 30 s, taken a little way in to skip intros.
+async function detectLanguage(wav: string) {
+  const seconds = Math.max(0, ((await stat(wav)).size - 44) / 32000);
+  const offset = seconds > 60 ? Math.min(seconds * 0.2, 120) : 0;
+  try {
+    // Not -np: that also silences the line that names the language.
+    const { stderr } = await run(config.whisperBin, ["-m", config.whisperModel!, "-f", wav, "-l", "auto", "-dl", "-ot", String(Math.round(offset * 1000))]);
+    return /auto-detected language: ([a-z]{2,3})/.exec(stderr)?.[1] ?? "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+// Only the names and terms from the hint go to Whisper, as a list: a prompt written in
+// sentences pulls the transcript into the prompt's language, even with the spoken
+// language set (an English title turned French speech into English).
+const OPENERS = new Set("a an the this that these our my we you i it in on at for to and but so if when how what why la le les un une des ce cette nos notre nous vous je on il elle en au aux pour et mais si quand comment pourquoi el los las una".split(" "));
+
+export function namesIn(hint: string) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  hint.split(/\s+/).forEach((raw, i, all) => {
+    const w = raw.replace(/^[^\p{L}\p{N}@#]+|[^\p{L}\p{N}]+$/gu, "");
+    // A capital at the start of a sentence only counts when the word isn't a common opener.
+    const sentenceStart = i === 0 || /[.!?:]$/.test(all[i - 1]);
+    const named = /\p{Lu}/u.test(w.slice(1)) || /\d/.test(w) || /^[@#]/.test(w) || (/^\p{Lu}/u.test(w) && !(sentenceStart && OPENERS.has(w.toLowerCase())));
+    if (w.length > 1 && named && !seen.has(w.toLowerCase())) {
+      seen.add(w.toLowerCase());
+      out.push(w);
+    }
+  });
+  return out.slice(0, 40).join(", ");
 }
 
 // With VAD on, whisper.cpp maps segment times back to the real audio but leaves word
