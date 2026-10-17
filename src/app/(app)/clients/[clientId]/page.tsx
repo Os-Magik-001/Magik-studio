@@ -57,7 +57,12 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
         }
         title={client.name}
         description={`${videos?.length ?? 0} videos · ${client.revision_limit} included revision rounds per video`}
-        actions={<LinkButton href={`/clients/${client.id}/brand`}>Brand & strategy</LinkButton>}
+        actions={
+          <>
+            <LinkButton href={`/agents?client=${client.id}`}>Agents</LinkButton>
+            <LinkButton href={`/clients/${client.id}/brand`}>Brand & strategy</LinkButton>
+          </>
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

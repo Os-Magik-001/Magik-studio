@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
 import { asCharte, asFindings, asPillars, asReels } from "@/lib/agent-types";
-import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
+import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { LocalDate } from "@/components/local-date";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { QuestionnaireForm, ResearchForm, StrategistButton } from "@/components/agents/forms";
@@ -55,6 +55,7 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
         }
         title="Brand & strategy"
         description="The questionnaire feeds the brand strategist (agent 1); its niche feeds the trend researcher (agent 2); both feed the scriptwriter (agent 3) on every video."
+        actions={<LinkButton href={`/agents?client=${client.id}`}>Open mission control</LinkButton>}
       />
       {open && <AutoRefresh seconds={8} />}
 

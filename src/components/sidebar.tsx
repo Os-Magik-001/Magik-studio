@@ -10,12 +10,14 @@ const NAV: Record<Role, NavItem[]> = {
   admin: [
     { href: "/pipeline", label: "Pipeline", icon: "pipeline" },
     { href: "/clients", label: "Clients", icon: "clients" },
+    { href: "/agents", label: "Agents", icon: "agents" },
     { href: "/shoots", label: "Shoots", icon: "shoots" },
     { href: "/team", label: "Team", icon: "team" },
   ],
   editor: [
     { href: "/pipeline", label: "Pipeline", icon: "pipeline" },
     { href: "/clients", label: "Clients", icon: "clients" },
+    { href: "/agents", label: "Agents", icon: "agents" },
   ],
   videographer: [{ href: "/shoots", label: "Shoots", icon: "shoots" }],
   client: [

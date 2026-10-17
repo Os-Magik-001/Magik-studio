@@ -217,3 +217,33 @@ input::-webkit-calendar-picker-indicator {
   animation: magik-drift 38s ease-in-out infinite;
   will-change: transform;
 }
+
+/* Agents mission control (src/components/agents/hud.tsx): holographic cyan on black, the studio's gold for what's hot. */
+.hud-frame {
+  position: relative;
+  background: linear-gradient(180deg, rgba(8, 30, 50, 0.5), rgba(3, 12, 22, 0.6));
+  border: 1px solid rgba(84, 214, 255, 0.25);
+  clip-path: polygon(0 14px, 14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+}
+.hud-frame::before,
+.hud-frame::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #54d6ff;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.hud-frame::before { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
+.hud-frame::after { bottom: 6px; left: 6px; border-right: 0; border-top: 0; }
+.hud-label { font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #6f9bb3; }
+.hud-node { cursor: pointer; outline: none; }
+.hud-node:focus-visible > circle:nth-of-type(2) { stroke: var(--accent); stroke-width: 3; }
+.hud-node text, .hud-edge { paint-order: stroke; stroke: #02060c; stroke-width: 4px; stroke-linejoin: round; }
+.hud-kind { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; letter-spacing: 0.2em; fill: #6f9bb3; }
+.hud-title { font-family: var(--font-montserrat), sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.14em; fill: #b8f1ff; }
+.hud-meta { font-family: var(--font-geist-mono), monospace; font-size: 11px; fill: #54d6ff; }
+.hud-edge { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; fill: #54d6ff; letter-spacing: 0.04em; }
+.hud-edge.hot { fill: var(--accent); }
+.hud-edge.off { fill: #3a5a6b; }
