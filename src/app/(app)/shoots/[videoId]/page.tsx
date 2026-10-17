@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { visibleVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
+import { driveServiceEmail } from "@/lib/drive";
 import { formatBytes, parseShotList, FORMAT_LABEL } from "@/lib/workflow";
 import { Card, CardHeader, EmptyState, PageHeader, cx } from "@/components/ui";
 import { toggleShot } from "@/app/actions/workflow";
@@ -113,7 +114,7 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
                   <span className="text-muted">{formatBytes(f.size_bytes)}</span>
                 </div>
               ))}
-              <FootageDrop videoId={video.id} />
+              <FootageDrop videoId={video.id} driveEmail={driveServiceEmail()} />
             </div>
           </Card>
         </div>

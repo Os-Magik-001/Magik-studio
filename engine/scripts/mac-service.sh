@@ -41,7 +41,7 @@ install() {
 
   # Private env file with just what the engine needs.
   ( umask 077
-    grep -E '^(NEXT_PUBLIC_SUPABASE_URL|SUPABASE_URL|SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|WHISPER_CPP_MODEL|WHISPER_VAD_MODEL|WHISPER_LANGUAGE)=' "$REPO/.env.local" > "$HOME_DIR/engine.env" )
+    grep -E '^(NEXT_PUBLIC_SUPABASE_URL|SUPABASE_URL|SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|WHISPER_CPP_MODEL|WHISPER_VAD_MODEL|WHISPER_LANGUAGE|GOOGLE_SERVICE_ACCOUNT_FILE|GOOGLE_SERVICE_ACCOUNT_KEY|ENGINE_CACHE_GB)=' "$REPO/.env.local" > "$HOME_DIR/engine.env" )
   for key in SUPABASE_SECRET_KEY ANTHROPIC_API_KEY; do
     grep -q "^$key=" "$HOME_DIR/engine.env" || { echo "Missing $key in .env.local"; exit 1; }
   done
@@ -65,6 +65,7 @@ install() {
   <dict>
     <key>PATH</key><string>$FFMPEG_DIR:$(dirname "$NODE"):/usr/bin:/bin</string>
     <key>ENGINE_WORK_DIR</key><string>$HOME_DIR/work</string>
+    <key>ENGINE_CACHE_DIR</key><string>$HOME_DIR/cache</string>
   </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>

@@ -5,6 +5,7 @@ import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { config, db } from "./config.ts";
 import { contactSheets, download, probe } from "./media.ts";
+import { driveWorkingCopy, pruneCache } from "./drive.ts";
 import { parseStoredPlan, planEdit, validatePlan, type BrandKit, type Clip } from "./plan.ts";
 import { render } from "./render.ts";
 import { loadSkills } from "./skills.ts";
@@ -88,6 +89,7 @@ async function notify(videoId: string, title: string, body?: string) {
 export async function processJob(job: Job, planner: typeof planEdit = planEdit) {
   const dir = path.join(config.workDir, job.id);
   await mkdir(dir, { recursive: true });
+  const cachedFiles = new Set<string>();
   try {
     await progress(job.id, "Gathering the script, brand kit and footage");
     const { data: video } = await db.from("videos").select("*").eq("id", job.video_id).single();
@@ -96,7 +98,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       db.from("clients").select("name").eq("id", video.client_id).single(),
       db.from("brand_kits").select("*").eq("client_id", video.client_id).maybeSingle(),
       db.from("scripts").select("body, shot_list, status").eq("video_id", video.id).maybeSingle(),
-      db.from("footage").select("storage_path, file_name").eq("video_id", video.id).order("created_at"),
+      db.from("footage").select("storage_path, file_name, source, drive_file_id").eq("video_id", video.id).order("created_at"),
     ]);
     if (script?.status !== "approved") throw new Error("The script isn't approved yet.");
     if (!footage?.length) throw new Error("There's no footage on this video.");
@@ -104,9 +106,26 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     // Download and inspect every file; skip anything that isn't video.
     const clips: Clip[] = [];
     for (const [i, f] of footage.entries()) {
-      const file = path.join(dir, "footage", `${i}-${path.basename(f.storage_path)}`);
-      await progress(job.id, `Downloading footage ${i + 1} of ${footage.length}`);
-      await download("footage", f.storage_path, file);
+      let file: string;
+      if (f.source === "drive" && f.drive_file_id) {
+        const label = `Fetching ${f.file_name} from Google Drive (${i + 1} of ${footage.length})`;
+        await progress(job.id, label);
+        let shown = 0;
+        const copy = await driveWorkingCopy(f.drive_file_id, (fraction) => {
+          const pct = Math.floor(fraction * 100);
+          if (pct >= shown + 5) {
+            shown = pct;
+            void progress(job.id, `${label}: ${pct}%`);
+          }
+        });
+        if (copy.cached) log(job.id, `using the cached copy of ${f.file_name}`);
+        file = copy.file;
+        cachedFiles.add(file);
+      } else if (f.storage_path) {
+        file = path.join(dir, "footage", `${i}-${path.basename(f.storage_path)}`);
+        await progress(job.id, `Downloading footage ${i + 1} of ${footage.length}`);
+        await download("footage", f.storage_path, file);
+      } else continue;
       const p = await probe(file);
       if (!p.hasVideo || p.duration < 0.5) {
         log(job.id, `Skipping ${f.file_name}: not a usable video`);
@@ -250,5 +269,6 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     if (video) await notify(job.video_id, `Claude couldn't finish the edit: ${video.title}`, message.slice(0, 280));
   } finally {
     await rm(dir, { recursive: true, force: true });
+    await pruneCache(cachedFiles).catch((err) => log(job.id, `cache cleanup failed: ${err.message}`));
   }
 }

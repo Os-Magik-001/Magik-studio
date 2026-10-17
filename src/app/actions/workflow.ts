@@ -5,6 +5,7 @@ import { getViewer, requireRole } from "@/lib/auth";
 import { visibleVideo, visibleVersion } from "@/lib/access";
 import { notify } from "@/lib/notify";
 import { objectExists } from "@/lib/storage";
+import { DriveError, driveConfigured, parseDriveLink, resolveDriveVideos } from "@/lib/drive";
 import { draftScript, claudeConfigured } from "@/lib/claude";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -207,6 +208,51 @@ export async function registerFootage(input: {
   return done();
 }
 
+// Big camera files go to Google Drive; the editor pastes the file or folder link.
+export async function addDriveFootage(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const viewer = await requireRole("admin", "editor", "videographer");
+  const videoId = text(formData, "videoId");
+  const video = await visibleVideo(videoId);
+  if (!video) return fail("Video not found.");
+  if (!driveConfigured()) return fail("Google Drive isn't connected yet. Ask an admin to add the service account key.");
+  const id = parseDriveLink(text(formData, "link"));
+  if (!id) return fail("That doesn't look like a Google Drive link.");
+
+  let files;
+  try {
+    files = await resolveDriveVideos(id);
+  } catch (err) {
+    return fail(err instanceof DriveError ? err.message : "Couldn't reach Google Drive. Try again.");
+  }
+  if (!files.length) return fail("No video files in that folder.");
+
+  const admin = createAdminClient();
+  const { data: existing } = await admin.from("footage").select("drive_file_id").eq("video_id", videoId).not("drive_file_id", "is", null);
+  const known = new Set(existing?.map((f) => f.drive_file_id));
+  const fresh = files.filter((f) => !known.has(f.id));
+  if (!fresh.length) return done("Those files are already on this video.");
+
+  const { error } = await admin.from("footage").insert(
+    fresh.map((f) => ({
+      video_id: videoId,
+      source: "drive" as const,
+      drive_file_id: f.id,
+      drive_url: f.webViewLink,
+      file_name: f.name,
+      size_bytes: f.size,
+      content_type: f.mimeType,
+      uploaded_by: viewer.id,
+    })),
+  );
+  if (error) return fail("Couldn't add the footage.");
+
+  const summary = fresh.length === 1 ? fresh[0].name : `${fresh.length} files from Google Drive`;
+  await advance(videoId, "footage_in");
+  await notify({ videoId, editor: true, exclude: viewer.id }, { kind: "footage_in", title: `Footage arrived: ${video.title}`, body: summary });
+  refresh();
+  return done(fresh.length === 1 ? `Added ${fresh[0].name}.` : `Added ${fresh.length} files.`);
+}
+
 export async function deleteFootage(formData: FormData) {
   await requireRole("admin", "editor");
   const supabase = await createClient();
@@ -217,7 +263,8 @@ export async function deleteFootage(formData: FormData) {
     .maybeSingle();
   if (!data) return;
   const admin = createAdminClient();
-  await admin.storage.from("footage").remove([data.storage_path]);
+  // Drive footage stays in Drive; only the link is removed.
+  if (data.storage_path) await admin.storage.from("footage").remove([data.storage_path]);
   await admin.from("footage").delete().eq("id", data.id);
   refresh();
 }
@@ -235,7 +282,7 @@ export async function launchEdit(_: ActionResult, formData: FormData): Promise<A
     admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
     admin.from("scripts").select("status").eq("video_id", videoId).maybeSingle(),
   ]);
-  if (!footageCount) return fail("Upload the raw footage first.");
+  if (!footageCount) return fail("Add the raw footage first.");
   if (script?.status !== "approved") return fail("The client has to approve the script before the edit.");
 
   const { error } = await admin.from("edit_jobs").insert({

@@ -264,7 +264,8 @@ export async function deleteVideo(formData: FormData) {
     admin.from("footage").select("storage_path").eq("video_id", videoId),
     admin.from("versions").select("storage_path").eq("video_id", videoId),
   ]);
-  if (footage?.length) await admin.storage.from("footage").remove(footage.map((f) => f.storage_path));
+  const uploads = (footage ?? []).flatMap((f) => (f.storage_path ? [f.storage_path] : []));
+  if (uploads.length) await admin.storage.from("footage").remove(uploads);
   if (versions?.length) await admin.storage.from("versions").remove(versions.map((v) => v.storage_path));
   await createClient().then((s) => s.from("videos").delete().eq("id", videoId));
   redirect(`/clients/${video.client_id}`);

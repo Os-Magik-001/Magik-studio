@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Download, Trash2 } from "lucide-react";
+import { Download, ExternalLink, Trash2 } from "lucide-react";
 import { requireRole, displayName } from "@/lib/auth";
 import { visibleVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
+import { driveServiceEmail } from "@/lib/drive";
 import { claudeConfigured } from "@/lib/claude";
 import { FORMAT_LABEL, formatBytes, parseShotList } from "@/lib/workflow";
 import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClass } from "@/components/ui";
@@ -57,7 +58,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
       supabase.from("profiles").select("id, full_name, email, role").in("role", ["editor", "videographer"]),
     ]);
 
-  const footageUrls = await signedUrls("footage", (footage ?? []).map((f) => f.storage_path));
+  const footageUrls = await signedUrls("footage", (footage ?? []).flatMap((f) => (f.storage_path ? [f.storage_path] : [])));
   const openJobs = (jobs ?? []).filter((j) => j.status === "queued" || j.status === "running");
   const changeRounds = (versions ?? []).filter((v) => v.status === "changes_requested").length;
   const latest = versions?.[0];
@@ -301,14 +302,27 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                     {f.file_name}
                   </span>
                   <span className="text-muted">{formatBytes(f.size_bytes)}</span>
-                  {footageUrls.get(f.storage_path) && (
+                  {f.drive_url ? (
                     <a
-                      href={footageUrls.get(f.storage_path)}
+                      href={f.drive_url}
+                      target="_blank"
+                      rel="noreferrer"
                       className={buttonClass("ghost", "sm")}
-                      aria-label={`Download ${f.file_name}`}
+                      aria-label={`Open ${f.file_name} in Google Drive`}
                     >
-                      <Download size={14} />
+                      <ExternalLink size={14} />
                     </a>
+                  ) : (
+                    f.storage_path &&
+                    footageUrls.get(f.storage_path) && (
+                      <a
+                        href={footageUrls.get(f.storage_path)}
+                        className={buttonClass("ghost", "sm")}
+                        aria-label={`Download ${f.file_name}`}
+                      >
+                        <Download size={14} />
+                      </a>
+                    )
                   )}
                   <form action={deleteFootage}>
                     <input type="hidden" name="footageId" value={f.id} />
@@ -318,7 +332,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                   </form>
                 </div>
               ))}
-              <FootageDrop videoId={video.id} />
+              <FootageDrop videoId={video.id} driveEmail={driveServiceEmail()} />
             </div>
           </Card>
 

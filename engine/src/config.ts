@@ -15,6 +15,9 @@ export const config = {
   supabaseUrl: required("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"),
   secretKey: required("SUPABASE_SECRET_KEY"),
   workDir: process.env.ENGINE_WORK_DIR ?? path.join(os.tmpdir(), "magik-engine"),
+  // Working copies of Google Drive footage, kept between jobs so revisions don't fetch again.
+  cacheDir: process.env.ENGINE_CACHE_DIR ?? path.join(os.tmpdir(), "magik-engine-cache"),
+  cacheBytes: Number(process.env.ENGINE_CACHE_GB ?? 20) * 1024 ** 3,
   pollMs: Number(process.env.ENGINE_POLL_MS ?? 10_000),
   ffmpeg: process.env.FFMPEG_PATH ?? "ffmpeg",
   ffprobe: process.env.FFPROBE_PATH ?? "ffprobe",

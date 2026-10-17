@@ -13,6 +13,7 @@ import {
   draftScriptWithClaude,
   launchEdit,
   registerDraftVersion,
+  addDriveFootage,
   registerFootage,
   saveScript,
   sendScriptToClient,
@@ -192,27 +193,55 @@ export function ScheduleShootForm({ videoId }: { videoId: string }) {
   );
 }
 
-export function FootageDrop({ videoId }: { videoId: string }) {
+// Supabase Storage on the Free plan takes files up to 50 MB; bigger camera files go through Drive.
+const UPLOAD_LIMIT = 50 * 1024 * 1024;
+
+export function FootageDrop({ videoId, driveEmail }: { videoId: string; driveEmail: string | null }) {
   const router = useRouter();
   return (
-    <Uploader
-      bucket="footage"
-      folder={videoId}
-      multiple
-      label="Drop raw footage"
-      hint="Uploads resume if the connection drops"
-      onUploaded={async ({ path, file }) => {
-        const res = await registerFootage({
-          videoId,
-          path,
-          fileName: file.name,
-          size: file.size,
-          contentType: file.type,
-        });
-        if (!res.error) router.refresh();
-        return res;
-      }}
-    />
+    <div className="flex flex-col gap-4">
+      <DriveFootageForm videoId={videoId} driveEmail={driveEmail} />
+      <Uploader
+        bucket="footage"
+        folder={videoId}
+        multiple
+        label="Or drop small files here"
+        hint="Up to 50 MB each. Use Google Drive for camera files."
+        maxBytes={UPLOAD_LIMIT}
+        tooBig="Too big to upload here (over 50 MB). Put it in Google Drive and paste the link above."
+        onUploaded={async ({ path, file }) => {
+          const res = await registerFootage({
+            videoId,
+            path,
+            fileName: file.name,
+            size: file.size,
+            contentType: file.type,
+          });
+          if (!res.error) router.refresh();
+          return res;
+        }}
+      />
+    </div>
+  );
+}
+
+function DriveFootageForm({ videoId, driveEmail }: { videoId: string; driveEmail: string | null }) {
+  if (!driveEmail) {
+    return <p className="text-xs text-muted">Google Drive isn&apos;t connected yet, so only small uploads work.</p>;
+  }
+  return (
+    <ActionForm action={addDriveFootage} resetOnSuccess className="flex flex-col gap-2">
+      <input type="hidden" name="videoId" value={videoId} />
+      <Field
+        label="Add from Google Drive"
+        hint={`Paste a file or folder link. Share it with ${driveEmail} first (Viewer is enough).`}
+      >
+        <Input name="link" required placeholder="https://drive.google.com/drive/folders/…" />
+      </Field>
+      <SubmitButton pendingText="Checking Drive…" size="sm" className="self-start">
+        Add footage
+      </SubmitButton>
+    </ActionForm>
   );
 }
 

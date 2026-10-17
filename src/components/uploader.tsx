@@ -24,13 +24,16 @@ type Props = {
   multiple?: boolean;
   label: string;
   hint?: string;
+  // Files over this size are stopped before uploading, with `tooBig` as the reason.
+  maxBytes?: number;
+  tooBig?: string;
   // Called after the bytes are in Storage; records the row server-side.
   onUploaded: (args: { path: string; file: File }) => Promise<{ error?: string }>;
 };
 
 const safeName = (name: string) => name.normalize("NFKD").replace(/[^\w.-]+/g, "_").slice(-120);
 
-export function Uploader({ bucket, folder, accept = "video/*", multiple, label, hint, onUploaded }: Props) {
+export function Uploader({ bucket, folder, accept = "video/*", multiple, label, hint, maxBytes, tooBig, onUploaded }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +50,10 @@ export function Uploader({ bucket, folder, accept = "video/*", multiple, label, 
     for (const file of list) {
       const id = crypto.randomUUID();
       const path = `${folder}/${id}-${safeName(file.name)}`;
+      if (maxBytes && file.size > maxBytes) {
+        setItems((xs) => [...xs, { id, file, progress: 0, state: "error", error: tooBig ?? "This file is too big to upload here." }]);
+        continue;
+      }
       if (!token) {
         setItems((xs) => [...xs, { id, file, progress: 0, state: "error", error: "Your session expired. Reload the page." }]);
         continue;

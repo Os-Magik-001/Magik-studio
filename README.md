@@ -32,7 +32,9 @@ The workspace that runs Magik Studio: videographers bring in the footage, Claude
 A separate Node worker that turns raw footage into an edited draft. It runs anywhere with Node 24 and FFmpeg, not on Vercel.
 
 1. **Claims** the oldest queued `edit_jobs` row (one job per video at a time) and reports progress the editor sees live.
-2. **Gathers** the approved script and shot list, the brand kit and logo, and downloads the raw footage.
+2. **Gathers** the approved script and shot list, the brand kit and logo, and the raw footage.
+   - Small uploads come from Storage.
+   - Camera files come from Google Drive: ffmpeg reads them straight from Drive into a 4K working copy, so a 17 GB original never lands on disk. Working copies are cached under `ENGINE_CACHE_GB` (default 20) so revisions don't fetch again.
 3. **Watches** the footage: contact sheets of frames sampled across every clip. With whisper.cpp set up, it also transcribes speech into timed phrases.
 4. **Plans** the cut with Claude (`claude-opus-5-5`, adaptive thinking), producing an edit decision list:
    - shots, with transitions, speed changes, punch-ins and pushes, focus-point reframing and per-shot color fixes
@@ -46,6 +48,12 @@ A separate Node worker that turns raw footage into an edited draft. It runs anyw
    - keeps text clear of the app's own buttons and labels on vertical video
    - adds a branded end card
 6. **Hands off** the result as a new version in **editor check**, and notifies the editor. Failures show up on the video page with a plain reason and a Retry button.
+
+Footage from Google Drive needs a Google Cloud service account with the Drive API turned on.
+
+- **The app** (on Vercel) reads it from `GOOGLE_SERVICE_ACCOUNT_KEY`, the key JSON base64-encoded. Locally it can use `GOOGLE_SERVICE_ACCOUNT_FILE`, a path to the key file.
+- **The engine** reads either one.
+- **Sharing:** footage folders are shared with the service account's email as Viewer. They never need to be public.
 
 To set up transcription on a Mac:
 

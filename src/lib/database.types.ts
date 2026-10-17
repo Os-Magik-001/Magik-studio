@@ -248,30 +248,39 @@ export type Database = {
         Row: {
           content_type: string | null
           created_at: string
+          drive_file_id: string | null
+          drive_url: string | null
           file_name: string
           id: string
           size_bytes: number | null
-          storage_path: string
+          source: Database["public"]["Enums"]["footage_source"]
+          storage_path: string | null
           uploaded_by: string | null
           video_id: string
         }
         Insert: {
           content_type?: string | null
           created_at?: string
+          drive_file_id?: string | null
+          drive_url?: string | null
           file_name: string
           id?: string
           size_bytes?: number | null
-          storage_path: string
+          source?: Database["public"]["Enums"]["footage_source"]
+          storage_path?: string | null
           uploaded_by?: string | null
           video_id: string
         }
         Update: {
           content_type?: string | null
           created_at?: string
+          drive_file_id?: string | null
+          drive_url?: string | null
           file_name?: string
           id?: string
           size_bytes?: number | null
-          storage_path?: string
+          source?: Database["public"]["Enums"]["footage_source"]
+          storage_path?: string | null
           uploaded_by?: string | null
           video_id?: string
         }
@@ -614,6 +623,7 @@ export type Database = {
     Enums: {
       edit_job_source: "launch" | "editor_fix" | "client_changes"
       edit_job_status: "queued" | "running" | "done" | "failed" | "cancelled"
+      footage_source: "upload" | "drive"
       script_status:
         | "draft"
         | "client_review"
@@ -765,6 +775,7 @@ export const Constants = {
     Enums: {
       edit_job_source: ["launch", "editor_fix", "client_changes"],
       edit_job_status: ["queued", "running", "done", "failed", "cancelled"],
+      footage_source: ["upload", "drive"],
       script_status: [
         "draft",
         "client_review",
