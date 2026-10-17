@@ -6,6 +6,7 @@ import { run } from "./exec.ts";
 import { frameSize } from "./media.ts";
 import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
 import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
+import { motionAvailable, renderMotion } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 import { sfxFile, sfxLead } from "./sfx.ts";
 
@@ -220,8 +221,10 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     const seconds = shotLength(seg);
     args.push("-ss", seg.start.toFixed(3), "-t", (seg.end - seg.start).toFixed(3), "-i", clip.file);
     const v = input++;
-    filters.push(`[${v}:v]${shotVideo(seg, clip, W, H, plan.look)}[v${i}]`);
-    if (clip.hasAudio && seg.audio === "keep") filters.push(normA(`${v}:a`, `a${i}`, seconds, atempo(seg.speed)));
+    // A freeze repeats its first frame for the hold; any push still plays over it.
+    const freeze = seg.hold > 0 ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB,trim=duration=${seconds.toFixed(3)},` : "";
+    filters.push(`[${v}:v]${freeze}${shotVideo(seg, clip, W, H, plan.look)}[v${i}]`);
+    if (clip.hasAudio && seg.audio === "keep" && seg.hold === 0) filters.push(normA(`${v}:a`, `a${i}`, seconds, atempo(seg.speed)));
     else filters.push(normA(`${addSilence(seconds)}:a`, `a${i}`, seconds));
     pieces.push({ seconds, transition: seg.transition_in });
   });
@@ -371,6 +374,22 @@ export async function render(opts: RenderOptions) {
       input++;
       v = `vp${i}`;
     }
+  }
+  // 3D motion graphics sit over the picture and under captions and titles.
+  if (plan.motion.length) {
+    if (await motionAvailable()) {
+      const accent = opts.brand.colors.find((c, i) => i > 0 && isColor(c)) ?? plan.captions.highlight_color;
+      const layers = await renderMotion({ plan, clips: opts.clips, picture: base, W, H, fps: FPS, accent, workDir });
+      for (const [k, m] of layers.entries()) {
+        args.push("-framerate", String(FPS), "-i", path.join(m.dir, "%05d.png"));
+        filters.push(
+          `[${input}:v]format=rgba,setpts=PTS+${m.start.toFixed(4)}/TB[mo${k}]`,
+          `[${v}][mo${k}]overlay=0:0:eof_action=pass:format=auto:enable='between(t,${m.start.toFixed(4)},${m.end.toFixed(4)})'[vm${k}]`,
+        );
+        input++;
+        v = `vm${k}`;
+      }
+    } else console.warn("motion graphics skipped: no Chrome or Chromium found for rendering them");
   }
   if (hasLayer(gfx, "front")) {
     const layer = await renderLayer(gfx, "front", path.join(workDir, "gfx"));

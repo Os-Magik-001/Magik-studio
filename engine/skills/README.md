@@ -31,9 +31,10 @@ A skill with broken front matter is skipped, and the engine log says why. The lo
     - animated titles, hero words, serif accents, stacked or boxed headlines, and dripping series logos, optionally behind the person
   - **Graphics:** comment bubbles, follow buttons, progress bars, counters, emojis, drawn circles.
   - **Overlays:** B-roll cutaways over the voice, floating clip or screenshot cards.
+  - **Motion (3D):** freeze frames with character intros, cast lineups, kinetic 3D titles, 3D stat cards and 3D name plates (see motion-graphics).
   - **Sound:** a music bed from the library that dips under speech, synthesized sound effects.
   - **Ending:** a branded end card.
-  - **Not possible:** fully animated scenes such as 3D or app mock-ups.
+  - **Not possible yet:** fully animated scenes such as 3D product renders or app mock-ups.
 - **Use concrete numbers.** "Hold the product 1.5s after it lands" works; "let it breathe" doesn't.
 - **Expect to be overridden.** The brand kit, the script and the editor's notes always beat a skill.
 - **Keep each skill short and on one topic.** All matching skills go into every edit's instructions, so long skills cost tokens on every job.

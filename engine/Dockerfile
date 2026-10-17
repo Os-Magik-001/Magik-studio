@@ -14,6 +14,7 @@ COPY src ./src
 COPY skills ./skills
 COPY music ./music
 COPY assets ./assets
+COPY motion ./motion
 
 ENV NODE_ENV=production ENGINE_WORK_DIR=/tmp/magik-engine
 USER node

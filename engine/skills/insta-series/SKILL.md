@@ -26,6 +26,15 @@ Use this when the brief, the title or the editor's notes mention an episode, a s
 - **Filler episode:** music only, two lines of text ("sorry we have plans", then "the plan:") over a moody magenta scene.
 - **Borrowed clips:** one episode opens on a scene from a TV show. Flag borrowed footage in `open_questions` (rights), and never rely on it for the hook.
 
+**Dynamic first.** The series must feel as alive as top creator reels:
+- Something visible changes every 1–2s: a cut, a punch-in, a push, a new subtitle, a motion graphic.
+- Every shot longer than 2s gets a slow push (zoom 1.0 to 1.12, or 1.15 to 1.3), or a cut to a tighter framing halfway through. No shot sits static for more than 2s.
+- Use the motion templates (see motion-graphics):
+  - a `cast_lineup` opener after the hook
+  - a freeze-frame `character_intro` the first time each member matters
+  - a `title_3d` for the episode tease and for one big claim
+- Comic beats: on a punchline or an absurd claim, freeze for 1.5–2s (a `hold`) with a `hit`, and either a `title_3d` of 1–3 words ("SURE.", "BILLION?") or a `lower_third_3d` with a deadpan fact.
+
 **What to do better** (apply these by default)
 1. **Hook before the title.** Open on the episode's funniest or boldest line, 1.5–3s, with its subtitle; for example "Bro, what the f*ck?" or "We're going to destroy Facebook."
    - Then a short title sting, 1.5–2.5s: the group shot, if the footage has it, with a `drip` title "THE BOYZ\nEPISODE N", position `top`, animation `pop`. Never spend 5s on the intro.
@@ -39,7 +48,7 @@ Use this when the brief, the title or the editor's notes mention an episode, a s
 4. **Confessionals are the joke engine.**
    - Cut to a confessional right after a claim in the scene, so the character contradicts or mocks it ("He's always late, this bastard"). Then cut back to the scene.
    - Keep each confessional 2–5s.
-5. **Name the characters.** On each character's first appearance in an episode, add a `label` with their name and role, for 1.5–2s at `top` ("JOY BOY · the vision", "GHOST · the skills"). New viewers find out who's who.
+5. **Name the characters with motion, not labels.** On each character's first appearance in an episode, freeze on them and run a `character_intro` (name, role, 2–3 funny stats), with a `hit` and a `whoosh`. In later episodes, use a `lower_third_3d` instead. New viewers find out who's who, and it looks produced.
 6. **Subtitles in the series look.** Use the subtitle settings under "Text and sound" below.
 7. **End on a hook for the next episode,** never on a fade:
    - the cliffhanger line, or a `label` "EPISODE N+1 TOMORROW" for 1.5s
@@ -53,7 +62,8 @@ Use this when the brief, the title or the editor's notes mention an episode, a s
   - Write one caption item per spoken phrase: a faithful, natural English translation of 3–8 words, timed on the finished timeline from the phrase's first word to its last word plus about 0.2s.
   - Translate the comedy, not word for word. Keep English lines as spoken, and star swear words ("f*ck").
   - If the dialogue is already all English, use `auto` with preset `subtitle` instead.
-- **Logo:** `drip` style, red (the default), "THE BOYZ\nEPISODE N" on the title sting. Use `behind_subject` only when the members' heads overlap the lower part of the letters.
+- **Logo:** `drip` style, red (the default), "THE BOYZ\nEPISODE N" on the title sting or over the `cast_lineup`. Use `behind_subject` only when the members' heads overlap the lower part of the letters.
+- **Accent color:** red #E0222B for every motion template and the caption highlight.
 - **Reveal titles:**
   - For a new character or a big announcement: a `hero` with the name ("ERU"), `pop`, plus a `label` under it ("NEW CHARACTER"), with a `glitch` transition into the reveal shot.
   - For HUD-style info: a `label` with `typewriter` ("PROFILE LOADED · NAME: ERU · STATUS: CONFIRMED").

@@ -80,6 +80,7 @@ export const EXTRAS = {
   captions: DEFAULT_CAPTIONS,
   graphics: [],
   overlays: [],
+  motion: [],
   music: { track: null, start: 0, volume: "low" },
   sfx: [],
 } satisfies Partial<EditPlan>;

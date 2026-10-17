@@ -193,7 +193,7 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
   const { W, H, plan, brand } = input;
   const c = plan.captions;
   const base = Math.min(W, H);
-  const size = base * { small: 0.052, medium: 0.068, large: 0.088 }[c.size] * (c.preset === "minimal" ? 0.8 : c.preset === "subtitle" ? 0.72 : 1);
+  const size = base * { small: 0.052, medium: 0.068, large: 0.088 }[c.size] * (c.preset === "minimal" ? 0.8 : c.preset === "subtitle" ? 0.82 : 1);
   const highlights = new Set(c.highlight_words.flatMap((w) => w.split(/\s+/)).map(bare));
   const spokenIdx = screen.words.findLastIndex((w) => w.start <= t);
   const builds = c.preset === "bold_pop" || c.preset === "subtitle";

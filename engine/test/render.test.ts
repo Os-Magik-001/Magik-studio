@@ -259,6 +259,37 @@ test("series episode: translated subtitles, a dripping logo and a glitch transit
   }
 });
 
+test("freeze frames hold a still and motion graphics render over it", async (t) => {
+  const { motionAvailable } = await import("../src/motion.ts");
+  const plan: EditPlan = {
+    ...EXTRAS,
+    look: "natural",
+    summary: "motion",
+    on_screen_text: [],
+    segments: [shot("C1", 0, 1.5, "talk"), shot("C1", 1.4, 1.5, "freeze", { hold: 2 }), shot("C3", 0, 1.5, "after")],
+    motion: [
+      { template: "character_intro", start: 1.5, end: 3.5, title: "GHOST", subtitle: "the ads guy", lines: ["ADS|96", "SLEEP|8"], people: [], accent: "#E0222B", position: "center" },
+      { template: "title_3d", start: 3.5, end: 5, title: "EPISODE 2", subtitle: "tomorrow", lines: [], people: [], accent: null, position: "top" },
+    ],
+    end_card: { include: false, headline: null, seconds: 0, transition: CUT },
+    open_questions: [],
+  };
+  const { plan: valid, length } = validatePlan(plan, clips);
+  assert.equal(valid.segments[1].hold, 2);
+  assert.ok(Math.abs(valid.segments[1].end - valid.segments[1].start - 0.1) < 0.001, "a freeze only needs one frame");
+  assert.ok(Math.abs(length - 5) < 0.01, `length ${length}`);
+  assert.equal(valid.motion.length, 2);
+  if (!(await motionAvailable())) return t.skip("no Chrome to render motion graphics");
+  const output = path.join(dir, "motion.mp4");
+  await render({ plan: valid, clips, aspect: "9:16", brand: { colors: [], fonts: [], logoFile: null }, workDir: path.join(dir, "motion"), output });
+  const out = await probe(output);
+  assert.ok(Math.abs(out.duration - length) < 0.25, `duration ${out.duration} vs planned ${length}`);
+  if (process.env.KEEP_RENDER) {
+    const { copyFile } = await import("node:fs/promises");
+    await copyFile(output, process.env.KEEP_RENDER.replace(/(\.mp4)?$/, "-motion.mp4"));
+  }
+});
+
 test("timeline words follow the cut, speed and muting", () => {
   const words = [{ text: "a", start: 1.0, end: 1.2 }, { text: "b", start: 2.0, end: 2.2 }, { text: "c", start: 3.5, end: 3.7 }];
   const withWords = clips.map((c) => (c.id === "C1" ? { ...c, transcript: [{ start: 1, end: 3.7, text: "a b c", words }] } : c));

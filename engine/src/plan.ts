@@ -37,6 +37,10 @@ const Segment = z.object({
     .object({ brightness: z.number(), contrast: z.number(), saturation: z.number() })
     .describe("Corrections for this shot only. Neutral is brightness 0, contrast 1, saturation 1. Brightness -0.3 to 0.3, contrast 0.7 to 1.4, saturation 0 to 2."),
   transition_in: Transition.describe("How this shot comes in from the previous one. Ignored on the first shot."),
+  hold: z
+    .number()
+    .default(0)
+    .describe("Freeze frame: above 0, the frame at `start` holds still for this many seconds (end and speed are ignored, the clip's sound is silent, music carries on). Put a character_intro or a comic freeze beat over it; 1.5 to 4. 0 = a normal moving shot."),
 });
 
 type Shot = z.infer<typeof Segment>;
@@ -49,6 +53,7 @@ export const PLAIN_SHOT = {
   focus: { x: 0.5, y: 0.5 },
   adjust: { brightness: 0, contrast: 1, saturation: 1 },
   transition_in: { type: "cut", seconds: 0 },
+  hold: 0,
 } satisfies Omit<Shot, "clip" | "start" | "end" | "purpose">;
 
 export const TEXT_STYLES = ["caption", "title", "hero", "serif", "stacked", "boxed", "label", "drip"] as const;
@@ -56,6 +61,7 @@ export const TEXT_ANIMATIONS = ["none", "pop", "fade", "slide_up", "typewriter"]
 export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal", "subtitle"] as const;
 export const GRAPHICS = ["comment_cta", "follow_pill", "progress_bar", "counter", "emoji", "circle"] as const;
 export const SFX = ["whoosh", "pop", "hit", "riser", "click", "ding"] as const;
+export const MOTION_TEMPLATES = ["character_intro", "cast_lineup", "title_3d", "stat_card", "lower_third_3d"] as const;
 
 const Hex = z.string().describe("A hex color like #FFD84D");
 
@@ -126,6 +132,32 @@ const Overlay = z.object({
   tilt: z.number().describe("card: rotation in degrees, -10 to 10 (a few degrees looks hand-placed)"),
 });
 
+const Person = z.object({
+  clip: z.string().describe("Clip id with a clear frame of this person"),
+  time: z.number().describe("Seconds into that clip: a frame where the person is sharp, facing camera, whole head and shoulders in frame"),
+  focus: z.object({ x: z.number(), y: z.number() }).describe("Where the person is in the source frame, 0 to 1"),
+  name: z.string().describe("Display name, e.g. GHOST"),
+  role: z.string().describe("Short role line, e.g. 'the ads guy'"),
+});
+
+const Motion = z.object({
+  template: z
+    .enum(MOTION_TEMPLATES)
+    .describe(
+      "3D motion graphics. character_intro = full-frame freeze intro: the frame under it freezes, the person is cut out and pops forward in color over a darkened, tinted background, a giant name sits behind them and a 3D card flips in with the role and stat bars (put it over a `hold` shot, 2.5 to 4 s); cast_lineup = full-frame 3D fan of cards, one cut-out per person with name and role, for an opener or a 'meet the team' beat (2.5 to 4 s, 2 to 6 people); title_3d = an extruded 3D title that slams in with camera shake and glow, over the picture (1.5 to 3 s); stat_card = a floating, slowly turning 3D card with a big number counting up and a label, for proof (2 to 3 s); lower_third_3d = a 3D name plate that swings in beside a person while they keep talking, no freeze (2 to 3.5 s)",
+    ),
+  start: z.number().describe("Seconds on the finished timeline"),
+  end: z.number(),
+  title: z.string().describe("character_intro/lower_third_3d: the name; title_3d: 1 to 4 words; stat_card: the number or 'from|to' like '0|1000000'; cast_lineup: an optional header like 'MEET THE BOYZ'"),
+  subtitle: z.string().describe("character_intro/lower_third_3d: the role; title_3d: an optional small line; stat_card: the label; cast_lineup: optional"),
+  lines: z
+    .array(z.string())
+    .describe("character_intro only: 0 to 3 stat lines, 'LABEL|0-100' draws an animated bar (e.g. 'VISION|98'), plain text draws a line (e.g. 'Sleeps 3 h a night')"),
+  people: z.array(Person).describe("cast_lineup: the people to show (2 to 6). Other templates: empty (character_intro cuts the person out of the frozen frame under it)."),
+  accent: Hex.nullable().describe("Accent color for glows, bars and card edges; null = the brand's accent or the caption highlight color"),
+  position: z.enum(["top", "center", "bottom"]).describe("title_3d, stat_card and lower_third_3d: where on screen. Full-frame templates ignore it."),
+});
+
 const Music = z.object({
   track: z.string().nullable().describe("Track id from the music library, or null for no music"),
   start: z.number().describe("Seconds into the track to start from (a strong section or the first beat)"),
@@ -145,6 +177,7 @@ export const EditPlan = z.object({
   on_screen_text: z.array(OnScreenText).describe("Titles and other text you place. In captions auto mode, don't add caption items: the engine writes those."),
   graphics: z.array(Graphic),
   overlays: z.array(Overlay),
+  motion: z.array(Motion).default([]).describe("3D motion graphics templates: the dynamic look (freeze-frame character intros, 3D cards, kinetic titles)."),
   music: Music,
   sfx: z.array(Sfx).describe("Sound effects, sparingly: a few per video, on the moments that deserve them"),
   end_card: z.object({
@@ -182,6 +215,7 @@ export function parseStoredPlan(raw: unknown): EditPlan | null {
     captions: DEFAULT_CAPTIONS,
     graphics: [],
     overlays: [],
+    motion: [],
     music: { track: null, start: 0, volume: "low" },
     sfx: [],
     ...p,
@@ -197,7 +231,7 @@ export function parseStoredPlan(raw: unknown): EditPlan | null {
 
 // ---------------------------------------------------------------- the timeline
 
-export const shotLength = (seg: Pick<Shot, "start" | "end" | "speed">) => (seg.end - seg.start) / seg.speed;
+export const shotLength = (seg: Pick<Shot, "start" | "end" | "speed"> & { hold?: number }) => (seg.hold && seg.hold > 0 ? seg.hold : (seg.end - seg.start) / seg.speed);
 export const overlapOf = (t: Shot["transition_in"]) => (t.type === "cut" ? 0 : t.seconds);
 
 // Where everything sits on the finished video: speed changes stretch shots, and
@@ -279,6 +313,7 @@ Your tools, beyond choosing shots:
 - Text you place: titles, hero words, serif accents, stacked headlines, boxed headers, labels and dripping series logos, each with an entrance animation, an optional accent word, and optionally drawn behind the person.
 - Graphics: comment call-to-action bubbles, follow buttons, progress bars, counters, emojis, hand-drawn circles.
 - Overlays: B-roll that covers the picture while the voice continues (cutaway), and floating cards of other clips or stills.
+- Motion: 3D motion graphics templates (freeze-frame character intros over a held frame, 3D cast cards, kinetic 3D titles, 3D stat cards, 3D name plates). They make the edit feel dynamic and premium.
 - Sound: a music bed from the library that dips under speech, and sound effects on key moments.
 A hard cut with no moves is the default; every move, graphic and sound should have a reason you could tell the editor.
 
@@ -520,10 +555,12 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
       continue;
     }
     const words = seg.audio === "keep" ? (clip.transcript ?? []).flatMap((l) => l.words ?? []) : [];
-    const start = clamp(snapToWords(seg.start, words), 0, clip.duration);
-    const end = clamp(snapToWords(seg.end, words), 0, clip.duration);
-    const speed = clamp(seg.speed, 0.25, 4, 1);
-    const length = (end - start) / speed;
+    const hold = clamp(seg.hold ?? 0, 0, 6, 0);
+    const start = clamp(snapToWords(seg.start, words), 0, Math.max(0, clip.duration - (hold > 0 ? 0.1 : 0)));
+    // A freeze needs just its one frame from the clip.
+    const end = hold > 0 ? Math.min(clip.duration, start + 0.1) : clamp(snapToWords(seg.end, words), 0, clip.duration);
+    const speed = hold > 0 ? 1 : clamp(seg.speed, 0.25, 4, 1);
+    const length = hold > 0 ? hold : (end - start) / speed;
     if (length < 0.3) {
       problems.push(`Dropped a ${length.toFixed(2)}s shot from ${clip.id}.`);
       continue;
@@ -538,6 +575,7 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
       start: round(start),
       end: round(end),
       speed: round(speed),
+      hold: round(hold),
       zoom: { start: round(clamp(seg.zoom.start, 1, 2.5, 1)), end: round(clamp(seg.zoom.end, 1, 2.5, 1)) },
       focus: { x: round(clamp(seg.focus.x, 0, 1, 0.5)), y: round(clamp(seg.focus.y, 0, 1, 0.5)) },
       adjust: {
@@ -633,8 +671,27 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
   if (plan.music.track && !music.track) problems.push(`Dropped unknown music track ${plan.music.track}.`);
   const sfx = plan.sfx.filter((x) => x.at >= 0 && x.at < length).slice(0, 24).map((x) => ({ ...x, at: round(x.at) }));
 
+  const motion: EditPlan["motion"] = [];
+  for (const m of plan.motion ?? []) {
+    const people = m.people.flatMap((p) => {
+      const clip = byId.get(p.clip.trim().toUpperCase());
+      if (!clip) {
+        problems.push(`Dropped a ${m.template} person from unknown clip ${p.clip}.`);
+        return [];
+      }
+      return [{ ...p, clip: clip.id, time: round(clamp(p.time, 0, Math.max(0, clip.duration - 0.05))), focus: { x: round(clamp(p.focus.x, 0, 1, 0.5)), y: round(clamp(p.focus.y, 0, 1, 0.5)) }, name: p.name.trim(), role: p.role.trim() }];
+    });
+    const item = { ...span(m), title: m.title.trim(), subtitle: m.subtitle.trim(), lines: m.lines.map((l) => l.trim()).filter(Boolean).slice(0, 3), people: people.slice(0, 6), accent: hex(m.accent) };
+    if (item.end - item.start < 0.8) continue;
+    if (m.template === "cast_lineup" && item.people.length < 1) {
+      problems.push("Dropped a cast_lineup with no usable people.");
+      continue;
+    }
+    motion.push(item);
+  }
+
   return {
-    plan: { ...fixed, captions, on_screen_text, graphics, overlays, music, sfx } satisfies EditPlan,
+    plan: { ...fixed, captions, on_screen_text, graphics, overlays, motion, music, sfx } satisfies EditPlan,
     problems,
     length: round(length),
   };
@@ -646,7 +703,7 @@ export function timelineWords(plan: EditPlan, clips: Clip[]) {
   const out: { text: string; start: number; end: number }[] = [];
   for (const shot of timelineOf(plan).shots) {
     const { seg } = shot;
-    if (seg.audio !== "keep") continue;
+    if (seg.audio !== "keep" || seg.hold > 0) continue;
     for (const line of byId.get(seg.clip)?.transcript ?? []) {
       for (const w of line.words ?? []) {
         if (w.start < seg.start - 0.02 || w.start >= seg.end) continue;
