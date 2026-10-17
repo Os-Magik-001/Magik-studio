@@ -278,12 +278,9 @@ export async function launchEdit(_: ActionResult, formData: FormData): Promise<A
   if (!video) return fail("Video not found.");
 
   const admin = createAdminClient();
-  const [{ count: footageCount }, { data: script }] = await Promise.all([
-    admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
-    admin.from("scripts").select("status").eq("video_id", videoId).maybeSingle(),
-  ]);
+  // For now an edit can start before the client approves the script (or without one).
+  const { count: footageCount } = await admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId);
   if (!footageCount) return fail("Add the raw footage first.");
-  if (script?.status !== "approved") return fail("The client has to approve the script before the edit.");
 
   const { error } = await admin.from("edit_jobs").insert({
     video_id: videoId,

@@ -100,7 +100,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       db.from("scripts").select("body, shot_list, status").eq("video_id", video.id).maybeSingle(),
       db.from("footage").select("storage_path, file_name, source, drive_file_id").eq("video_id", video.id).order("created_at"),
     ]);
-    if (script?.status !== "approved") throw new Error("The script isn't approved yet.");
+    // For now Claude can edit before the script is approved, or with no script (brief and footage only).
     if (!footage?.length) throw new Error("There's no footage on this video.");
 
     // Download and inspect every file; skip anything that isn't video.
@@ -144,7 +144,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       clip.sheets = await contactSheets(clip.file, path.join(dir, "sheets", clip.id), interval);
       if (clip.hasAudio && (await transcriptionAvailable())) {
         await progress(job.id, `Transcribing ${clip.id}`);
-        clip.transcript = await transcribe(clip.file, dir, `${client?.name ?? ""}. ${video.title}. ${script.body}`);
+        clip.transcript = await transcribe(clip.file, dir, `${client?.name ?? ""}. ${video.title}. ${script?.body ?? ""}`);
       }
     }
 
@@ -182,7 +182,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     log(job.id, `skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
 
     await progress(job.id, "Claude is planning the cut");
-    const shots = Array.isArray(script.shot_list)
+    const shots = Array.isArray(script?.shot_list)
       ? (script.shot_list as { text?: string }[]).map((s) => s?.text ?? "").filter(Boolean)
       : [];
     const { plan: raw, usage } = await planner({
@@ -191,7 +191,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       format: video.format.replace("_", " "),
       aspect: video.aspect,
       brief: video.brief,
-      script: script.body,
+      script: script?.body ?? "",
       shots,
       brandKit,
       instructions: job.instructions,

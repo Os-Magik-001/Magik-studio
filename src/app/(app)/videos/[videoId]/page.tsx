@@ -145,13 +145,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
               {openJobs.length === 0 && (
                 <LaunchEditForm
                   videoId={video.id}
-                  disabledReason={
-                    !footage?.length
-                      ? "Upload the raw footage first."
-                      : scriptStatus !== "approved"
-                        ? "The client has to approve the script first."
-                        : undefined
-                  }
+                  disabledReason={!footage?.length ? "Add the raw footage first." : undefined}
                 />
               )}
               {(jobs ?? []).length > 0 && (
