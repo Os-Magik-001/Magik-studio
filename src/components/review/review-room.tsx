@@ -449,9 +449,11 @@ function Stage({
         {url ? (
           <video
             ref={videoRef}
-            src={url}
+            // The media fragment makes Safari decode and paint the first frame
+            // instead of a black box until playback starts.
+            src={url.includes("#") ? url : `${url}#t=0.001`}
             playsInline
-            preload="metadata"
+            preload="auto"
             muted={muted}
             className="h-full w-full"
             onLoadedMetadata={(e) => {
