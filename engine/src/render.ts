@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { config } from "./config.ts";
@@ -383,8 +383,8 @@ export async function render(opts: RenderOptions) {
       if (layers.length) {
         // One input for every graphic: separate image-sequence inputs stall ffmpeg's overlay
         // sync now and then (a graphic froze on its 8th frame), a single timed list never does.
-        args.push("-f", "concat", "-safe", "0", "-i", await motionTrack(layers, W, H, length, workDir));
-        filters.push(`[${input}:v]fps=${FPS},format=rgba[mo]`, `[${v}][mo]overlay=0:0:eof_action=pass:format=auto[vm]`);
+        args.push("-framerate", String(FPS), "-i", await motionTrack(layers, W, H, length, workDir));
+        filters.push(`[${input}:v]format=rgba[mo]`, `[${v}][mo]overlay=0:0:eof_action=pass:format=auto[vm]`);
         input++;
         v = "vm";
       }
@@ -438,27 +438,25 @@ export async function render(opts: RenderOptions) {
   await run(config.ffmpeg, args);
 }
 
-// Every motion graphic on one timeline: their frames at 1/FPS each, with a transparent
-// frame filling the gaps, as a concat list. Overlapping graphics: the later one starts
-// where the earlier one ends.
+// Every motion graphic on one timeline, as an image sequence with exactly one image per
+// output frame (links to the graphics' frames, a transparent image in between). A single
+// input at the edit's own frame rate keeps every graphic frame-accurate; stitched stills
+// came out on ffmpeg's 25 fps image clock and drifted.
 async function motionTrack(layers: MotionLayer[], W: number, H: number, length: number, workDir: string) {
+  const dir = path.join(workDir, "motion-track");
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(dir, { recursive: true });
   const blank = path.join(workDir, "motion-blank.png");
   await writeFile(blank, await createCanvas(W, H).encode("png"));
-  const q = (f: string) => `file '${f.replace(/'/g, "'\\''")}'`;
-  const lines: string[] = [];
-  let t = 0;
+  const total = Math.ceil(length * FPS);
+  const frames: string[] = new Array(total).fill(blank);
+  // Later graphics win where two overlap.
   for (const m of [...layers].sort((a, b) => a.start - b.start)) {
-    if (m.start - t > 0.5 / FPS) lines.push(q(blank), `duration ${(m.start - t).toFixed(6)}`);
-    const skip = Math.max(0, Math.round((t - m.start) * FPS));
-    for (let f = skip; f < m.frames; f++) lines.push(q(path.join(m.dir, `${String(f).padStart(5, "0")}.png`)), `duration ${(1 / FPS).toFixed(6)}`);
-    t = Math.max(t, m.start + m.frames / FPS);
+    const first = Math.round(m.start * FPS);
+    for (let f = 0; f < m.frames && first + f < total; f++) frames[first + f] = path.join(m.dir, `${String(f).padStart(5, "0")}.png`);
   }
-  if (length - t > 0.5 / FPS) lines.push(q(blank), `duration ${(length - t).toFixed(6)}`);
-  // The concat demuxer needs the last image repeated to honor its duration.
-  lines.push(q(blank));
-  const list = path.join(workDir, "motion.txt");
-  await writeFile(list, lines.join("\n"));
-  return list;
+  await Promise.all(frames.map((src, i) => symlink(src, path.join(dir, `${String(i).padStart(6, "0")}.png`))));
+  return path.join(dir, "%06d.png");
 }
 
 // The music's level over the timeline: the whole video at one level, or only inside
