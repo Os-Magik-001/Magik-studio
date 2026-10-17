@@ -34,10 +34,13 @@ stop() {
 install() {
   [ -n "$NODE" ] || { echo "node is not installed"; exit 1; }
   [ -x "$FFMPEG_DIR/ffmpeg" ] || { echo "ffmpeg is not installed"; exit 1; }
-  [ -d "$REPO/engine/node_modules" ] || (cd "$REPO/engine" && pnpm install --ignore-workspace)
+  command -v pnpm >/dev/null || { echo "pnpm is not installed"; exit 1; }
 
   mkdir -p "$HOME_DIR"
-  rsync -a --delete --exclude test --exclude scripts --exclude .env "$REPO/engine/" "$HOME_DIR/engine/"
+  # The service gets its own packages, installed in place from the engine's lockfile:
+  # packages linked inside the repo can point outside the engine folder.
+  rsync -a --delete --exclude test --exclude scripts --exclude .env --exclude node_modules "$REPO/engine/" "$HOME_DIR/engine/"
+  (cd "$HOME_DIR/engine" && pnpm install --prod --frozen-lockfile --ignore-workspace --config.confirmModulesPurge=false) || { echo "Couldn't install the engine's packages"; exit 1; }
 
   # Private env file with just what the engine needs.
   ( umask 077

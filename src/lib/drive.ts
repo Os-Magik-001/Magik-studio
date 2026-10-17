@@ -96,8 +96,13 @@ const toFile = (f: RawFile): DriveFile => ({
 
 const isVideo = (f: RawFile) => f.mimeType.startsWith("video/") || VIDEO_EXT.test(f.name);
 
+// Folder names camera cards use, which split one shoot into several folders.
+const CAMERA_FOLDER = /^(dcim|private|avchd|bdmv|stream|clip|clips|m4root|xdroot|sub|contents|video|\d{3}[a-z_]*|[a-z]*\d{3,})$/i;
+
 // The video files behind a link: the file itself, or every video in the folder
-// and its subfolders (camera cards nest clips several folders deep).
+// and its subfolders (camera cards nest clips several folders deep). A folder that
+// holds several projects (Episode 1, Episode 2…) is refused, so one video never
+// receives another video's footage.
 export async function resolveDriveVideos(id: string, limit = 200): Promise<DriveFile[]> {
   let root = await api<RawFile>(`files/${id}`, { fields: FIELDS });
   if (root.mimeType === SHORTCUT && root.shortcutDetails) root = await api<RawFile>(`files/${root.shortcutDetails.targetId}`, { fields: FIELDS });
@@ -108,7 +113,8 @@ export async function resolveDriveVideos(id: string, limit = 200): Promise<Drive
   }
 
   const found: DriveFile[] = [];
-  const queue: { id: string; depth: number }[] = [{ id: root.id, depth: 0 }];
+  const queue: { id: string; depth: number; top: string | null }[] = [{ id: root.id, depth: 0, top: null }];
+  const tops = new Set<string>();
   while (queue.length && found.length < limit) {
     const folder = queue.shift()!;
     let pageToken: string | undefined;
@@ -122,11 +128,21 @@ export async function resolveDriveVideos(id: string, limit = 200): Promise<Drive
         ...(pageToken ? { pageToken } : {}),
       });
       for (const f of page.files) {
-        if (f.mimeType === FOLDER && folder.depth < 5) queue.push({ id: f.id, depth: folder.depth + 1 });
-        else if (isVideo(f)) found.push(toFile(f));
+        if (f.mimeType === FOLDER && folder.depth < 5) queue.push({ id: f.id, depth: folder.depth + 1, top: folder.top ?? f.name });
+        else if (isVideo(f)) {
+          found.push(toFile(f));
+          if (folder.top) tops.add(folder.top);
+        }
       }
       pageToken = page.nextPageToken;
     } while (pageToken && found.length < limit);
+  }
+  const projects = [...tops].filter((name) => !CAMERA_FOLDER.test(name.trim()));
+  if (projects.length >= 2) {
+    const names = projects.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    throw new DriveError(
+      `This folder holds ${names.length} folders of clips (${names.slice(0, 4).join(", ")}${names.length > 4 ? "…" : ""}). Paste the link of the one for this video.`,
+    );
   }
   return found.slice(0, limit);
 }
