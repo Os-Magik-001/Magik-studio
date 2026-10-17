@@ -38,3 +38,23 @@ test("reaction shots keep their silence, and titles move with the cut", () => {
   const shift = timelineOf(before).shots[1].start - timelineOf(out).shots[1].start;
   assert.ok(Math.abs(out.on_screen_text[0].start - (3.5 - shift)) < 0.02, "the title moved with its shot");
 });
+
+test("full-frame intros lock onto their freeze, whatever time they were given", async () => {
+  const { anchorMotion } = await import("../src/tighten.ts");
+  const c = clip("C1", words([["Salut.", 0.2, 0.6]]));
+  const p = plan([shot("C1", 0, 2, "line"), shot("C1", 1.9, 2, "freeze", { hold: 2.2 }), shot("C1", 2, 3, "after")], {
+    motion: [{ template: "character_intro", start: 1.4, end: 3.6, title: "GHOST", subtitle: "", lines: [], people: [], accent: null, position: "center" }],
+  });
+  const out = anchorMotion(p);
+  assert.deepEqual([out.motion[0].start, out.motion[0].end], [2, 4.2]);
+  void c;
+});
+
+test("an end lineup goes on the end freeze, not on a short comic freeze next to it", async () => {
+  const { anchorMotion } = await import("../src/tighten.ts");
+  const p = plan([shot("C1", 0, 2, "line"), shot("C1", 1.9, 2, "comic freeze", { hold: 1 }), shot("C1", 1.9, 2, "end freeze", { hold: 2.4 })], {
+    motion: [{ template: "cast_lineup", start: 2.6, end: 5.0, title: "THE BOYZ", subtitle: "", lines: [], people: [], accent: null, position: "center" }],
+  });
+  const out = anchorMotion(p);
+  assert.deepEqual([out.motion[0].start, out.motion[0].end], [3, 5.4]);
+});

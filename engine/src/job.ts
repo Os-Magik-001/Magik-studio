@@ -11,7 +11,7 @@ import { parseStoredPlan, planEdit, timelineOf, timelineWords, validatePlan, typ
 import { render, type Brand } from "./render.ts";
 import { reviewRender } from "./review.ts";
 import { loadSkills } from "./skills.ts";
-import { tighten } from "./tighten.ts";
+import { anchorMotion, tighten } from "./tighten.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
 export const log = (job: string | null, msg: string) =>
@@ -226,7 +226,8 @@ function finish(checked: ReturnType<typeof validatePlan>, clips: Clip[], note: N
   checked.problems.forEach((p) => note(`plan fix: ${p}`));
   const tight = tighten(checked.plan, clips);
   if (tight.removed) note(`trim pass: removed ${tight.removed.toFixed(1)}s (${tight.notes.length ? tight.notes.join("; ") : "heads and tails"})`);
-  return { plan: tight.plan, length: timelineOf(tight.plan).length };
+  const plan = anchorMotion(tight.plan);
+  return { plan, length: timelineOf(plan).length };
 }
 
 // ---------------------------------------------------------------- one job

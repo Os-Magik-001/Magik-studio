@@ -137,3 +137,42 @@ const round = (n: number) => Math.round(n * 100) / 100;
 
 // How long the cut would be with every shot at its own length (for logs and tests).
 export const totalLength = (plan: EditPlan) => plan.segments.reduce((a, s) => a + shotLength(s), 0);
+
+// Full-frame motion templates belong on a freeze: lock each one onto the nearest hold
+// shot, so neither Claude's arithmetic nor the trim pass can leave it half off.
+const FULL_FRAME = new Set(["character_intro", "cast_lineup"]);
+export function anchorMotion(plan: EditPlan): EditPlan {
+  const holds = timelineOf(plan).shots.filter((s) => s.seg.hold > 0);
+  const used = new Set<number>();
+  const motion = plan.motion.map((m) => {
+    if (!FULL_FRAME.has(m.template) || !holds.length) return m;
+    const mid = (m.start + m.end) / 2;
+    // Closest in time and in length: an end lineup goes on the end freeze, not a short comic one.
+    const cost = (h: (typeof holds)[number]) => Math.abs((h.start + h.end) / 2 - mid) + Math.abs(h.end - h.start - (m.end - m.start));
+    let best = -1;
+    holds.forEach((h, i) => {
+      if (used.has(i) || Math.abs((h.start + h.end) / 2 - mid) > 2.5) return;
+      if (best < 0 || cost(h) < cost(holds[best])) best = i;
+    });
+    if (best < 0) return m;
+    used.add(best);
+    return { ...m, start: round(holds[best].start), end: round(holds[best].end) };
+  });
+  // A freeze has no speech: when the music plays in sections, it plays under the freezes too.
+  const music = plan.music;
+  if (!music.track || !music.sections?.length) return { ...plan, motion };
+  const sections = [...music.sections];
+  for (const m of motion.filter((x) => FULL_FRAME.has(x.template))) {
+    const covered = sections.some((sec) => sec.start <= m.start + 0.05 && sec.end >= m.end - 0.05);
+    if (!covered) sections.push({ start: round(Math.max(0, m.start - 0.15)), end: round(m.end + 0.1), volume: "medium" });
+  }
+  sections.sort((a, b) => a.start - b.start);
+  // Overlapping sections merge into one.
+  const merged: typeof sections = [];
+  for (const sec of sections) {
+    const last = merged.at(-1);
+    if (last && sec.start <= last.end) last.end = Math.max(last.end, sec.end);
+    else merged.push({ ...sec });
+  }
+  return { ...plan, motion, music: { ...music, sections: merged } };
+}

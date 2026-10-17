@@ -119,8 +119,10 @@ export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
     const assets: Record<string, unknown> = {};
     if (item.template === "character_intro") {
       // The frame the edit freezes on, straight from the picture pass, so they match exactly.
+      // Taken from the middle of the freeze: its first frame can still be the shot before,
+      // after frame rounding.
       const frame = path.join(assetsDir, `m${i}-frame.png`);
-      await still(picture, item.start + 0.5 / fps, frame);
+      await still(picture, (item.start + item.end) / 2, frame);
       assets.frame = `/assets/${path.basename(frame)}`;
       assets.cutout = `/assets/${path.basename(await cutout(frame, W, H, assetsDir, `m${i}`))}`;
       member++;

@@ -6,7 +6,7 @@ import { run } from "./exec.ts";
 import { frameSize } from "./media.ts";
 import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
 import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
-import { motionAvailable, renderMotion } from "./motion.ts";
+import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 import { sfxFile, sfxLead } from "./sfx.ts";
 
@@ -380,14 +380,13 @@ export async function render(opts: RenderOptions) {
     if (await motionAvailable()) {
       const accent = opts.brand.colors.find((c, i) => i > 0 && isColor(c)) ?? plan.captions.highlight_color;
       const layers = await renderMotion({ plan, clips: opts.clips, picture: base, W, H, fps: FPS, accent, workDir });
-      for (const [k, m] of layers.entries()) {
-        args.push("-framerate", String(FPS), "-i", path.join(m.dir, "%05d.png"));
-        filters.push(
-          `[${input}:v]format=rgba,setpts=PTS+${m.start.toFixed(4)}/TB[mo${k}]`,
-          `[${v}][mo${k}]overlay=0:0:eof_action=pass:format=auto:enable='between(t,${m.start.toFixed(4)},${m.end.toFixed(4)})'[vm${k}]`,
-        );
+      if (layers.length) {
+        // One input for every graphic: separate image-sequence inputs stall ffmpeg's overlay
+        // sync now and then (a graphic froze on its 8th frame), a single timed list never does.
+        args.push("-f", "concat", "-safe", "0", "-i", await motionTrack(layers, W, H, length, workDir));
+        filters.push(`[${input}:v]fps=${FPS},format=rgba[mo]`, `[${v}][mo]overlay=0:0:eof_action=pass:format=auto[vm]`);
         input++;
-        v = `vm${k}`;
+        v = "vm";
       }
     } else console.warn("motion graphics skipped: no Chrome or Chromium found for rendering them");
   }
@@ -437,6 +436,29 @@ export async function render(opts: RenderOptions) {
     output,
   );
   await run(config.ffmpeg, args);
+}
+
+// Every motion graphic on one timeline: their frames at 1/FPS each, with a transparent
+// frame filling the gaps, as a concat list. Overlapping graphics: the later one starts
+// where the earlier one ends.
+async function motionTrack(layers: MotionLayer[], W: number, H: number, length: number, workDir: string) {
+  const blank = path.join(workDir, "motion-blank.png");
+  await writeFile(blank, await createCanvas(W, H).encode("png"));
+  const q = (f: string) => `file '${f.replace(/'/g, "'\\''")}'`;
+  const lines: string[] = [];
+  let t = 0;
+  for (const m of [...layers].sort((a, b) => a.start - b.start)) {
+    if (m.start - t > 0.5 / FPS) lines.push(q(blank), `duration ${(m.start - t).toFixed(6)}`);
+    const skip = Math.max(0, Math.round((t - m.start) * FPS));
+    for (let f = skip; f < m.frames; f++) lines.push(q(path.join(m.dir, `${String(f).padStart(5, "0")}.png`)), `duration ${(1 / FPS).toFixed(6)}`);
+    t = Math.max(t, m.start + m.frames / FPS);
+  }
+  if (length - t > 0.5 / FPS) lines.push(q(blank), `duration ${(length - t).toFixed(6)}`);
+  // The concat demuxer needs the last image repeated to honor its duration.
+  lines.push(q(blank));
+  const list = path.join(workDir, "motion.txt");
+  await writeFile(list, lines.join("\n"));
+  return list;
 }
 
 // The music's level over the timeline: the whole video at one level, or only inside
