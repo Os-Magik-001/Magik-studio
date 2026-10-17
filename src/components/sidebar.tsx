@@ -18,7 +18,10 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/clients", label: "Clients", icon: "clients" },
   ],
   videographer: [{ href: "/shoots", label: "Shoots", icon: "shoots" }],
-  client: [{ href: "/review", label: "Your videos", icon: "videos" }],
+  client: [
+    { href: "/review", label: "Your videos", icon: "videos" },
+    { href: "/brand", label: "Your brand", icon: "brand" },
+  ],
 };
 
 export async function Sidebar() {

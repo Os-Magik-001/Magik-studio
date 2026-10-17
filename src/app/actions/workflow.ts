@@ -6,7 +6,9 @@ import { visibleVideo, visibleVersion } from "@/lib/access";
 import { notify } from "@/lib/notify";
 import { objectExists } from "@/lib/storage";
 import { DriveError, driveConfigured, parseDriveLink, resolveDriveVideos } from "@/lib/drive";
-import { draftScript, claudeConfigured } from "@/lib/claude";
+import { claudeConfigured } from "@/lib/claude";
+import { runScriptwriter } from "@/lib/agents";
+import { asFindings } from "@/lib/agent-types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatTimecode, videoStatusIndex, type VideoStatus } from "@/lib/workflow";
@@ -45,6 +47,7 @@ export async function saveScript(_: ActionResult, formData: FormData): Promise<A
     video_id: videoId,
     body: text(formData, "body"),
     shot_list: shots,
+    edit_prompt: optionalText(formData, "editPrompt"),
     // Editing a script the client asked to change puts it back in draft.
     status: "draft",
   });
@@ -53,6 +56,8 @@ export async function saveScript(_: ActionResult, formData: FormData): Promise<A
   return done("Script saved.");
 }
 
+// Agent 3: the brand strategy, the latest trend research and the brief become the
+// script, the videographer's shoot plan and the edit prompt for the engine.
 export async function draftScriptWithClaude(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin", "editor");
   if (!claudeConfigured()) {
@@ -64,31 +69,42 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
   if (!video.brief?.trim()) return fail("Add the client's brief first. Claude writes the script from it.");
 
   const supabase = await createClient();
-  const [{ data: client }, { data: kit }, { data: script }] = await Promise.all([
+  const admin = createAdminClient();
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
-    supabase.from("brand_kits").select("*").eq("client_id", video.client_id).maybeSingle(),
+    supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
     supabase.from("scripts").select("status, client_note").eq("video_id", videoId).maybeSingle(),
+    admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
+    admin
+      .from("trend_reports")
+      .select("id, findings")
+      .eq("client_id", video.client_id)
+      .eq("status", "done")
+      .order("finished_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (script?.status === "approved") return fail("This script is already approved.");
 
   try {
-    const draft = await draftScript({
+    const draft = await runScriptwriter({
       clientName: client?.name ?? "Client",
       title: video.title,
       format: video.format.replace("_", " "),
       aspect: video.aspect,
       brief: video.brief,
-      editorNotes: [text(formData, "notes"), script?.client_note && `The client asked for: ${script.client_note}`]
-        .filter(Boolean)
-        .join("\n"),
-      brandKit: kit
-        ? { colors: kit.colors, fonts: kit.fonts, musicMood: kit.music_mood, styleRules: kit.style_rules }
-        : null,
+      notes: [text(formData, "notes"), script?.client_note && `The client asked for: ${script.client_note}`].filter(Boolean).join("\n"),
+      strategy,
+      findings: asFindings(report?.findings),
+      styleRules: kit?.style_rules ?? null,
     });
     const { error } = await supabase.from("scripts").upsert({
       video_id: videoId,
       body: draft.script,
       shot_list: draft.shots.map((s) => ({ text: s })),
+      shoot_plan: draft.plan,
+      edit_prompt: draft.edit_prompt,
+      trend_report_id: report?.id ?? null,
       status: "draft",
       drafted_by_claude: true,
     });
@@ -97,7 +113,11 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
     return fail(e instanceof Error ? e.message : "Claude couldn't draft the script.");
   }
   refresh();
-  return done("Claude drafted the script. Review it before sending it to the client.");
+  return done(
+    strategy
+      ? "Script, shoot plan and edit prompt are ready. Review them before sending to the client."
+      : "Script ready. Run the brand strategist on the client page for sharper scripts.",
+  );
 }
 
 export async function sendScriptToClient(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -292,6 +312,41 @@ export async function launchEdit(_: ActionResult, formData: FormData): Promise<A
   await advance(videoId, "editing");
   refresh();
   return done("Edit queued for Claude.");
+}
+
+// The videographer says all the footage is in: the engine starts the edit right away,
+// with the scriptwriter's edit prompt.
+export async function markFootageComplete(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const viewer = await requireRole("admin", "editor", "videographer");
+  const videoId = text(formData, "videoId");
+  const video = await visibleVideo(videoId);
+  if (!video) return fail("Video not found.");
+
+  const admin = createAdminClient();
+  const [{ count: footageCount }, { count: openJobs }, { data: script }] = await Promise.all([
+    admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
+    admin.from("edit_jobs").select("id", { count: "exact", head: true }).eq("video_id", videoId).in("status", ["queued", "running"]),
+    admin.from("scripts").select("edit_prompt").eq("video_id", videoId).maybeSingle(),
+  ]);
+  if (!footageCount) return fail("Upload or link the footage first.");
+
+  await admin.from("videos").update({ footage_complete_at: new Date().toISOString() }).eq("id", videoId);
+  if (!openJobs) {
+    const { error } = await admin.from("edit_jobs").insert({
+      video_id: videoId,
+      source: "launch",
+      instructions: script?.edit_prompt ?? null,
+      requested_by: viewer.id,
+    });
+    if (error) return fail("Couldn't start the edit.");
+  }
+  await advance(videoId, "editing");
+  await notify(
+    { videoId, editor: true, admins: true, exclude: viewer.id },
+    { kind: "footage_in", title: `Footage complete: ${video.title}`, body: "Claude started the edit." },
+  );
+  refresh();
+  return done(openJobs ? "Marked complete. An edit is already running." : "Thanks! Claude started the edit.");
 }
 
 export async function cancelEditJob(formData: FormData) {

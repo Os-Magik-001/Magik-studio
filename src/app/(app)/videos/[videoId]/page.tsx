@@ -13,6 +13,8 @@ import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClas
 import { ScriptStatusBadge, StatusStepper, VersionStatusBadge, VideoStatusBadge } from "@/components/status";
 import { deleteFootage, cancelEditJob, retryEditJob } from "@/app/actions/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { ShootPlanView } from "@/components/agents/views";
+import { asShootPlan } from "@/lib/agent-types";
 import { LocalDate } from "@/components/local-date";
 import { deleteShoot, deleteVideo } from "@/app/actions/studio";
 import {
@@ -43,7 +45,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
   if (!video) notFound();
 
   const supabase = await createClient();
-  const [{ data: client }, { data: script }, { data: shoots }, { data: footage }, { data: jobs }, { data: versions }, { data: staff }] =
+  const [{ data: client }, { data: script }, { data: shoots }, { data: footage }, { data: jobs }, { data: versions }, { data: staff }, { data: strategy }] =
     await Promise.all([
       supabase.from("clients").select("id, name, revision_limit").eq("id", video.client_id).single(),
       supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -56,6 +58,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         .eq("video_id", videoId)
         .order("number", { ascending: false }),
       supabase.from("profiles").select("id, full_name, email, role").in("role", ["editor", "videographer"]),
+      supabase.from("brand_strategies").select("client_id").eq("client_id", video.client_id).maybeSingle(),
     ]);
 
   const footageUrls = await signedUrls("footage", (footage ?? []).flatMap((f) => (f.storage_path ? [f.storage_path] : [])));
@@ -65,6 +68,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
   const people = (role: string) =>
     (staff ?? []).filter((p) => p.role === role).map((p) => ({ id: p.id, name: displayName(p) }));
   const scriptStatus = script?.status ?? "draft";
+  const shootPlan = asShootPlan(script?.shoot_plan);
 
   return (
     <>
@@ -120,6 +124,12 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                     {script.body}
                   </div>
                   <ShotList shots={parseShotList(script.shot_list)} />
+                  {script.edit_prompt && (
+                    <div>
+                      <div className="kicker mb-2">Edit prompt</div>
+                      <div className="whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-[13px] leading-relaxed text-ink-2">{script.edit_prompt}</div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <ScriptEditor
@@ -130,7 +140,17 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                   hasBrief={!!video.brief?.trim()}
                   claudeReady={claudeConfigured()}
                   draftedByClaude={!!script?.drafted_by_claude}
+                  editPrompt={script?.edit_prompt ?? ""}
+                  hasStrategy={!!strategy}
                 />
+              )}
+              {shootPlan && (
+                <details className="mt-5 rounded-xl border border-line p-4">
+                  <summary className="cursor-pointer text-sm font-medium text-ink">Shoot plan for the videographer ({shootPlan.scenes.length} scenes)</summary>
+                  <div className="mt-4">
+                    <ShootPlanView plan={shootPlan} />
+                  </div>
+                </details>
               )}
             </div>
           </Card>
@@ -145,6 +165,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
               {openJobs.length === 0 && (
                 <LaunchEditForm
                   videoId={video.id}
+                  prompt={script?.edit_prompt ?? undefined}
                   disabledReason={!footage?.length ? "Add the raw footage first." : undefined}
                 />
               )}

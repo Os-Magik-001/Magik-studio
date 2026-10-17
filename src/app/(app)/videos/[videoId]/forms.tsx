@@ -10,10 +10,11 @@ import { Uploader } from "@/components/uploader";
 import { ASPECTS, FORMAT_LABEL, type ScriptStatus } from "@/lib/workflow";
 import { markDelivered, scheduleShoot, updateVideo } from "@/app/actions/studio";
 import {
+  addDriveFootage,
   draftScriptWithClaude,
   launchEdit,
+  markFootageComplete,
   registerDraftVersion,
-  addDriveFootage,
   registerFootage,
   saveScript,
   sendScriptToClient,
@@ -108,6 +109,8 @@ export function ScriptEditor({
   hasBrief,
   claudeReady,
   draftedByClaude,
+  editPrompt,
+  hasStrategy,
 }: {
   videoId: string;
   body: string;
@@ -116,6 +119,8 @@ export function ScriptEditor({
   hasBrief: boolean;
   claudeReady: boolean;
   draftedByClaude: boolean;
+  editPrompt: string;
+  hasStrategy: boolean;
 }) {
   // Remount the textareas after Claude writes a new draft.
   const [key, setKey] = useState(0);
@@ -127,10 +132,14 @@ export function ScriptEditor({
           <Field label="Notes for Claude (optional)" className="flex-1">
             <Input name="notes" placeholder="Keep it under 45 seconds, open on the product" />
           </Field>
-          <SubmitButton pendingText="Claude is writing…" variant="secondary">
-            <Sparkles size={14} aria-hidden /> {body ? "Redraft with Claude" : "Draft with Claude"}
+          <SubmitButton pendingText="The scriptwriter is working (about a minute)…" variant="secondary">
+            <Sparkles size={14} aria-hidden /> {body ? "Rewrite with the scriptwriter" : "Write with the scriptwriter"}
           </SubmitButton>
         </div>
+        <p className="mt-2 text-xs text-muted">
+          Agent 3 writes the script, the videographer&apos;s shoot plan and the edit prompt
+          {hasStrategy ? ", from the brand strategy and the latest viral research." : ". Run the brand strategist on the client's Brand & strategy page for sharper scripts."}
+        </p>
         {!hasBrief && <p className="mt-2 text-xs text-muted">Add the client brief in Details first.</p>}
         {!claudeReady && (
           <p className="mt-2 text-xs text-warning">Claude isn&apos;t connected yet: ANTHROPIC_API_KEY is missing.</p>
@@ -144,6 +153,9 @@ export function ScriptEditor({
         </Field>
         <Field label="Shot list" hint="One shot per line. The videographer ticks these off on set.">
           <Textarea name="shots" rows={6} defaultValue={shots} />
+        </Field>
+        <Field label="Edit prompt" hint="What the engine is told when it edits this video. It starts by itself once the videographer marks the footage complete.">
+          <Textarea name="editPrompt" rows={6} defaultValue={editPrompt} className="text-[13px]" />
         </Field>
         <div className="flex flex-wrap gap-2">
           <SubmitButton variant="secondary">Save script</SubmitButton>
@@ -277,12 +289,12 @@ export function DraftUpload({ videoId }: { videoId: string }) {
   );
 }
 
-export function LaunchEditForm({ videoId, disabledReason }: { videoId: string; disabledReason?: string }) {
+export function LaunchEditForm({ videoId, disabledReason, prompt }: { videoId: string; disabledReason?: string; prompt?: string }) {
   return (
     <ActionForm action={launchEdit} className="flex flex-col gap-3">
       <input type="hidden" name="videoId" value={videoId} />
-      <Field label="Notes for Claude (optional)">
-        <Textarea name="notes" rows={2} placeholder={'"Keep it under 60 seconds", "Open on the product"'} />
+      <Field label={prompt ? "Edit prompt (from the scriptwriter)" : "Notes for Claude (optional)"}>
+        <Textarea name="notes" rows={prompt ? 6 : 2} defaultValue={prompt} placeholder={'"Keep it under 60 seconds", "Open on the product"'} />
       </Field>
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton pendingText="Starting…">
@@ -290,6 +302,21 @@ export function LaunchEditForm({ videoId, disabledReason }: { videoId: string; d
         </SubmitButton>
         {disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
       </div>
+    </ActionForm>
+  );
+}
+
+// The videographer's last step: the edit starts as soon as this is pressed.
+export function FootageCompleteForm({ videoId, completedAt, hasFootage }: { videoId: string; completedAt: string | null; hasFootage: boolean }) {
+  return (
+    <ActionForm action={markFootageComplete} className="flex flex-col gap-2">
+      <input type="hidden" name="videoId" value={videoId} />
+      <SubmitButton pendingText="Starting the edit…" variant={completedAt ? "secondary" : "primary"}>
+        {completedAt ? "Footage complete ✓ (press again after adding more)" : "All footage is in: start the edit"}
+      </SubmitButton>
+      <p className="text-xs text-muted">
+        {hasFootage ? "Claude starts editing right away with the scriptwriter's edit prompt." : "Upload or link the footage first."}
+      </p>
     </ActionForm>
   );
 }

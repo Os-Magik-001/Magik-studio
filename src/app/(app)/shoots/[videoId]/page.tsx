@@ -10,7 +10,9 @@ import { formatBytes, parseShotList, FORMAT_LABEL } from "@/lib/workflow";
 import { Card, CardHeader, EmptyState, PageHeader, cx } from "@/components/ui";
 import { toggleShot } from "@/app/actions/workflow";
 import { LocalDate } from "@/components/local-date";
-import { FootageDrop } from "@/app/(app)/videos/[videoId]/forms";
+import { FootageCompleteForm, FootageDrop } from "@/app/(app)/videos/[videoId]/forms";
+import { ShootPlanView } from "@/components/agents/views";
+import { asShootPlan } from "@/lib/agent-types";
 
 export const metadata: Metadata = { title: "Shoot" };
 
@@ -23,12 +25,14 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
   const supabase = await createClient();
   const [{ data: client }, { data: script }, { data: shoots }, { data: footage }] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
-    supabase.from("scripts").select("body, shot_list, status").eq("video_id", videoId).maybeSingle(),
+    supabase.from("scripts").select("body, shot_list, status, shoot_plan").eq("video_id", videoId).maybeSingle(),
     supabase.from("shoots").select("*").eq("video_id", videoId).order("starts_at"),
     supabase.from("footage").select("id, file_name, size_bytes, created_at").eq("video_id", videoId).order("created_at"),
   ]);
   const shots = parseShotList(script?.shot_list);
   const doneCount = shots.filter((s) => s.done).length;
+  const plan = asShootPlan(script?.shoot_plan);
+  const { data: complete } = await supabase.from("videos").select("footage_complete_at").eq("id", videoId).single();
 
   return (
     <>
@@ -79,9 +83,17 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
               </ul>
             )}
           </Card>
+          {plan && (
+            <Card>
+              <CardHeader title="Shoot plan" description="Scene by scene: framing, action, lines and what not to forget." />
+              <div className="p-5">
+                <ShootPlanView plan={plan} />
+              </div>
+            </Card>
+          )}
           {script && (
             <Card>
-              <CardHeader title="Approved script" />
+              <CardHeader title="Script" />
               <div className="whitespace-pre-wrap p-5 text-sm leading-relaxed text-ink">{script.body}</div>
             </Card>
           )}
@@ -115,6 +127,9 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
                 </div>
               ))}
               <FootageDrop videoId={video.id} driveEmail={driveServiceEmail()} />
+              <div className="border-t border-line pt-3">
+                <FootageCompleteForm videoId={video.id} completedAt={complete?.footage_complete_at ?? null} hasFootage={!!footage?.length} />
+              </div>
             </div>
           </Card>
         </div>

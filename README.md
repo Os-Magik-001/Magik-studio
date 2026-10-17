@@ -21,6 +21,16 @@ The workspace that runs Magik Studio: videographers bring in the footage, Claude
 - Notes staff leave during draft check are internal and hidden from clients.
 - Change requests beyond the client's included revision rounds are flagged as billable.
 
+## The three agents before the edit
+
+Each client has a **Brand & strategy** page (`/clients/<id>/brand`); clients fill in their side under **Your brand**.
+
+1. **Brand strategist** (`src/lib/agents.ts`, runs in the app): turns the brand questionnaire into the niche, search hashtags and reference accounts, the charte graphique (palette, fonts, caption and motion style, tone, do's and don'ts), and the business, audience and needs. It also fills the brand kit, so every edit follows it.
+2. **Trend researcher** (`engine/src/research.ts`, runs on the edit engine): finds reels for the niche's hashtags and accounts through Apify (`APIFY_TOKEN`), watches the top 10 by reach (contact sheets, transcript, cut rate), and has Claude write the key points: hooks, structures, editing, text, sound, scripting notes and video ideas. About $0.10 to $0.50 of Apify credit per run.
+3. **Scriptwriter** (`src/lib/agents.ts`, the "Write with the scriptwriter" button on a video): strategy + latest research + brief become the script for the client, a scene-by-scene shoot plan for the videographer (framing, action, lines, B-roll, props) and the edit prompt.
+
+When the videographer presses **All footage is in: start the edit** on their shoot page, the engine starts editing with that edit prompt; the editor can still change the prompt on the video page before then.
+
 ## Stack
 
 - **Next.js 16** (App Router, Cache Components, server actions) on **Vercel**

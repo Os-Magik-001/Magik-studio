@@ -8,12 +8,14 @@ import { mkdir } from "node:fs/promises";
 import os from "node:os";
 import { config, db } from "./config.ts";
 import { claim, log, processJob, recoverStale } from "./job.ts";
+import { claimResearch, recoverStaleResearch, runResearch } from "./research.ts";
 import { transcriptionAvailable } from "./transcribe.ts";
 
 const once = process.argv.includes("--once");
 const worker = `${os.hostname()}:${process.pid}`;
 let stopping = false;
 let current: string | null = null;
+let currentResearch: string | null = null;
 
 // ---------------------------------------------------------------- loop
 
@@ -26,6 +28,10 @@ async function shutdown() {
     await db.from("edit_jobs").update({ status: "queued", progress: null }).eq("id", current).eq("status", "running");
     log(current, "requeued: the engine is stopping");
   }
+  if (currentResearch) {
+    await db.from("trend_reports").update({ status: "queued", progress: null }).eq("id", currentResearch).eq("status", "running");
+    log(currentResearch, "research requeued: the engine is stopping");
+  }
   log(null, "stopped");
   process.exit(0);
 }
@@ -35,11 +41,13 @@ process.on("SIGTERM", shutdown);
 log(null, `edit engine ${worker} started (model ${config.model}, transcription ${(await transcriptionAvailable()) ? "on" : "off"})`);
 await mkdir(config.workDir, { recursive: true });
 await recoverStale();
+await recoverStaleResearch();
 let lastRecovery = Date.now();
 
 while (!stopping) {
   if (Date.now() - lastRecovery > 10 * 60_000) {
     await recoverStale();
+    await recoverStaleResearch();
     lastRecovery = Date.now();
   }
   const job = await claim();
@@ -48,6 +56,16 @@ while (!stopping) {
     current = job.id;
     await processJob(job);
     current = null;
+    if (once) break;
+    continue;
+  }
+  // Edits come first; research runs when no edit is waiting.
+  const research = await claimResearch();
+  if (research) {
+    log(research.id, `claimed trend research for client ${research.client_id.slice(0, 8)}`);
+    currentResearch = research.id;
+    await runResearch(research);
+    currentResearch = null;
     if (once) break;
     continue;
   }

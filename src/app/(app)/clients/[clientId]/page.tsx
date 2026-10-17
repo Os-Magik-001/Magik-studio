@@ -5,7 +5,7 @@ import { requireRole, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { FORMAT_LABEL } from "@/lib/workflow";
-import { Avatar, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
+import { Avatar, Card, CardHeader, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { VideoStatusBadge } from "@/components/status";
 import {
   BrandKitForm,
@@ -57,6 +57,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
         }
         title={client.name}
         description={`${videos?.length ?? 0} videos · ${client.revision_limit} included revision rounds per video`}
+        actions={<LinkButton href={`/clients/${client.id}/brand`}>Brand & strategy</LinkButton>}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

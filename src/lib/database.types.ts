@@ -52,6 +52,95 @@ export type Database = {
           },
         ]
       }
+      brand_questionnaires: {
+        Row: {
+          answers: Json
+          client_id: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          client_id: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          client_id?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_questionnaires_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_questionnaires_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_strategies: {
+        Row: {
+          audience: string | null
+          business: string | null
+          charte: Json
+          client_id: string
+          error: string | null
+          keywords: string[]
+          needs: string[]
+          niche: string | null
+          pillars: Json
+          reference_accounts: string[]
+          status: Database["public"]["Enums"]["agent_status"]
+          updated_at: string
+        }
+        Insert: {
+          audience?: string | null
+          business?: string | null
+          charte?: Json
+          client_id: string
+          error?: string | null
+          keywords?: string[]
+          needs?: string[]
+          niche?: string | null
+          pillars?: Json
+          reference_accounts?: string[]
+          status?: Database["public"]["Enums"]["agent_status"]
+          updated_at?: string
+        }
+        Update: {
+          audience?: string | null
+          business?: string | null
+          charte?: Json
+          client_id?: string
+          error?: string | null
+          keywords?: string[]
+          needs?: string[]
+          niche?: string | null
+          pillars?: Json
+          reference_accounts?: string[]
+          status?: Database["public"]["Enums"]["agent_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_strategies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_team: {
         Row: {
           client_id: string
@@ -391,8 +480,11 @@ export type Database = {
           body: string
           client_note: string | null
           drafted_by_claude: boolean
+          edit_prompt: string | null
+          shoot_plan: Json | null
           shot_list: Json
           status: Database["public"]["Enums"]["script_status"]
+          trend_report_id: string | null
           updated_at: string
           video_id: string
         }
@@ -402,8 +494,11 @@ export type Database = {
           body?: string
           client_note?: string | null
           drafted_by_claude?: boolean
+          edit_prompt?: string | null
+          shoot_plan?: Json | null
           shot_list?: Json
           status?: Database["public"]["Enums"]["script_status"]
+          trend_report_id?: string | null
           updated_at?: string
           video_id: string
         }
@@ -413,8 +508,11 @@ export type Database = {
           body?: string
           client_note?: string | null
           drafted_by_claude?: boolean
+          edit_prompt?: string | null
+          shoot_plan?: Json | null
           shot_list?: Json
           status?: Database["public"]["Enums"]["script_status"]
+          trend_report_id?: string | null
           updated_at?: string
           video_id?: string
         }
@@ -424,6 +522,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scripts_trend_report_id_fkey"
+            columns: ["trend_report_id"]
+            isOneToOne: false
+            referencedRelation: "trend_reports"
             referencedColumns: ["id"]
           },
           {
@@ -469,6 +574,72 @@ export type Database = {
             columns: ["video_id"]
             isOneToOne: false
             referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trend_reports: {
+        Row: {
+          accounts: string[]
+          attempts: number
+          client_id: string
+          created_at: string
+          error: string | null
+          findings: Json | null
+          finished_at: string | null
+          hashtags: string[]
+          id: string
+          progress: string | null
+          reels: Json
+          requested_by: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["agent_status"]
+        }
+        Insert: {
+          accounts?: string[]
+          attempts?: number
+          client_id: string
+          created_at?: string
+          error?: string | null
+          findings?: Json | null
+          finished_at?: string | null
+          hashtags?: string[]
+          id?: string
+          progress?: string | null
+          reels?: Json
+          requested_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["agent_status"]
+        }
+        Update: {
+          accounts?: string[]
+          attempts?: number
+          client_id?: string
+          created_at?: string
+          error?: string | null
+          findings?: Json | null
+          finished_at?: string | null
+          hashtags?: string[]
+          id?: string
+          progress?: string | null
+          reels?: Json
+          requested_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["agent_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trend_reports_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -545,6 +716,7 @@ export type Database = {
           created_by: string | null
           due_on: string | null
           editor_id: string | null
+          footage_complete_at: string | null
           format: Database["public"]["Enums"]["video_format"]
           id: string
           status: Database["public"]["Enums"]["video_status"]
@@ -560,6 +732,7 @@ export type Database = {
           created_by?: string | null
           due_on?: string | null
           editor_id?: string | null
+          footage_complete_at?: string | null
           format?: Database["public"]["Enums"]["video_format"]
           id?: string
           status?: Database["public"]["Enums"]["video_status"]
@@ -575,6 +748,7 @@ export type Database = {
           created_by?: string | null
           due_on?: string | null
           editor_id?: string | null
+          footage_complete_at?: string | null
           format?: Database["public"]["Enums"]["video_format"]
           id?: string
           status?: Database["public"]["Enums"]["video_status"]
@@ -621,6 +795,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      agent_status: "queued" | "running" | "done" | "failed"
       edit_job_source: "launch" | "editor_fix" | "client_changes"
       edit_job_status: "queued" | "running" | "done" | "failed" | "cancelled"
       footage_source: "upload" | "drive"
@@ -773,6 +948,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_status: ["queued", "running", "done", "failed"],
       edit_job_source: ["launch", "editor_fix", "client_changes"],
       edit_job_status: ["queued", "running", "done", "failed", "cancelled"],
       footage_source: ["upload", "drive"],
