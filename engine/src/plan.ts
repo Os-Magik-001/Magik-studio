@@ -235,7 +235,11 @@ export function parseStoredPlan(raw: unknown): EditPlan | null {
 
 // ---------------------------------------------------------------- the timeline
 
-export const shotLength = (seg: Pick<Shot, "start" | "end" | "speed"> & { hold?: number }) => (seg.hold && seg.hold > 0 ? seg.hold : (seg.end - seg.start) / seg.speed);
+// The edit's frame rate. Every shot lasts a whole number of frames, so the picture and
+// the sound of each shot have exactly the same length and the cuts never drift.
+export const FPS = 30;
+export const shotLength = (seg: Pick<Shot, "start" | "end" | "speed"> & { hold?: number }) =>
+  Math.max(1, Math.round((seg.hold && seg.hold > 0 ? seg.hold : (seg.end - seg.start) / seg.speed) * FPS)) / FPS;
 export const overlapOf = (t: Shot["transition_in"]) => (t.type === "cut" ? 0 : t.seconds);
 
 // Where everything sits on the finished video: speed changes stretch shots, and

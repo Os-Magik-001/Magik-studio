@@ -80,7 +80,10 @@ function shotVideo(seg: Shot, clip: Clip, W: number, H: number, look: EditPlan["
     steps.push(`eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}`);
   }
   if (LOOK_FILTERS[look]) steps.push(LOOK_FILTERS[look]);
-  steps.push("format=yuv420p");
+  // Exactly the shot's frame count: the source can give a frame more or less after
+  // retiming, and that used to add up into picture lagging behind the sound.
+  const frames = Math.round(shotLength(seg) * FPS);
+  steps.push(`tpad=stop_mode=clone:stop=2,trim=end_frame=${frames},setpts=PTS-STARTPTS`, "format=yuv420p");
   return steps.join(",");
 }
 

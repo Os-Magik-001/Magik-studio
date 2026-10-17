@@ -15,8 +15,8 @@ type Word = { start: number; end: number; text: string };
 export const HEAD = 0.08;
 export const TAIL = 0.14;
 // Silence at a head or tail worth removing, and a pause inside a shot worth cutting out.
-const DEAD = 0.18;
-const PAUSE = 0.65;
+const DEAD = 0.12;
+const PAUSE = 0.45;
 // Shots whose point is the silence (reactions, glances, beats) are left alone.
 const KEEP_SILENCE = /react|glance|look|stare|deadpan|beat|pause|silent|silence|freeze|hold|b-roll|broll|cutaway|insert|establish|intro clip|logo|title|walk|entrance|ending|end card|tag/i;
 
