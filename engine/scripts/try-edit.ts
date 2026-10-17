@@ -6,8 +6,9 @@
 //        --format social_short --aspect 9:16 --client "Name" --title "Title" --brief "..." --notes "..." --out cut.mp4
 //
 // --fix revises the video's latest version the way an editor's fix request would.
+// --plan <file.plan.json> re-renders a saved plan without asking Claude again.
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
@@ -15,7 +16,7 @@ import { db } from "../src/config.ts";
 import { listDriveVideos } from "../src/drive.ts";
 import { planAndRender, prepareClips, watchClips, type Source } from "../src/job.ts";
 import { probe } from "../src/media.ts";
-import { parseStoredPlan } from "../src/plan.ts";
+import { parseStoredPlan, type EditPlan } from "../src/plan.ts";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -31,6 +32,7 @@ const { values, positionals } = parseArgs({
     brief: { type: "string" },
     colors: { type: "string" },
     out: { type: "string", default: "cut.mp4" },
+    plan: { type: "string" },
   },
 });
 
@@ -100,7 +102,8 @@ if (values.video) {
 say(`${sources.length} footage file(s)`);
 const clips = await prepareClips(sources, dir, say, say, new Set());
 await watchClips(clips, dir, `${request.clientName}. ${request.title}. ${request.script}`, say);
-const { plan, length } = await planAndRender(request, clips, dir, output, say, say);
+const saved = values.plan ? (JSON.parse(await readFile(values.plan, "utf8")) as EditPlan) : null;
+const { plan, length } = await planAndRender(request, clips, dir, output, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined);
 await writeFile(output.replace(/\.mp4$/, ".plan.json"), JSON.stringify(plan, null, 1));
 const p = await probe(output);
 say(`done: ${output} (${p.duration.toFixed(1)}s of a planned ${length.toFixed(1)}s, ${p.width}x${p.height})`);

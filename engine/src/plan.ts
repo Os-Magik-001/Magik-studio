@@ -282,7 +282,7 @@ Your tools, beyond choosing shots:
 - Sound: a music bed from the library that dips under speech, and sound effects on key moments.
 A hard cut with no moves is the default; every move, graphic and sound should have a reason you could tell the editor.
 
-Transcripts mark fillers like [filler "euh" 12.4–12.6] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. Shot in and out points are snapped to the nearest word edge automatically, so place them at the gaps between words. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
+Transcripts mark fillers like [filler "euh" 12.4–12.6], stutters like [repeat "en" 3.1–3.2] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. Shot in and out points are snapped to the nearest word edge automatically, so place them at the gaps between words. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
 
 When you're revising a previous cut, change what the comments ask for and keep everything else that already worked. Comments are pinned to the previous cut's timeline; each one tells you which shot it falls on.`;
 
@@ -300,7 +300,13 @@ export function annotate(line: TranscriptLine) {
     .map((w, i) => {
       const next = line.words[i + 1];
       const gap = next ? next.start - w.end : 0;
-      const word = FILLERS.has(bare(w.text)) ? `[filler "${w.text.replace(/[,.]$/, "")}" ${w.start.toFixed(2)}–${w.end.toFixed(2)}]` : w.text;
+      const prev = line.words[i - 1];
+      // Fillers and stutters ("en en") are marked with their times so the cut can drop them.
+      const word = FILLERS.has(bare(w.text))
+        ? `[filler "${w.text.replace(/[,.]$/, "")}" ${w.start.toFixed(2)}–${w.end.toFixed(2)}]`
+        : prev && bare(prev.text) === bare(w.text) && bare(w.text)
+          ? `[repeat "${w.text.replace(/[,.]$/, "")}" ${w.start.toFixed(2)}–${w.end.toFixed(2)}]`
+          : w.text;
       return gap >= 0.35 ? `${word} [pause ${gap.toFixed(1)}s]` : word;
     })
     .join(" ");

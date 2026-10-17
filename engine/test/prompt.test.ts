@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildContent, buildSystem, parseStoredPlan, type EditPlan, type PlanInput } from "../src/plan.ts";
+import { annotate, buildContent, buildSystem, parseStoredPlan, type EditPlan, type PlanInput } from "../src/plan.ts";
 import { CUT, EXTRAS, shot, txt } from "./fixtures.ts";
 
 const plan: EditPlan = {
@@ -96,4 +96,15 @@ test("each clip says how far it can be punched in before it goes soft", async ()
   assert.match(text, /Clip C1 .*stays sharp up to zoom 2\.00/);
   assert.match(text, /Clip C2 .*fills the frame at its own resolution/);
   assert.match(text, /Clip C3 .*already enlarged 1\.8x to fill 9:16/);
+});
+
+test("transcripts mark fillers, stutters and pauses for the cut", () => {
+  const line = { start: 0, end: 3, text: "euh on en en parle", words: [
+    { text: "euh", start: 0, end: 0.2 }, { text: "on", start: 0.3, end: 0.4 }, { text: "en", start: 0.45, end: 0.5 },
+    { text: "en", start: 0.55, end: 0.6 }, { text: "parle", start: 1.2, end: 1.6 },
+  ] };
+  const out = annotate(line);
+  assert.match(out, /\[filler "euh" 0\.00–0\.20\]/);
+  assert.match(out, /\[repeat "en" 0\.55–0\.60\]/);
+  assert.match(out, /\[pause 0\.6s\]/);
 });

@@ -108,13 +108,17 @@ function anchorY(position: "top" | "center" | "bottom", blockH: number, W: numbe
 
 type Run = { text: string; font: string; color: string };
 
+// Heavy fonts have a thin space that an outline nearly closes; add air that scales
+// with the font size so words never run together at phone size.
+const wordGap = (ctx: Ctx) => ctx.measureText(" ").width + parseFloat(ctx.font) * 0.14;
+
 // Lays runs (words with their own font and color) into centered lines.
 function layoutRuns(ctx: Ctx, runs: Run[], maxW: number) {
   const lines: Run[][] = [[]];
   let lineW = 0;
   const space = (r: Run) => {
     ctx.font = r.font;
-    return ctx.measureText(" ").width;
+    return wordGap(ctx);
   };
   for (const r of runs) {
     ctx.font = r.font;
@@ -145,7 +149,7 @@ function drawRuns(ctx: Ctx, lines: ReturnType<typeof layoutRuns>, cx: number, to
     const y = top + lineH * (li + 0.5);
     line.runs.forEach((r, i) => {
       ctx.font = r.font;
-      if (i) x += ctx.measureText(" ").width;
+      if (i) x += wordGap(ctx);
       if (stroke) {
         ctx.lineWidth = stroke;
         ctx.strokeStyle = "rgba(0,0,0,0.85)";
@@ -216,7 +220,7 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
       const y = top + lineH / 2;
       line.runs.forEach((r, i) => {
         ctx.font = r.font;
-        if (i) x += ctx.measureText(" ").width;
+        if (i) x += wordGap(ctx);
         const w = ctx.measureText(r.text).width;
         ctx.save();
         if (i === last) {
