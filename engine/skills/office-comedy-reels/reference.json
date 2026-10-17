@@ -1,0 +1,397 @@
+{
+ "trainedAt": "2026-10-17T20:04:42.777Z",
+ "accounts": [
+  "themarketinginterns",
+  "cluely"
+ ],
+ "reels": [
+  {
+   "url": "https://www.instagram.com/p/DcYNO8hgzUS/",
+   "owner": "themarketinginterns",
+   "plays": 14169784,
+   "duration": 10.2,
+   "cutsPerSecond": 0.1,
+   "shots": 2,
+   "medianShot": 5.3,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "Tyrons",
+    "song_name": "Limitless",
+    "uses_original_audio": false,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "803133299540627"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/Db9Q-vyPZGJ/",
+   "owner": "themarketinginterns",
+   "plays": 2145877,
+   "duration": 31.1,
+   "cutsPerSecond": 0.42,
+   "shots": 14,
+   "medianShot": 1.8,
+   "wordsPerMinute": 234,
+   "speechShare": 0.85,
+   "longestPause": 0.9,
+   "audio": {
+    "artist_name": "Future Hit Makers",
+    "song_name": "Empire State of Mind (Instrumental Version)",
+    "uses_original_audio": false,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "316809819085917"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DegHjFjgiGC/",
+   "owner": "themarketinginterns",
+   "plays": 957366,
+   "duration": 9.3,
+   "cutsPerSecond": 0,
+   "shots": 1,
+   "medianShot": 9.3,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "Mustafa Saboori",
+    "song_name": "Aura Farming",
+    "uses_original_audio": false,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "1710099986737207"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DejA_y7AXzm/",
+   "owner": "themarketinginterns",
+   "plays": 617487,
+   "duration": 6.2,
+   "cutsPerSecond": 0,
+   "shots": 1,
+   "medianShot": 6.2,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "2xfarhad",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28599516776383586"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DegYO8XgQww/",
+   "owner": "themarketinginterns",
+   "plays": 450124,
+   "duration": 14,
+   "cutsPerSecond": 0,
+   "shots": 1,
+   "medianShot": 14,
+   "wordsPerMinute": 115,
+   "speechShare": 0.77,
+   "longestPause": 0,
+   "audio": {
+    "artist_name": "DJ Bountyhunter",
+    "song_name": "Woops",
+    "uses_original_audio": false,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "2214270228835091"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DegF1dUALTV/",
+   "owner": "themarketinginterns",
+   "plays": 354493,
+   "duration": 8.6,
+   "cutsPerSecond": 0.82,
+   "shots": 6,
+   "medianShot": 1.4,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "1.39am",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "27983380241330457"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DeiZmWdgPl-/",
+   "owner": "themarketinginterns",
+   "plays": 234256,
+   "duration": 12.1,
+   "cutsPerSecond": 0,
+   "shots": 1,
+   "medianShot": 12.1,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "nahfrlcam",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "27686822737661329"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DddI4ExgWjh/",
+   "owner": "themarketinginterns",
+   "plays": 226502,
+   "duration": 32,
+   "cutsPerSecond": 0.66,
+   "shots": 22,
+   "medianShot": 1.7,
+   "wordsPerMinute": 264,
+   "speechShare": 0.79,
+   "longestPause": 0.6,
+   "audio": {
+    "artist_name": "themarketinginterns",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28242326158743248"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/Dd9bmKepccj/",
+   "owner": "cluely",
+   "plays": 7148967,
+   "duration": 62.2,
+   "cutsPerSecond": 0.23,
+   "shots": 15,
+   "medianShot": 3.1,
+   "wordsPerMinute": 217,
+   "speechShare": 0.83,
+   "longestPause": 1.9,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "38951677544447867"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DcPiAFPpkJT/",
+   "owner": "cluely",
+   "plays": 5343526,
+   "duration": 101.9,
+   "cutsPerSecond": 0.4,
+   "shots": 42,
+   "medianShot": 1.8,
+   "wordsPerMinute": 194,
+   "speechShare": 0.95,
+   "longestPause": 3.6,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28208259592143905"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DbMixlZJJoo/",
+   "owner": "cluely",
+   "plays": 4163943,
+   "duration": 98.6,
+   "cutsPerSecond": 0.38,
+   "shots": 38,
+   "medianShot": 2.1,
+   "wordsPerMinute": 132,
+   "speechShare": 0.62,
+   "longestPause": 6.4,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "27448601724821986"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DbmHQlIpt_I/",
+   "owner": "cluely",
+   "plays": 3437481,
+   "duration": 58.9,
+   "cutsPerSecond": 0.24,
+   "shots": 15,
+   "medianShot": 3.9,
+   "wordsPerMinute": 187,
+   "speechShare": 0.81,
+   "longestPause": 3.6,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "27778838871782270"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/Ddclhi8JXoF/",
+   "owner": "cluely",
+   "plays": 3332645,
+   "duration": 128,
+   "cutsPerSecond": 0.38,
+   "shots": 49,
+   "medianShot": 1.8,
+   "wordsPerMinute": 256,
+   "speechShare": 0.9,
+   "longestPause": 1.3,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28467080796256310"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DdJ5gmtB-zV/",
+   "owner": "cluely",
+   "plays": 3243540,
+   "duration": 120.1,
+   "cutsPerSecond": 0.29,
+   "shots": 36,
+   "medianShot": 2.2,
+   "wordsPerMinute": 219,
+   "speechShare": 0.9,
+   "longestPause": 1.1,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28581711448111620"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DbZjCFyMDK0/",
+   "owner": "cluely",
+   "plays": 3002246,
+   "duration": 81.2,
+   "cutsPerSecond": 0.31,
+   "shots": 26,
+   "medianShot": 2.7,
+   "wordsPerMinute": 148,
+   "speechShare": 0.72,
+   "longestPause": 11.1,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "27702727182681987"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DbwafFlpXyu/",
+   "owner": "cluely",
+   "plays": 2972932,
+   "duration": 96.6,
+   "cutsPerSecond": 0.26,
+   "shots": 26,
+   "medianShot": 3.2,
+   "wordsPerMinute": 201,
+   "speechShare": 0.95,
+   "longestPause": 1.6,
+   "audio": {
+    "artist_name": "cluely",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "27773750542280396"
+   }
+  },
+  {
+   "url": "https://www.instagram.com/p/DPzmN55D8BK/",
+   "owner": "thejohnsonbrothers",
+   "plays": 10939790,
+   "duration": 65,
+   "cutsPerSecond": 0.17,
+   "shots": 10,
+   "medianShot": 5.4,
+   "wordsPerMinute": 66,
+   "speechShare": 0.4,
+   "longestPause": 12.8,
+   "audio": {
+    "artist_name": "Red Hot Chili Peppers",
+    "song_name": "Can't Stop",
+    "uses_original_audio": false,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "2109370465976847"
+   }
+  }
+ ],
+ "summary": {
+  "reels": 17,
+  "medianDuration": 58.882948,
+  "medianCutsPerSecond": 0.26,
+  "medianShot": 3.1,
+  "medianWordsPerMinute": 201,
+  "medianSpeechShare": 0.83,
+  "medianLongestPause": 1.9,
+  "originalAudioShare": 0.71,
+  "songs": [
+   {
+    "song": "Tyrons - Limitless",
+    "count": 1
+   },
+   {
+    "song": "Future Hit Makers - Empire State of Mind (Instrumental Version)",
+    "count": 1
+   },
+   {
+    "song": "Mustafa Saboori - Aura Farming",
+    "count": 1
+   },
+   {
+    "song": "DJ Bountyhunter - Woops",
+    "count": 1
+   },
+   {
+    "song": "Red Hot Chili Peppers - Can't Stop",
+    "count": 1
+   }
+  ]
+ },
+ "music": {
+  "summary": "71% of the reels run on original audio. Every episodic skit (Cluely, The Marketing Interns team intro) plays dialogue alone, because the jokes live in delivery and timing, and music would flatten the awkward pauses. Licensed tracks appear only where nobody speaks: the 6–12 s meme posts (Limitless, Aura Farming, Woops) and the friend-types montage (Can't Stop). There, a recognisable hype or trending sound carries the whole joke beside one line of text. The house tour uses an Empire State of Mind instrumental under the voice as a 'look at our empire' irony bed.",
+  "recommendation": "For The Boyz episodes, default to original audio with no music under dialogue or confessionals. Optional bed at volume low (around -24 dB under speech) is allowed only under a cold-open action or an intro and cast montage. It starts at frame one and drops out hard on the first spoken line. It may return at low for a final cast_lineup. For mock-serious stakes (an investor meeting, a fake crisis), use a dramatic or epic bed at low under the action, cut dead on the punchline for contrast. Picks: spec-ops (120 BPM) or kings-trailer (80 BPM). For season and cast intros and hype moments, use funkeriffic (112 BPM) or beat-thee (91 BPM) at medium, with character_intro freezes landing on beats. For ironic 'visionary founder' moments, inspiration or favorite corporate (120 BPM) at low. For no-dialogue meme posts, use music at medium-high for the full duration, starting on a strong downbeat: hippety-hop, city-sunshine or arpent. Cut the visual change on the beat.",
+  "library_moods": [
+   "funky-groovy",
+   "hip-hop",
+   "dramatic-suspense",
+   "cinematic-epic",
+   "inspiring-corporate",
+   "upbeat-pop",
+   "electronic-tech",
+   "ironic hype",
+   "mock-epic",
+   "playful"
+  ]
+ }
+}

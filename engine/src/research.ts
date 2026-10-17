@@ -47,7 +47,7 @@ export async function recoverStaleResearch() {
 
 // ---------------------------------------------------------------- Apify
 
-type Item = {
+export type Item = {
   url?: string;
   shortCode?: string;
   caption?: string;
@@ -60,9 +60,10 @@ type Item = {
   videoDuration?: number;
   ownerUsername?: string;
   timestamp?: string;
+  musicInfo?: { artist_name?: string; song_name?: string; uses_original_audio?: boolean; audio_id?: string };
 };
 
-async function apify(actor: string, input: Record<string, unknown>): Promise<Item[]> {
+export async function apify(actor: string, input: Record<string, unknown>): Promise<Item[]> {
   const token = process.env.APIFY_TOKEN;
   if (!token) throw new Error("The trend researcher needs APIFY_TOKEN in the engine's environment.");
   const res = await fetch(`https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?timeout=280`, {
@@ -78,7 +79,7 @@ async function apify(actor: string, input: Record<string, unknown>): Promise<Ite
   return Array.isArray(items) ? items : [];
 }
 
-const plays = (i: Item) => i.videoPlayCount ?? i.igPlayCount ?? i.videoViewCount ?? null;
+export const plays = (i: Item) => i.videoPlayCount ?? i.igPlayCount ?? i.videoViewCount ?? null;
 // Reach first, engagement as a tie-breaker; likes stand in when plays are hidden.
 function score(i: Item) {
   const p = plays(i);
@@ -129,13 +130,63 @@ const SYSTEM = `You are the trend researcher at Magik Studio, a short-form video
 
 Each reel comes with its numbers, caption, transcript, cut rate and a contact sheet (a grid of frames sampled across the reel, read left to right, top to bottom). Look closely at the frames: framing, text on screen, captions style, motion graphics, people, setting, pacing. Be concrete and quantitative. Write in English.`;
 
-async function cutsPerSecond(file: string, duration: number) {
+async function cutTimes(file: string) {
   try {
     const { stderr } = await run(config.ffmpeg, ["-hide_banner", "-i", file, "-vf", "scale=320:-2,select='gt(scene,0.3)',showinfo", "-an", "-f", "null", "-"]);
-    return Math.round(((stderr.match(/pts_time:/g)?.length ?? 0) / Math.max(1, duration)) * 100) / 100;
+    return [...stderr.matchAll(/pts_time:([\d.]+)/g)].map((m) => Number(m[1]));
   } catch {
     return null;
   }
+}
+
+export type Watched = {
+  item: Item;
+  duration: number;
+  sheet: string | null;
+  transcript: string;
+  cuts: number | null;
+  // Measured pacing: shot lengths between detected cuts, speaking rate, and pauses.
+  stats: { shots: number; medianShot: number | null; wordsPerMinute: number | null; speechShare: number | null; longestPause: number | null };
+};
+
+// Downloads and measures each reel: a contact sheet, the transcript, cuts and pacing.
+export async function watchReels(items: Item[], workDir: string, onProgress: (step: string) => unknown = () => {}): Promise<Watched[]> {
+  const watched: Watched[] = [];
+  for (const [k, item] of items.entries()) {
+    await onProgress(`Watching reel ${k + 1} of ${items.length}`);
+    try {
+      const file = path.join(workDir, `reel-${k}.mp4`);
+      const res = await fetch(item.videoUrl!, { signal: AbortSignal.timeout(120_000) });
+      if (!res.ok) continue;
+      await writeFile(file, Buffer.from(await res.arrayBuffer()));
+      const p = await probe(file);
+      const sheets = await contactSheets(file, path.join(workDir, `sheets-${k}`), Math.max(0.5, Math.ceil((p.duration / 9) * 2) / 2));
+      const lines = p.hasAudio && (await transcriptionAvailable()) ? ((await transcribe(file, workDir)) ?? []) : [];
+      const words = lines.flatMap((l) => l.words ?? []);
+      const times = await cutTimes(file);
+      const bounds = times ? [0, ...times, p.duration] : null;
+      const shots = bounds ? bounds.slice(1).map((t, i) => t - bounds[i]).filter((d) => d > 0.05).sort((a, b) => a - b) : [];
+      const spoken = words.reduce((a, w) => a + Math.max(0, w.end - w.start), 0);
+      const pauses = words.slice(1).map((w, i) => w.start - words[i].end);
+      watched.push({
+        item,
+        duration: p.duration,
+        sheet: sheets[0] ?? null,
+        transcript: lines.map((l) => l.text).join(" "),
+        cuts: times ? Math.round((times.length / Math.max(1, p.duration)) * 100) / 100 : null,
+        stats: {
+          shots: shots.length,
+          medianShot: shots.length ? Math.round(shots[Math.floor(shots.length / 2)] * 10) / 10 : null,
+          wordsPerMinute: words.length ? Math.round((words.length / Math.max(1, p.duration)) * 60) : null,
+          speechShare: words.length ? Math.round((spoken / p.duration) * 100) / 100 : null,
+          longestPause: pauses.length ? Math.round(Math.max(...pauses) * 10) / 10 : null,
+        },
+      });
+    } catch (e) {
+      log(null, `research: skipped a reel (${e instanceof Error ? e.message : e})`);
+    }
+  }
+  return watched;
 }
 
 export type StudyContext = { client: string; niche?: string | null; business?: string | null; audience?: string | null; needs?: string[] };
@@ -153,22 +204,7 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
   log(null, `research: ${found.length} reels found, watching ${picks.length}`);
   if (!picks.length) throw new Error("Apify found no usable reels for these hashtags and accounts. Try broader hashtags.");
 
-  const watched: { item: Item; duration: number; sheet: string | null; transcript: string; cuts: number | null }[] = [];
-  for (const [k, item] of picks.entries()) {
-    await onProgress(`Watching reel ${k + 1} of ${picks.length}`);
-    try {
-      const file = path.join(workDir, `reel-${k}.mp4`);
-      const res = await fetch(item.videoUrl!, { signal: AbortSignal.timeout(120_000) });
-      if (!res.ok) continue;
-      await writeFile(file, Buffer.from(await res.arrayBuffer()));
-      const p = await probe(file);
-      const sheets = await contactSheets(file, path.join(workDir, `sheets-${k}`), Math.max(0.5, Math.ceil((p.duration / 9) * 2) / 2));
-      const lines = p.hasAudio && (await transcriptionAvailable()) ? ((await transcribe(file, workDir)) ?? []) : [];
-      watched.push({ item, duration: p.duration, sheet: sheets[0] ?? null, transcript: lines.map((l) => l.text).join(" "), cuts: await cutsPerSecond(file, p.duration) });
-    } catch (e) {
-      log(null, `research: skipped a reel (${e instanceof Error ? e.message : e})`);
-    }
-  }
+  const watched = await watchReels(picks, workDir, onProgress);
   if (!watched.length) throw new Error("None of the reels could be downloaded.");
 
   await onProgress("Claude is studying the reels");

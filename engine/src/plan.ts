@@ -162,6 +162,10 @@ const Music = z.object({
   track: z.string().nullable().describe("Track id from the music library, or null for no music"),
   start: z.number().describe("Seconds into the track to start from (a strong section or the first beat)"),
   volume: z.enum(["low", "medium", "high"]).describe("Bed level under speech: low for talking, medium for mixed, high for montage with little speech. It dips automatically under speech."),
+  sections: z
+    .array(z.object({ start: z.number(), end: z.number(), volume: z.enum(["low", "medium", "high"]) }))
+    .default([])
+    .describe("Where on the finished timeline the music plays, each with its own level (it fades in and out over 0.2 s at each edge). Empty = the whole video at `volume`. Example: under the cold open until the first line, then again under the end lineup."),
 });
 
 const Sfx = z.object({
@@ -216,7 +220,7 @@ export function parseStoredPlan(raw: unknown): EditPlan | null {
     graphics: [],
     overlays: [],
     motion: [],
-    music: { track: null, start: 0, volume: "low" },
+    music: { track: null, start: 0, volume: "low", sections: [] },
     sfx: [],
     ...p,
     on_screen_text: Array.isArray(p.on_screen_text)
@@ -291,6 +295,8 @@ export type PlanInput = {
   previous: { number: number; plan: EditPlan; comments: { timecodeMs: number | null; body: string; fromClient: boolean }[] } | null;
   // The music library, described for planning; empty when there is none.
   music?: string;
+  // Self-review: contact sheets of the cut being revised, one frame per second.
+  renderSheets?: { files: string[]; interval: number };
 };
 
 const SYSTEM = `You are the editor at Magik Studio, a video studio that makes short videos for brands. You cut raw footage into a finished video that a human editor will check before the client sees it.
@@ -314,7 +320,7 @@ Your tools, beyond choosing shots:
 - Graphics: comment call-to-action bubbles, follow buttons, progress bars, counters, emojis, hand-drawn circles.
 - Overlays: B-roll that covers the picture while the voice continues (cutaway), and floating cards of other clips or stills.
 - Motion: 3D motion graphics templates (freeze-frame character intros over a held frame, 3D cast cards, kinetic 3D titles, 3D stat cards, 3D name plates). They make the edit feel dynamic and premium.
-- Sound: a music bed from the library that dips under speech, and sound effects on key moments.
+- Sound: a music bed from the library that dips under speech, either under the whole video or only in sections you choose (for example under the cold open, out on the first line, back for the ending), and sound effects on key moments.
 A hard cut with no moves is the default; every move, graphic and sound should have a reason you could tell the editor.
 
 Transcripts mark fillers like [filler "euh" 12.4–12.6], stutters like [repeat "en" 3.1–3.2] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. Shot in and out points are snapped to the nearest word edge automatically, so place them at the gaps between words. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
@@ -436,6 +442,15 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
         type: "image",
         source: { type: "base64", media_type: "image/jpeg", data: (await readFile(clip.sheets[s])).toString("base64") },
       });
+    }
+  }
+  if (input.renderSheets?.files.length) {
+    const per = SHEET_COLS * SHEET_ROWS;
+    blocks.push({ type: "text", text: "The previous cut as it rendered (watch it the way a viewer will):" });
+    for (const [s, file] of input.renderSheets.files.entries()) {
+      const times = Array.from({ length: per }, (_, k) => (s * per + k) * input.renderSheets!.interval);
+      blocks.push({ type: "text", text: `Render sheet ${s + 1}, frames at ${times.map(fmt).join(", ")} on the timeline:` });
+      blocks.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: (await readFile(file)).toString("base64") } });
     }
   }
   blocks.push({
@@ -663,10 +678,20 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
     });
   }
 
+  // Music sections: inside the video, at least half a second, in order and not overlapping.
+  const sections: EditPlan["music"]["sections"] = [];
+  for (const sec of [...(plan.music.sections ?? [])].sort((a, b) => a.start - b.start)) {
+    const start = round(clamp(sec.start, 0, length));
+    const end = round(clamp(sec.end, 0, length));
+    const prev = sections.at(-1);
+    const from = prev ? Math.max(start, prev.end) : start;
+    if (end - from >= 0.5) sections.push({ start: from, end, volume: sec.volume });
+  }
   const music = {
     track: plan.music.track && tracks.includes(plan.music.track) ? plan.music.track : null,
     start: round(Math.max(0, plan.music.start || 0)),
     volume: plan.music.volume,
+    sections,
   };
   if (plan.music.track && !music.track) problems.push(`Dropped unknown music track ${plan.music.track}.`);
   const sfx = plan.sfx.filter((x) => x.at >= 0 && x.at < length).slice(0, 24).map((x) => ({ ...x, at: round(x.at) }));

@@ -1,5 +1,5 @@
-// Royalty-free music for edits. music/library.json lists the tracks: all CC0, so they can
-// go under client ads on any platform without credit. Each entry's `page` is the archived
+// Royalty-free music for edits. music/library.json lists the tracks: CC0 or the Pixabay
+// Content License, so they can go under client videos on any platform without credit. Each entry's `page` is the archived
 // freepd.com listing that states the licence (the site closed in 2025; the files are served
 // from an archive.org mirror, byte-identical to freepd.com's originals). bpm and firstBeat
 // were measured from the audio, so beat n falls at firstBeat + n * 60 / bpm.
@@ -10,6 +10,7 @@ import os from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { fetchDriveFile } from "./drive.ts";
 import { run } from "./exec.ts";
 
 export const MOODS = [
@@ -79,11 +80,13 @@ async function prepare(track: Track) {
   const source = path.join(dir, `${tag}.source`);
   const partial = path.join(dir, `${tag}.partial.m4a`);
   try {
+    // Tracks the studio keeps in Google Drive are "drive:<file id>"; the rest are web links.
     // archive.org sometimes answers a 5xx for a moment: try a few times before giving up.
-    let res = await fetch(track.url, { signal: AbortSignal.timeout(5 * 60_000) });
+    const get = () => (track.url.startsWith("drive:") ? fetchDriveFile(track.url.slice(6)) : fetch(track.url, { signal: AbortSignal.timeout(5 * 60_000) }));
+    let res = await get();
     for (let tries = 1; res.status >= 500 && tries < 4; tries++) {
       await new Promise((r) => setTimeout(r, 2000 * tries));
-      res = await fetch(track.url, { signal: AbortSignal.timeout(5 * 60_000) });
+      res = await get();
     }
     if (!res.ok || !res.body) throw new Error(`Couldn't download music "${track.title}" (${res.status})`);
     await pipeline(Readable.fromWeb(res.body as never), createWriteStream(source));

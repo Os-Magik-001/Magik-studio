@@ -407,7 +407,7 @@ export async function render(opts: RenderOptions) {
     args.push("-ss", plan.music.start.toFixed(3), "-i", opts.musicFile);
     const fadeOut = Math.max(0, length - 1.5).toFixed(3);
     filters.push(
-      `[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=duration=${length.toFixed(3)},afade=t=in:d=0.5,afade=t=out:st=${fadeOut}:d=1.5,volume=${MUSIC_LEVEL[plan.music.volume]}[mus]`,
+      `[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=duration=${length.toFixed(3)},${musicLevel(plan.music, length, fadeOut)}[mus]`,
       `[mus][side]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=400:makeup=1[duck]`,
     );
     input++;
@@ -437,6 +437,15 @@ export async function render(opts: RenderOptions) {
     output,
   );
   await run(config.ffmpeg, args);
+}
+
+// The music's level over the timeline: the whole video at one level, or only inside
+// its sections, each ramping in and out over 0.2 s.
+function musicLevel(music: EditPlan["music"], length: number, fadeOut: string) {
+  if (!music.sections?.length) return `afade=t=in:d=0.5,afade=t=out:st=${fadeOut}:d=1.5,volume=${MUSIC_LEVEL[music.volume]}`;
+  const ramp = 0.2;
+  const terms = music.sections.map((s) => `${MUSIC_LEVEL[s.volume]}*clip(min((t-${s.start.toFixed(3)})/${ramp},(${Math.min(s.end, length).toFixed(3)}-t)/${ramp}),0,1)`);
+  return `volume='${terms.join("+")}':eval=frame`;
 }
 
 // Overlapping or touching ranges become one, so each needs a single cut-out pass.

@@ -7,9 +7,11 @@ import { config, db } from "./config.ts";
 import { contactSheets, download, probe } from "./media.ts";
 import { driveWorkingCopy, pruneCache } from "./drive.ts";
 import { describeLibrary, loadLibrary, trackFile } from "./music.ts";
-import { parseStoredPlan, planEdit, timelineWords, validatePlan, type BrandKit, type Clip, type PlanInput } from "./plan.ts";
+import { parseStoredPlan, planEdit, timelineOf, timelineWords, validatePlan, type BrandKit, type Clip, type EditPlan, type PlanInput } from "./plan.ts";
 import { render, type Brand } from "./render.ts";
+import { reviewRender } from "./review.ts";
 import { loadSkills } from "./skills.ts";
+import { tighten } from "./tighten.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
 export const log = (job: string | null, msg: string) =>
@@ -147,7 +149,7 @@ export async function watchClips(clips: Clip[], dir: string, hint: string, step:
   }
 }
 
-export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand };
+export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand; selfReview?: boolean };
 
 // Claude plans the cut, the plan is checked against the real footage, and the edit
 // renders to `output`.
@@ -170,15 +172,60 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
     note(`rejected plan (saved to ${keep}): ${raw.segments.map((s) => `${s.clip} ${s.start}-${s.end}`).join(", ") || "no shots"}`);
     throw err;
   }
-  const { plan, problems, length } = checked;
-  problems.forEach((p) => note(`plan fix: ${p}`));
+  const first = finish(checked, clips, note);
 
-  await step(`Rendering ${length.toFixed(1)}s`);
-  const track = library.find((t) => t.id === plan.music.track);
+  const track = (plan: EditPlan) => library.find((t) => t.id === plan.music.track);
   // A music download that fails shouldn't sink the edit: it goes out without music.
-  const musicFile = track ? await trackFile(track).catch((err) => (note(`music unavailable: ${err.message}`), null)) : null;
-  await render({ plan, clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(plan, clips), musicFile });
-  return { plan, length };
+  const music = async (plan: EditPlan) => {
+    const t = track(plan);
+    return t ? await trackFile(t).catch((err) => (note(`music unavailable: ${err.message}`), null)) : null;
+  };
+  await step(`Rendering ${first.length.toFixed(1)}s`);
+  await render({ plan: first.plan, clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(first.plan, clips), musicFile: await music(first.plan) });
+  if (req.selfReview === false) return first;
+
+  // Self-review: watch the render back, then revise it like a senior editor would.
+  await step("Watching the cut back");
+  const review = await reviewRender(output, first.plan, path.join(dir, "review"));
+  note(`self-review: ${review.notes.length} note(s)${review.summary.length ? `: ${review.summary.join(" | ")}` : ""}`);
+  await step("Claude is reviewing its own cut");
+  let revised;
+  try {
+    const { plan: raw2, usage: usage2 } = await planner({
+      ...input,
+      skills,
+      clips,
+      music: library.length ? describeLibrary(library) : undefined,
+      source: "editor_fix",
+      previous: { number: 1, plan: first.plan, comments: review.notes },
+      instructions: [SELF_REVIEW, input.instructions && `The original notes for this edit:\n${input.instructions}`].filter(Boolean).join("\n\n"),
+      renderSheets: review.sheets,
+    });
+    note(`${usage2} (self-review)`);
+    revised = finish(validatePlan(raw2, clips, library.map((t) => t.id)), clips, note);
+  } catch (err) {
+    // The first cut stands if the review can't be planned.
+    note(`self-review skipped: ${err instanceof Error ? err.message : err}`);
+    return first;
+  }
+  await step(`Rendering the reviewed cut, ${revised.length.toFixed(1)}s`);
+  await render({ plan: revised.plan, clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output, words: timelineWords(revised.plan, clips), musicFile: await music(revised.plan) });
+  return revised;
+}
+
+const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you are now the senior editor reviewing it before anyone sees it. Watch the render sheets and read the notes pinned to its timeline, then deliver the final cut:
+- Cut every dead frame: no silence at the heads or tails of shots, no pauses over 0.3 s unless they are a deliberate comic beat, no second take of a line, no stutter.
+- Keep every line the script needs, and keep the jokes' timing: a reaction beat of 0.4 to 0.8 s after a punchline is good.
+- Freezes for character intros 2.2 to 2.8 s, a comic freeze 0.8 to 1.2 s.
+- Make it more dynamic where it sags: a punch-in, a cutaway, a motion graphic or a tighter cut.
+- If a note is wrong (a deliberate pause), keep it as it is. Don't change what already works.`;
+
+// Trim pass after validation; logs what it changed.
+function finish(checked: ReturnType<typeof validatePlan>, clips: Clip[], note: Note) {
+  checked.problems.forEach((p) => note(`plan fix: ${p}`));
+  const tight = tighten(checked.plan, clips);
+  if (tight.removed) note(`trim pass: removed ${tight.removed.toFixed(1)}s (${tight.notes.length ? tight.notes.join("; ") : "heads and tails"})`);
+  return { plan: tight.plan, length: timelineOf(tight.plan).length };
 }
 
 // ---------------------------------------------------------------- one job

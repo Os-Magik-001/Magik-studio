@@ -8,7 +8,7 @@ import { describeLibrary, loadLibrary, MOODS, trackFile } from "../src/music.ts"
 
 test("library.json is complete, commercially licensed and well formed", async () => {
   const tracks = await loadLibrary();
-  assert.ok(tracks.length >= 12 && tracks.length <= 16, `${tracks.length} tracks`);
+  assert.ok(tracks.length >= 12 && tracks.length <= 80, `${tracks.length} tracks`);
   assert.equal(new Set(tracks.map((t) => t.id)).size, tracks.length, "ids are unique");
   for (const t of tracks) {
     assert.match(t.id, /^[a-z0-9]+(-[a-z0-9]+)*$/, `kebab id: ${t.id}`);
@@ -16,9 +16,10 @@ test("library.json is complete, commercially licensed and well formed", async ()
     assert.ok(MOODS.includes(t.mood), `${t.id} mood ${t.mood}`);
     assert.ok(["low", "medium", "high"].includes(t.energy), `${t.id} energy ${t.energy}`);
     assert.ok(t.bpm >= 70 && t.bpm <= 180, `${t.id} bpm ${t.bpm}`);
-    assert.ok(t.duration >= 60 && t.duration <= 300, `${t.id} duration ${t.duration}`);
+    assert.ok(t.duration >= 30 && t.duration <= 300, `${t.id} duration ${t.duration}`);
     assert.ok(t.firstBeat >= 0 && t.firstBeat < Math.min(10, t.duration), `${t.id} firstBeat ${t.firstBeat}`);
-    assert.equal(new URL(t.url).protocol, "https:", `${t.id} url`);
+    // Web links, or tracks the studio keeps in Google Drive ("drive:<file id>").
+    assert.ok(/^(https:\/\/|drive:[\w-]{10,}$)/.test(t.url), `${t.id} url`);
     assert.equal(new URL(t.page).protocol, "https:", `${t.id} page`);
     // Attribution or non-commercial terms would rule a track out for client ads.
     assert.doesNotMatch(t.license, /\bBY\b|\bNC\b/i, `${t.id} license ${t.license}`);

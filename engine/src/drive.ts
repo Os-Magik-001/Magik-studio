@@ -119,6 +119,14 @@ const COPY_VERSION = "q70";
 const PREVIEW = "scale='if(gte(iw,ih),960,-2)':'if(gte(iw,ih),-2,960)',fps=10";
 const PREVIEW_ENCODE = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "28", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k"];
 
+// A Drive file's bytes (music tracks the studio keeps in Drive).
+export async function fetchDriveFile(id: string) {
+  return fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`, {
+    headers: { authorization: `Bearer ${await accessToken()}` },
+    signal: AbortSignal.timeout(5 * 60_000),
+  });
+}
+
 export const previewOf = (file: string) => file.replace(/\.mp4$/, ".preview.mp4");
 
 function transcode(input: string, output: string, preview: string, duration: number, onProgress: (fraction: number) => void) {
@@ -147,23 +155,27 @@ function transcode(input: string, output: string, preview: string, duration: num
 }
 
 // Every video file behind a Drive link: the file itself, or a folder's videos (and its subfolders').
-export async function listDriveVideos(id: string): Promise<{ id: string; name: string }[]> {
+export function listDriveVideos(id: string): Promise<{ id: string; name: string }[]> {
+  return listDriveFiles(id, (f) => f.mimeType.startsWith("video/") || /\.(mp4|mov|m4v|mxf|mts|avi|mkv)$/i.test(f.name));
+}
+
+// Every file behind a Drive link that `keep` accepts: the file itself, or a folder's files (and its subfolders').
+export async function listDriveFiles(id: string, keep: (f: { name: string; mimeType: string }) => boolean): Promise<{ id: string; name: string; parent: string }[]> {
   const get = async (q: string) => {
     const res = await fetch(`https://www.googleapis.com/drive/v3/${q}`, { headers: { authorization: `Bearer ${await accessToken()}` } });
     if (!res.ok) throw new Error(`Google Drive returned ${res.status}: share the footage with ${serviceAccount()?.client_email}.`);
     return res.json();
   };
   const root = await get(`files/${id}?supportsAllDrives=true&fields=id,name,mimeType`);
-  const isVideo = (f: { name: string; mimeType: string }) => f.mimeType.startsWith("video/") || /\.(mp4|mov|m4v|mxf|mts|avi|mkv)$/i.test(f.name);
-  if (root.mimeType !== "application/vnd.google-apps.folder") return isVideo(root) ? [root] : [];
-  const out: { id: string; name: string }[] = [];
-  const queue = [root.id as string];
-  while (queue.length && out.length < 200) {
+  if (root.mimeType !== "application/vnd.google-apps.folder") return keep(root) ? [{ id: root.id, name: root.name, parent: "" }] : [];
+  const out: { id: string; name: string; parent: string }[] = [];
+  const queue = [{ id: root.id as string, name: root.name as string }];
+  while (queue.length && out.length < 500) {
     const folder = queue.shift()!;
-    const page = await get(`files?q=${encodeURIComponent(`'${folder}' in parents and trashed = false`)}&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=1000&orderBy=name&fields=files(id,name,mimeType)`);
+    const page = await get(`files?q=${encodeURIComponent(`'${folder.id}' in parents and trashed = false`)}&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=1000&orderBy=name&fields=files(id,name,mimeType)`);
     for (const f of page.files) {
-      if (f.mimeType === "application/vnd.google-apps.folder") queue.push(f.id);
-      else if (isVideo(f)) out.push({ id: f.id, name: f.name });
+      if (f.mimeType === "application/vnd.google-apps.folder") queue.push({ id: f.id, name: f.name });
+      else if (keep(f)) out.push({ id: f.id, name: f.name, parent: folder.name });
     }
   }
   return out;

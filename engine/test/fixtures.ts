@@ -81,6 +81,6 @@ export const EXTRAS = {
   graphics: [],
   overlays: [],
   motion: [],
-  music: { track: null, start: 0, volume: "low" },
+  music: { track: null, start: 0, volume: "low", sections: [] },
   sfx: [],
 } satisfies Partial<EditPlan>;

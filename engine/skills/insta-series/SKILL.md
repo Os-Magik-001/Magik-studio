@@ -4,6 +4,8 @@ description: Episodes of an Instagram web series (sitcom or mockumentary with re
 formats: social_short, ad
 ---
 
+For The Boyz and other workplace or startup comedy, the trained **office-comedy-reels** skill wins on pacing, cutting, captions and music; use this skill for the series branding (cold open plus title sting, drip logo, episode numbering, next-episode tease) and the character intros.
+
 Use this when the brief, the title or the editor's notes mention an episode, a series, a season, a sitcom, a mockumentary or skit, or name The Boyz. It overrides creator-reels: a series episode is driven by scenes and dialogue, not by a speaker talking to camera.
 
 **What an episode is**
