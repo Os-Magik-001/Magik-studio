@@ -357,11 +357,12 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
     }));
   }
 
-  if (item.style === "boxed" || item.style === "caption") {
+  // Labels are small, so they get a soft dark pill: readable over a lamp or a white wall.
+  if (item.style === "boxed" || item.style === "caption" || item.style === "label") {
     const widest = Math.max(...allLines.map((l) => l.width));
     const padX = size * 0.7;
     const padY = size * 0.4;
-    ctx.fillStyle = item.style === "boxed" ? (brand.colors.find((c) => /^#/.test(c)) ?? "#FFFFFF") : "rgba(0,0,0,0.62)";
+    ctx.fillStyle = item.style === "boxed" ? (brand.colors.find((c) => /^#/.test(c)) ?? "#FFFFFF") : item.style === "label" ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.62)";
     shadow(ctx, size * 0.5, 0.35);
     ctx.beginPath();
     ctx.roundRect(cx - widest / 2 - padX, top - padY, widest + padX * 2, blockH + padY * 2, size * 0.45);
@@ -369,7 +370,7 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
     noShadow(ctx);
     if (item.style === "boxed" && !item.color) lines = lines.map((l) => ({ ...l, runs: l.runs.map((r) => ({ ...r, color: luminance(ctx.fillStyle as string) > 0.6 ? "#141413" : "#FFFFFF" })) }));
   } else {
-    shadow(ctx, size * (item.style === "hero" ? 0.25 : item.style === "drip" ? 0.12 : 0.35), item.style === "label" ? 0.7 : item.style === "drip" ? 0.35 : 0.55);
+    shadow(ctx, size * (item.style === "hero" ? 0.25 : item.style === "drip" ? 0.12 : 0.35), item.style === "drip" ? 0.35 : 0.55);
   }
   if (kickers) {
     drawRuns(ctx, lines.slice(0, 1), cx, top, lineH);

@@ -79,7 +79,12 @@ async function prepare(track: Track) {
   const source = path.join(dir, `${tag}.source`);
   const partial = path.join(dir, `${tag}.partial.m4a`);
   try {
-    const res = await fetch(track.url, { signal: AbortSignal.timeout(5 * 60_000) });
+    // archive.org sometimes answers a 5xx for a moment: try a few times before giving up.
+    let res = await fetch(track.url, { signal: AbortSignal.timeout(5 * 60_000) });
+    for (let tries = 1; res.status >= 500 && tries < 4; tries++) {
+      await new Promise((r) => setTimeout(r, 2000 * tries));
+      res = await fetch(track.url, { signal: AbortSignal.timeout(5 * 60_000) });
+    }
     if (!res.ok || !res.body) throw new Error(`Couldn't download music "${track.title}" (${res.status})`);
     await pipeline(Readable.fromWeb(res.body as never), createWriteStream(source));
 
