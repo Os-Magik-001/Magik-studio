@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { config } from "./config.ts";
-import { SHEET_COLS, SHEET_ROWS } from "./media.ts";
+import { frameSize, SHEET_COLS, SHEET_ROWS } from "./media.ts";
 import type { Skill } from "./skills.ts";
 import type { TranscriptLine } from "./transcribe.ts";
 
@@ -233,7 +233,16 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
 
   const blocks: Anthropic.Beta.BetaContentBlockParam[] = [{ type: "text", text: brief }, { type: "text", text: "Footage:" }];
 
+  const [W, H] = frameSize(input.aspect);
   for (const clip of input.clips) {
+    // How far a punch-in can go before the frame is enlarged past the source's own pixels.
+    const sharp = Math.min(clip.width / W, clip.height / H);
+    const zoomNote =
+      sharp >= 1.05
+        ? `stays sharp up to zoom ${(Math.floor(sharp * 20) / 20).toFixed(2)}`
+        : sharp >= 0.95
+          ? "fills the frame at its own resolution, so any punch-in softens it"
+          : `already enlarged ${(1 / sharp).toFixed(1)}x to fill ${input.aspect}, so it will look soft and any punch-in softens it further`;
     const transcript = clip.transcript?.length
       ? `\nTranscript:\n${clip.transcript.map((l) => `  ${fmt(l.start)}–${fmt(l.end)}: ${l.text}`).join("\n")}`
       : clip.transcript
@@ -241,7 +250,7 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
         : "";
     blocks.push({
       type: "text",
-      text: `Clip ${clip.id} ("${clip.fileName}"): ${fmt(clip.duration)} long, ${clip.width}x${clip.height} at ${Math.round(clip.fps)} fps, ${clip.hasAudio ? "has sound" : "no sound"}.${transcript}`,
+      text: `Clip ${clip.id} ("${clip.fileName}"): ${fmt(clip.duration)} long, ${clip.width}x${clip.height} at ${Math.round(clip.fps)} fps, ${clip.hasAudio ? "has sound" : "no sound"}, ${zoomNote}.${transcript}`,
     });
     const perSheet = SHEET_COLS * SHEET_ROWS;
     for (let s = 0; s < clip.sheets.length; s++) {

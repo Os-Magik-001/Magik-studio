@@ -58,6 +58,14 @@ export async function probe(file: string): Promise<Probe> {
   };
 }
 
+// Output frame size for each aspect ratio the studio delivers.
+const FRAME_SIZES: Record<string, [number, number]> = {
+  "9:16": [1080, 1920],
+  "1:1": [1080, 1080],
+  "16:9": [1920, 1080],
+};
+export const frameSize = (aspect: string) => FRAME_SIZES[aspect] ?? FRAME_SIZES["9:16"];
+
 export const SHEET_COLS = 3;
 export const SHEET_ROWS = 3;
 const CELL = 360;

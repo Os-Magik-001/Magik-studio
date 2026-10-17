@@ -3,13 +3,9 @@ import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
+import { frameSize } from "./media.ts";
 import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
 
-const SIZES: Record<string, [number, number]> = {
-  "9:16": [1080, 1920],
-  "1:1": [1080, 1080],
-  "16:9": [1920, 1080],
-};
 const FPS = 30;
 
 type Shot = EditPlan["segments"][number];
@@ -119,11 +115,16 @@ async function textOverlay(item: EditPlan["on_screen_text"][number], W: number, 
   ctx.font = `${caption ? 700 : 800} ${size}px ${fontStack(brand)}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  const lines = wrap(ctx, item.text, W * 0.82);
+  const lines = wrap(ctx, item.text, W * 0.8);
   const lineH = size * 1.25;
   const blockH = lines.length * lineH;
-  const anchor = item.position === "top" ? H * 0.14 : item.position === "center" ? H * 0.5 : H * (W < H ? 0.76 : 0.84);
-  const top = anchor - blockH / 2;
+  const anchor = item.position === "top" ? H * 0.14 : item.position === "center" ? H * 0.5 : H * (W < H ? 0.72 : 0.84);
+  // Vertical video plays under the app's own UI (Reels, TikTok, Shorts): the header
+  // covers the top ~220px and the caption, audio row and buttons everything below
+  // y 1470, so text is kept between them.
+  const [safeTop, safeBottom] = W < H ? [H * 0.125, H * 0.765] : [H * 0.06, H * 0.94];
+  const pad = caption ? size * 0.35 : 0;
+  const top = Math.min(Math.max(anchor - blockH / 2, safeTop + pad), safeBottom - pad - blockH);
 
   if (caption) {
     const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
@@ -190,7 +191,7 @@ export async function render(opts: {
   output: string;
 }) {
   const { plan, clips, brand, workDir, output } = opts;
-  const [W, H] = SIZES[opts.aspect] ?? SIZES["9:16"];
+  const [W, H] = frameSize(opts.aspect);
   const byId = new Map(clips.map((c) => [c.id, c]));
 
   const args: string[] = ["-v", "error", "-y"];

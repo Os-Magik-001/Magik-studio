@@ -22,6 +22,7 @@ formats: all
 - Hold the wide framing at least 1s before a punch-in, and the punched-in framing at least 1.5s after.
 
 **Quality limits**
-- Stay at or under 1.4 on 1080p footage and 1.6 on 4K. Closer looks soft, especially on faces and text.
-- Don't zoom into footage that's already low resolution or heavily compressed.
+- The clip list says, for each clip, the zoom it stays sharp up to at this video's aspect ratio. Keep punch-ins at or under that number. Going past it softens faces and text.
+- Some clips are already enlarged to fill the frame (typically horizontal footage in a vertical video). Use zoom 1.0 on those, or at most a very gentle push, and lean on cuts and focus for variety.
+- Don't zoom into footage that's heavily compressed.
 - Keep frames head-on and steady when they're full of information, like a screen, a menu or a label.

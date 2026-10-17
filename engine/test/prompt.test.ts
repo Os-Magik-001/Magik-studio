@@ -87,3 +87,12 @@ test("skills are added to Claude's instructions", () => {
   const system = buildSystem([{ name: "hooks", description: "d", formats: "all", enabled: true, body: "Open on the pour." }]);
   assert.match(system, /# Editing skills\n\n<skill name="hooks">\nOpen on the pour\.\n<\/skill>/);
 });
+
+test("each clip says how far it can be punched in before it goes soft", async () => {
+  const clip = (id: string, width: number, height: number) => ({ id, fileName: `${id}.mp4`, file: "", duration: 5, width, height, fps: 30, hasAudio: false, sheets: [], interval: 1, transcript: null });
+  const blocks = await buildContent({ ...input, aspect: "9:16", previous: null, clips: [clip("C1", 2160, 3840), clip("C2", 1080, 1920), clip("C3", 1920, 1080)] });
+  const text = blocks.map((b) => (b.type === "text" ? b.text : "")).join("\n");
+  assert.match(text, /Clip C1 .*stays sharp up to zoom 2\.00/);
+  assert.match(text, /Clip C2 .*fills the frame at its own resolution/);
+  assert.match(text, /Clip C3 .*already enlarged 1\.8x to fill 9:16/);
+});

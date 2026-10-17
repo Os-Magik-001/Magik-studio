@@ -13,6 +13,12 @@ formats: ad
 3. **Proof and benefits.** Show the product in use and the result, with one concrete benefit per shot, captioned as titles.
 4. **Peak and call to action.** Build energy into the final shots, then go to the end card with the offer or call to action. Hold the end card 2 to 3s so the brand mark and call to action fully land.
 
+**Structure by length** (when the script doesn't set one)
+- **15s:** establish, then the action, then the close with the call to action. Keep it to a few strong beats.
+- **30s:** establish, problem, solution, product, call to action.
+- **45 to 60s:** a small narrative with cutaways and B-roll around the same spine.
+- If the ad could run as a skippable YouTube ad, or the brief says so, the brand and product must be clear within the first 5 seconds.
+
 **Style**
 - Follow the brand kit exactly: colors, fonts and tone. Pick the look from the brand, usually `natural` or `cinematic`, unless the style rules say otherwise.
 - Transitions: clean and restrained. Hard cuts and a `crossfade` or `dip_to_black` into the end card. No novelty wipes unless the brand is playful.

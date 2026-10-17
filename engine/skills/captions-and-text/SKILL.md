@@ -10,8 +10,11 @@ formats: all
 - Time each caption to when its words are spoken in the transcript, on the finished timeline. Remember that speed changes and transitions shift it.
 - Leave each caption up at least 0.8s.
 - Clean up filler words ("um", "you know") in the caption text, but never change what someone means.
+- Captions say what was actually said. Automatic transcripts mishear names and keywords, so correct them using the spellings in the script, brief and client name. For example, a brand heard as a common word.
+- People speak about 2 to 2.7 words per second, so a 3 to 7 word caption usually covers 1.5 to 3s of speech.
+- No em dashes in on-screen text. Use a comma, a colon or a new caption.
 - Position:
-  - `bottom` by default.
+  - `bottom` by default. On vertical video the engine lifts it clear of the app's caption and buttons area automatically.
   - `top` when the bottom of the frame holds the subject's hands, the product or text that's already in the shot.
   - Never cover a face.
 

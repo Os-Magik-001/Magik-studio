@@ -13,7 +13,7 @@ formats: podcast_clip
 **Cutting speech**
 - Never cut mid-word or mid-sentence. In and out points go in the gaps between transcript lines.
 - Tighten by removing ums, false starts, long pauses and tangents.
-- Hide every cut inside a continuous take with a framing change: alternate the wide framing (zoom 1.0) and a punch-in (zoom 1.25 to 1.35) on each cut. That way a jump cut reads as a deliberate second angle.
+- Hide every cut inside a continuous take with a framing change: alternate the wide framing (zoom 1.0) and a punch-in (about 1.3, within the clip's sharp-zoom limit) on each cut. That way a jump cut reads as a deliberate second angle.
 - Set `focus` on the speaker's face. With two people, frame whoever is talking.
 - Keep the speaker's sound on every shot. No speed changes on speech.
 

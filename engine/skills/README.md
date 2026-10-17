@@ -28,4 +28,8 @@ A skill with broken front matter is skipped, and the engine log says why. The lo
 - **Expect to be overridden.** The brand kit, the script and the editor's notes always beat a skill.
 - **Keep each skill short and on one topic.** All matching skills go into every edit's instructions, so long skills cost tokens on every job.
 
-The starting set was distilled from the editing plugins installed in Claude Code: video-shotcraft, video-cleanup, adobe-edit-quick-cut, video-processing-editing and ffmpeg-llm.
+The starting set was distilled, not copied, from these sources:
+
+- **The editing plugins installed in Claude Code:** video-shotcraft, video-cleanup, adobe-edit-quick-cut, video-processing-editing and ffmpeg-llm.
+- **[tenfoldmarc/video-edit-skill](https://github.com/tenfoldmarc/video-edit-skill):** picking takes, talking-head framing, Reels safe zones and looks.
+- **[juliandickie/creators-studio](https://github.com/juliandickie/creators-studio)** (MIT): platform limits, ad structures and content-type defaults.

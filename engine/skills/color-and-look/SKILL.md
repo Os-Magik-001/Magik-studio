@@ -15,6 +15,11 @@ formats: all
   - **`vintage`:** nostalgia, retro products, throwback content.
 - When the brand style rules mention a mood like warm, moody or clean, follow them.
 
+**Protect skin tones**
+- When people are on screen, keep skin natural above everything else. Dark, crushed or heavily tinted grades push faces red or grey.
+- Dark is fine as a mood, as long as the person stays lit. Lift them with `adjust` rather than darkening the whole look.
+- Black and white rarely beats color for people on camera. Use it only when asked.
+
 **Make the shots match**
 - A shot that is visibly brighter, darker or a different color from its neighbors is a defect. Fix it with `adjust`:
   - **Underexposed:** brightness +0.05 to +0.12. Add contrast 1.05 if it also looks flat.
