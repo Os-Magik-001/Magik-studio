@@ -33,10 +33,29 @@ A separate Node worker that turns raw footage into an edited draft. It runs anyw
 
 1. **Claims** the oldest queued `edit_jobs` row (one job per video at a time) and reports progress the editor sees live.
 2. **Gathers** the approved script and shot list, the brand kit and logo, and downloads the raw footage.
-3. **Watches** the footage: contact sheets of frames sampled across every clip. With whisper.cpp installed it also transcribes speech.
-4. **Plans** the cut with Claude (`claude-opus-5-5`, adaptive thinking): an edit decision list of shots, captions, titles and an end card. Revisions start from the previous cut's plan, with each comment pinned to the shot it falls on.
-5. **Validates** the plan against the real footage, then **renders** it with FFmpeg: crop to 9:16, 1:1 or 16:9, 30 fps, loudness-normalized audio, branded end card.
+3. **Watches** the footage: contact sheets of frames sampled across every clip. With whisper.cpp set up, it also transcribes speech into timed phrases.
+4. **Plans** the cut with Claude (`claude-opus-5-5`, adaptive thinking), producing an edit decision list:
+   - shots, with transitions, speed changes, punch-ins and pushes, focus-point reframing and per-shot color fixes
+   - an overall look
+   - captions, titles and an end card
+
+   Claude follows the studio's editing skills in [`engine/skills/`](engine/skills/README.md), Markdown files matched to the video's format. Revisions start from the previous cut's plan, with each comment pinned to the shot it falls on.
+5. **Validates** the plan against the real footage, then **renders** it with FFmpeg:
+   - crops to 9:16, 1:1 or 16:9 around each shot's focus point
+   - 30 fps, loudness-normalized audio
+   - keeps text clear of the app's own buttons and labels on vertical video
+   - adds a branded end card
 6. **Hands off** the result as a new version in **editor check**, and notifies the editor. Failures show up on the video page with a plain reason and a Retry button.
+
+To set up transcription on a Mac:
+
+```bash
+brew install whisper-cpp
+M="$HOME/Library/Application Support/Magik Edit Engine/models"; mkdir -p "$M"
+curl -L -o "$M/ggml-large-v3-turbo-q5_0.bin" https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin
+curl -L -o "$M/ggml-silero-v5.1.2.bin" https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v5.1.2.bin
+# then set WHISPER_CPP_MODEL and WHISPER_VAD_MODEL in .env.local to those two paths
+```
 
 ```bash
 cd engine
@@ -46,7 +65,7 @@ pnpm start       # keep polling for jobs
 pnpm test        # render + plan unit tests (ENGINE_INTEGRATION=1 also runs live jobs with a stand-in planner)
 ```
 
-It reads `../.env.local` (or `engine/.env`): `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`) and `ANTHROPIC_API_KEY`. Optional: `WHISPER_CPP_MODEL` (path to a ggml model) to add transcripts, `ENGINE_MAX_FRAMES` (default 216) to cap how much footage Claude sees per job, and `ENGINE_MODEL`.
+It reads `../.env.local` (or `engine/.env`): `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`) and `ANTHROPIC_API_KEY`. Optional: `WHISPER_CPP_MODEL` (path to a ggml model) to add transcripts, with `WHISPER_VAD_MODEL` (Silero VAD, so silence and music don't produce invented words) and `WHISPER_LANGUAGE` (default `auto`); `ENGINE_SKILLS_DIR` to load skills from another folder; `ENGINE_MAX_FRAMES` (default 216) to cap how much footage Claude sees per job, and `ENGINE_MODEL`.
 
 **On a Mac**, run it as a background service that starts at login and restarts itself:
 

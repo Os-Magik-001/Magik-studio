@@ -14,11 +14,17 @@ export async function transcriptionAvailable() {
   return available;
 }
 
-export async function transcribe(file: string, workDir: string): Promise<TranscriptLine[] | null> {
+// `hint` primes Whisper with names and terms it would otherwise mishear (the client,
+// product names from the script).
+export async function transcribe(file: string, workDir: string, hint?: string): Promise<TranscriptLine[] | null> {
   if (!(await transcriptionAvailable())) return null;
   const base = path.join(workDir, path.basename(file) + ".speech");
   await run(config.ffmpeg, ["-v", "error", "-y", "-i", file, "-vn", "-ac", "1", "-ar", "16000", `${base}.wav`]);
-  await run(config.whisperBin, ["-m", config.whisperModel!, "-f", `${base}.wav`, "-oj", "-of", base, "-np"]);
+  // Short, word-aligned segments give phrase-level timing for cuts and captions.
+  const args = ["-m", config.whisperModel!, "-f", `${base}.wav`, "-l", config.whisperLanguage, "-ml", "48", "-sow", "-oj", "-of", base, "-np"];
+  if (config.whisperVadModel) args.push("--vad", "-vm", config.whisperVadModel);
+  if (hint) args.push("--prompt", hint.slice(0, 600));
+  await run(config.whisperBin, args);
   const json = JSON.parse(await readFile(`${base}.json`, "utf8")) as {
     transcription?: { offsets: { from: number; to: number }; text: string }[];
   };

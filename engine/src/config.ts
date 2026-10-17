@@ -21,6 +21,10 @@ export const config = {
   // Optional speech-to-text with whisper.cpp: path to a ggml model file.
   whisperModel: process.env.WHISPER_CPP_MODEL ?? null,
   whisperBin: process.env.WHISPER_CPP_BIN ?? "whisper-cli",
+  // Spoken language, or "auto" to detect it per clip.
+  whisperLanguage: process.env.WHISPER_LANGUAGE ?? "auto",
+  // Optional Silero VAD model: skips silence and music, where Whisper invents words.
+  whisperVadModel: process.env.WHISPER_VAD_MODEL ?? null,
   model: process.env.ENGINE_MODEL ?? "claude-opus-5-5",
   // Hard cap on how much footage one job may send to Claude, in frames.
   maxFrames: Number(process.env.ENGINE_MAX_FRAMES ?? 216),

@@ -125,7 +125,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       clip.sheets = await contactSheets(clip.file, path.join(dir, "sheets", clip.id), interval);
       if (clip.hasAudio && (await transcriptionAvailable())) {
         await progress(job.id, `Transcribing ${clip.id}`);
-        clip.transcript = await transcribe(clip.file, dir);
+        clip.transcript = await transcribe(clip.file, dir, `${client?.name ?? ""}. ${video.title}. ${script.body}`);
       }
     }
 

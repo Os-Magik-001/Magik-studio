@@ -41,7 +41,7 @@ install() {
 
   # Private env file with just what the engine needs.
   ( umask 077
-    grep -E '^(NEXT_PUBLIC_SUPABASE_URL|SUPABASE_URL|SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|WHISPER_CPP_MODEL)=' "$REPO/.env.local" > "$HOME_DIR/engine.env" )
+    grep -E '^(NEXT_PUBLIC_SUPABASE_URL|SUPABASE_URL|SUPABASE_SECRET_KEY|ANTHROPIC_API_KEY|WHISPER_CPP_MODEL|WHISPER_VAD_MODEL|WHISPER_LANGUAGE)=' "$REPO/.env.local" > "$HOME_DIR/engine.env" )
   for key in SUPABASE_SECRET_KEY ANTHROPIC_API_KEY; do
     grep -q "^$key=" "$HOME_DIR/engine.env" || { echo "Missing $key in .env.local"; exit 1; }
   done
