@@ -33,6 +33,7 @@ const { values, positionals } = parseArgs({
     colors: { type: "string" },
     out: { type: "string", default: "cut.mp4" },
     plan: { type: "string" },
+    clean: { type: "boolean" },
   },
 });
 
@@ -104,7 +105,7 @@ const clips = await prepareClips(sources, dir, say, say, new Set());
 await watchClips(clips, dir, `${request.clientName}. ${request.title}. ${request.script}`, say);
 const saved = values.plan ? (JSON.parse(await readFile(values.plan, "utf8")) as EditPlan) : null;
 // A saved plan is rendered as it is: no second planning pass.
-const { plan, length } = await planAndRender({ ...request, selfReview: !saved }, clips, dir, output, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined);
+const { plan, length } = await planAndRender({ ...request, selfReview: !saved, clean: values.clean ?? request.clean }, clips, dir, output, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined);
 await writeFile(output.replace(/\.mp4$/, ".plan.json"), JSON.stringify(plan, null, 1));
 const p = await probe(output);
 say(`done: ${output} (${p.duration.toFixed(1)}s of a planned ${length.toFixed(1)}s, ${p.width}x${p.height})`);

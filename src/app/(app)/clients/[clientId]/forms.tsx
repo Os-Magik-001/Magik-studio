@@ -93,7 +93,7 @@ export function BrandKitForm({
 }: {
   clientId: string;
   logoUrl?: string;
-  kit: { colors: string; fonts: string; musicMood: string; styleRules: string };
+  kit: { colors: string; fonts: string; musicMood: string; styleRules: string; editStyle: string };
 }) {
   const router = useRouter();
   return (
@@ -129,6 +129,16 @@ export function BrandKitForm({
         </Field>
         <Field label="Fonts" hint="Comma-separated">
           <Input name="fonts" defaultValue={kit.fonts} />
+        </Field>
+        <Field
+          label="Editing style"
+          hint="Clean: cuts, reframing and subtitles only, like Cluely's skits. Dynamic: 3D intros, motion graphics, stickers and sound effects."
+          className="sm:col-span-2"
+        >
+          <Select name="editStyle" defaultValue={kit.editStyle}>
+            <option value="dynamic">Dynamic: motion graphics and effects</option>
+            <option value="clean">Clean: cuts and subtitles only</option>
+          </Select>
         </Field>
         <Field label="Music mood" className="sm:col-span-2">
           <Input name="musicMood" defaultValue={kit.musicMood} placeholder="Warm acoustic, upbeat, no vocals" />

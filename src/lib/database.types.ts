@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           client_id: string
           colors: string[]
+          edit_style: string
           fonts: string[]
           logo_path: string | null
           music_mood: string | null
@@ -27,6 +28,7 @@ export type Database = {
         Insert: {
           client_id: string
           colors?: string[]
+          edit_style?: string
           fonts?: string[]
           logo_path?: string | null
           music_mood?: string | null
@@ -36,6 +38,7 @@ export type Database = {
         Update: {
           client_id?: string
           colors?: string[]
+          edit_style?: string
           fonts?: string[]
           logo_path?: string | null
           music_mood?: string | null

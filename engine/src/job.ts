@@ -149,13 +149,15 @@ export async function watchClips(clips: Clip[], dir: string, hint: string, step:
   }
 }
 
-export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand; selfReview?: boolean };
+export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand; selfReview?: boolean; clean?: boolean };
 
 // Claude plans the cut, the plan is checked against the real footage, and the edit
 // renders to `output`.
 export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit) {
-  const { formatKey, brand, ...input } = req;
-  const skills = await loadSkills(formatKey, undefined, note);
+  const { formatKey, brand, clean, ...rest } = req;
+  const skills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic");
+  // The clean style is stated up front, so the plan is built for it rather than stripped after.
+  const input = clean ? { ...rest, instructions: [CLEAN, rest.instructions].filter(Boolean).join("\n\n") } : rest;
   note(`skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
   await step("Claude is planning the cut");
   const library = await loadLibrary().catch(() => []);
@@ -163,7 +165,7 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
   note(usage);
   let checked;
   try {
-    checked = validatePlan(raw, clips, library.map((t) => t.id));
+    checked = validatePlan(raw, clips, library.map((t) => t.id), { clean });
   } catch (err) {
     // Keep what Claude sent, so a rejected plan can be looked at afterwards.
     const keep = path.join(config.workDir, "rejected", `${path.basename(dir)}.json`);
@@ -203,7 +205,7 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
       renderSheets: review.sheets,
     });
     note(`${usage2} (self-review)`);
-    revised = finish(validatePlan(raw2, clips, library.map((t) => t.id)), clips, note);
+    revised = finish(validatePlan(raw2, clips, library.map((t) => t.id), { clean }), clips, note);
   } catch (err) {
     // The first cut stands if the review can't be planned.
     note(`self-review skipped: ${err instanceof Error ? err.message : err}`);
@@ -214,11 +216,13 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
   return revised;
 }
 
+const CLEAN = `EDITING STYLE: CLEAN (like Cluely's skits). Cuts, framing and subtitles only. Do not use motion templates, freeze frames (hold), titles, labels, stickers, graphics, cards, sound effects, transitions other than cut, pushes or highlight words: they will be removed. Music only as a section under the series intro clip, never under dialogue. All the quality comes from choosing the best takes and cutting them with perfect comic timing.`;
+
 const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you are now the senior editor reviewing it before anyone sees it. Watch the render sheets and read the notes pinned to its timeline, then deliver the final cut:
 - Cut every dead frame: no silence at the heads or tails of shots, no pauses over 0.3 s unless they are a deliberate comic beat, no second take of a line, no stutter.
 - Keep every line the script needs, and keep the jokes' timing: a reaction beat of 0.4 to 0.8 s after a punchline is good.
 - Freezes for character intros 2.2 to 2.8 s, a comic freeze 0.8 to 1.2 s.
-- Make it more dynamic where it sags: a punch-in, a cutaway, a motion graphic or a tighter cut.
+- Where it sags, tighten it: a tighter cut, a cut to the listener's reaction, a punch-in or a cutaway (or a motion graphic, unless the editing style is clean).
 - If a note is wrong (a deliberate pause), keep it as it is. Don't change what already works.`;
 
 // Trim pass after validation; logs what it changed.
@@ -298,6 +302,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     const { plan } = await planAndRender(
       {
         formatKey: video.format,
+        clean: kit?.edit_style === "clean",
         brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile },
         clientName: client?.name ?? "Client",
         title: video.title,

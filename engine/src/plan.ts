@@ -557,7 +557,10 @@ export function snapToWords(t: number, words: { start: number; end: number }[]) 
   return t - w.start <= w.end - t ? w.start : w.end;
 }
 
-export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = []) {
+// `clean`: the client's clean editing style (cuts, reframing and subtitles only); anything
+// else Claude put in the plan is taken out.
+export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [], opts: { clean?: boolean } = {}) {
+  const clean = !!opts.clean;
   const byId = new Map(clips.map((c) => [c.id.toUpperCase(), c]));
   const problems: string[] = [];
   const segments: EditPlan["segments"] = [];
@@ -570,6 +573,10 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
       continue;
     }
     const words = seg.audio === "keep" ? (clip.transcript ?? []).flatMap((l) => l.words ?? []) : [];
+    if (clean && (seg.hold ?? 0) > 0) {
+      problems.push("Clean style: dropped a freeze frame.");
+      continue;
+    }
     const hold = clamp(seg.hold ?? 0, 0, 6, 0);
     const start = clamp(snapToWords(seg.start, words), 0, Math.max(0, clip.duration - (hold > 0 ? 0.1 : 0)));
     // A freeze needs just its one frame from the clip.
@@ -591,7 +598,10 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
       end: round(end),
       speed: round(speed),
       hold: round(hold),
-      zoom: { start: round(clamp(seg.zoom.start, 1, 2.5, 1)), end: round(clamp(seg.zoom.end, 1, 2.5, 1)) },
+      // Clean style: static framing, no closer than 1.4.
+      zoom: clean
+        ? { start: round(clamp(seg.zoom.start, 1, 1.4, 1)), end: round(clamp(seg.zoom.start, 1, 1.4, 1)) }
+        : { start: round(clamp(seg.zoom.start, 1, 2.5, 1)), end: round(clamp(seg.zoom.end, 1, 2.5, 1)) },
       focus: { x: round(clamp(seg.focus.x, 0, 1, 0.5)), y: round(clamp(seg.focus.y, 0, 1, 0.5)) },
       adjust: {
         brightness: round(clamp(seg.adjust.brightness, -0.3, 0.3, 0)),
@@ -609,7 +619,7 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
     return t.type === "cut" || seconds < 0.1 ? { type: "cut" as const, seconds: 0 } : { type: t.type, seconds: round(seconds) };
   };
   segments.forEach((seg, i) => {
-    seg.transition_in = i === 0 ? { type: "cut", seconds: 0 } : fitTransition(seg.transition_in, shotLength(segments[i - 1]), shotLength(seg));
+    seg.transition_in = i === 0 || clean ? { type: "cut", seconds: 0 } : fitTransition(seg.transition_in, shotLength(segments[i - 1]), shotLength(seg));
   });
 
   const cardSeconds = plan.end_card.include ? clamp(plan.end_card.seconds || 2, 1, 5) : 0;
@@ -619,7 +629,7 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
     seconds: cardSeconds,
     transition: plan.end_card.include ? fitTransition(plan.end_card.transition, shotLength(segments.at(-1)!), cardSeconds) : { type: "cut" as const, seconds: 0 },
   };
-  const fixed = { ...plan, look: LOOKS.includes(plan.look) ? plan.look : "natural", segments, end_card: endCard } satisfies EditPlan;
+  const fixed = { ...plan, look: clean ? "natural" : LOOKS.includes(plan.look) ? plan.look : "natural", segments, end_card: endCard } satisfies EditPlan;
   const { length } = timelineOf(fixed);
   const span = <T extends { start: number; end: number }>(x: T) => ({ ...x, start: round(clamp(x.start, 0, length)), end: round(clamp(x.end, 0, length)) });
 
@@ -630,6 +640,8 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
     color: hex(c.color) ?? "#FFFFFF",
     highlight_color: hex(c.highlight_color) ?? "#FFD84D",
     highlight_words: c.highlight_words.map((w) => w.trim()).filter(Boolean).slice(0, 40),
+    // Clean style: plain subtitles.
+    ...(clean ? { preset: "subtitle" as const, highlight_words: [] as string[], size: "small" as const, position: "bottom" as const, case: "as_spoken" as const, color: "#FFFFFF" } : {}),
   };
   const BEHIND = new Set(["hero", "title", "serif", "stacked", "drip"]);
   const on_screen_text = plan.on_screen_text
@@ -716,7 +728,20 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
   }
 
   return {
-    plan: { ...fixed, captions, on_screen_text, graphics, overlays, motion, music, sfx } satisfies EditPlan,
+    plan: (clean
+      ? {
+          ...fixed,
+          captions,
+          // Subtitles, plus the series' episode label if there is one; nothing else on screen.
+          on_screen_text: on_screen_text.filter((t) => t.style === "caption" || (t.style === "label" && /episode|épisode|ép\.|ep\.?\s*\d/i.test(t.text))).map((t) => ({ ...t, animation: t.style === "label" ? ("fade" as const) : t.animation, behind_subject: false })),
+          graphics: [],
+          overlays: overlays.filter((o) => o.kind === "cutaway"),
+          motion: [],
+          // Music only in sections (under the series intro), never as a bed under dialogue.
+          music: music.sections.length ? music : { ...music, track: null },
+          sfx: [],
+        }
+      : { ...fixed, captions, on_screen_text, graphics, overlays, motion, music, sfx }) satisfies EditPlan,
     problems,
     length: round(length),
   };

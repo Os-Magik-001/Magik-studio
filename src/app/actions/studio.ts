@@ -75,6 +75,7 @@ export async function saveBrandKit(_: ActionResult, formData: FormData): Promise
     fonts: list(text(formData, "fonts")),
     music_mood: optionalText(formData, "musicMood"),
     style_rules: optionalText(formData, "styleRules"),
+    edit_style: text(formData, "editStyle") === "clean" ? "clean" : "dynamic",
     ...(text(formData, "logoPath") ? { logo_path: text(formData, "logoPath") } : {}),
   });
   if (error) return fail("Couldn't save the brand kit.");

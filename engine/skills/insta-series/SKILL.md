@@ -2,6 +2,7 @@
 name: insta-series
 description: Episodes of an Instagram web series (sitcom or mockumentary with recurring characters), including The Boyz house style, from 12 analysed episodes
 formats: social_short, ad
+style: dynamic
 ---
 
 For The Boyz and other workplace or startup comedy, the trained **office-comedy-reels** skill wins on pacing, cutting, captions and music; use this skill for the series branding (cold open plus title sting, drip logo, episode numbering, next-episode tease) and the character intros.

@@ -2,6 +2,7 @@
 name: trailer-and-montage
 description: Cutting mostly visual footage (B-roll, events, products, travel) into a promo or trailer
 formats: social_short, ad
+style: dynamic
 ---
 
 Use this when most of the footage has no talking, and the video is carried by pictures and titles.

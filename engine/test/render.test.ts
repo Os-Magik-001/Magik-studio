@@ -298,3 +298,28 @@ test("timeline words follow the cut, speed and muting", () => {
   assert.deepEqual(tw.map((w) => w.text), ["b"]);
   assert.ok(Math.abs(tw[0].start - 1.0) < 0.01, `b at ${tw[0].start}`); // (2.0 - 1.5) / 0.5
 });
+
+test("clean style strips every effect and keeps cuts, framing and subtitles", () => {
+  const plan: EditPlan = {
+    ...EXTRAS,
+    look: "punchy",
+    summary: "",
+    segments: [shot("C1", 0, 2, "line"), shot("C1", 1.9, 2, "freeze", { hold: 2 }), shot("C3", 0, 2, "reaction", { zoom: { start: 1, end: 1.6 }, transition_in: { type: "glitch", seconds: 0.3 } })],
+    captions: { ...EXTRAS.captions, mode: "translate", preset: "bold_pop", highlight_words: ["wow"] },
+    on_screen_text: [txt("Guys, we launch tomorrow.", 0.1, 1.9, "caption", "bottom"), txt("WOW", 2, 3, "hero", "top"), txt("EPISODE 2", 0, 1.5, "label", "top")],
+    graphics: [{ kind: "emoji", start: 0, end: 1, text: "💀", x: 0.5, y: 0.3, size: 1 }],
+    motion: [{ template: "title_3d", start: 0, end: 2, title: "HI", subtitle: "", lines: [], people: [], accent: null, position: "top" }],
+    sfx: [{ kind: "hit", at: 1 }],
+    end_card: { include: false, headline: null, seconds: 0, transition: CUT },
+    open_questions: [],
+  };
+  const { plan: out } = validatePlan(plan, clips, [], { clean: true });
+  assert.equal(out.segments.length, 2, "the freeze is gone");
+  assert.deepEqual(out.segments[1].transition_in, CUT);
+  assert.deepEqual(out.segments[1].zoom, { start: 1, end: 1 }, "static framing");
+  assert.equal(out.look, "natural");
+  assert.equal(out.captions.preset, "subtitle");
+  assert.deepEqual(out.captions.highlight_words, []);
+  assert.deepEqual(out.on_screen_text.map((t) => t.style), ["caption", "label"], "subtitles and the episode label only");
+  assert.deepEqual([out.graphics.length, out.motion.length, out.sfx.length], [0, 0, 0]);
+});

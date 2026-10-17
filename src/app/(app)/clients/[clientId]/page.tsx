@@ -121,6 +121,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
                   fonts: kit?.fonts.join(", ") ?? "",
                   musicMood: kit?.music_mood ?? "",
                   styleRules: kit?.style_rules ?? "",
+                  editStyle: kit?.edit_style ?? "dynamic",
                 }}
               />
             </div>

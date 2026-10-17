@@ -7,6 +7,7 @@
 //   description: When and how to punch in on a shot
 //   formats: social_short, ad        (or "all"; optional, defaults to all)
 //   enabled: true                    (optional)
+//   style: clean                     (optional: clean or dynamic; only loaded in that editing style)
 //   ---
 //   The technique, in Markdown.
 //
@@ -16,7 +17,8 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type Skill = { name: string; description: string; formats: string[] | "all"; enabled: boolean; body: string };
+export type EditStyle = "clean" | "dynamic";
+export type Skill = { name: string; description: string; formats: string[] | "all"; enabled: boolean; style: EditStyle | "any"; body: string };
 
 export const skillsDir = process.env.ENGINE_SKILLS_DIR ?? fileURLToPath(new URL("../skills", import.meta.url));
 
@@ -40,13 +42,14 @@ export function parseSkill(text: string, fallbackName: string): Skill {
     description: meta.description,
     formats: !formats.length || formats.includes("all") ? "all" : formats,
     enabled: meta.enabled !== "false",
+    style: meta.style === "clean" || meta.style === "dynamic" ? meta.style : "any",
     body: match[2].trim(),
   };
 }
 
-// Every skill that applies to a video format, in folder-name order. A broken skill
-// is skipped with a warning rather than failing the edit.
-export async function loadSkills(format: string, dir = skillsDir, warn: (msg: string) => void = console.warn): Promise<Skill[]> {
+// Every skill that applies to a video format and editing style, in folder-name order.
+// A broken skill is skipped with a warning rather than failing the edit.
+export async function loadSkills(format: string, dir = skillsDir, warn: (msg: string) => void = console.warn, style: EditStyle = "dynamic"): Promise<Skill[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
   const skills: Skill[] = [];
   for (const entry of entries.filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -55,7 +58,8 @@ export async function loadSkills(format: string, dir = skillsDir, warn: (msg: st
     if (text === null) continue;
     try {
       const skill = parseSkill(text, entry.name);
-      if (skill.enabled && (skill.formats === "all" || skill.formats.includes(format))) skills.push(skill);
+      const fits = skill.style === "any" || skill.style === style;
+      if (skill.enabled && fits && (skill.formats === "all" || skill.formats.includes(format))) skills.push(skill);
     } catch (err) {
       warn(`Skipping skill ${entry.name}: ${(err as Error).message}`);
     }

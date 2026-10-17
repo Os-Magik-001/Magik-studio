@@ -2,6 +2,7 @@
 name: transitions
 description: When to use a transition instead of a hard cut, which one, and how long
 formats: all
+style: dynamic
 ---
 
 **Hard cuts are the edit.** In measured top-performing reels, about 95% of transitions are hard cuts. A transition is a punctuation mark: it signals a change of time, place, section or energy. If you can't name what it signals, use a hard cut.

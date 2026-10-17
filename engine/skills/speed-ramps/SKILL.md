@@ -2,6 +2,7 @@
 name: speed-ramps
 description: Slow motion, speed-ups and ramps
 formats: all
+style: dynamic
 ---
 
 **Slow motion (speed 0.4 to 0.6)**

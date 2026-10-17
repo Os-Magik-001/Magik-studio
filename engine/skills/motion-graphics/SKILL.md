@@ -2,6 +2,7 @@
 name: motion-graphics
 description: Using the 3D motion templates (freeze-frame character intros, cast lineups, 3D titles, stat cards, 3D name plates) to make edits dynamic
 formats: social_short, ad
+style: dynamic
 ---
 
 The motion templates are what make an edit feel produced rather than just cut. Use them on the moments that deserve a beat, never as wallpaper.
