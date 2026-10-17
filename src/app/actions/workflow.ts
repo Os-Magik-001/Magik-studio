@@ -314,8 +314,12 @@ export async function addDriveFootage(_: ActionResult, formData: FormData): Prom
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
   if (!driveConfigured()) return fail("Google Drive isn't connected yet. Ask an admin to add the service account key.");
-  const id = parseDriveLink(text(formData, "link"));
-  if (!id) return fail("That doesn't look like a Google Drive link.");
+  const link = text(formData, "link");
+  if (link.includes("@") && !link.includes("drive.google.com")) {
+    return fail("That's an email address. Share the folder with it in Google Drive, then paste the folder's link here (Share → Copy link).");
+  }
+  const id = parseDriveLink(link);
+  if (!id) return fail("That doesn't look like a Google Drive link. In Drive: right-click the folder → Share → Copy link.");
 
   let files;
   try {
