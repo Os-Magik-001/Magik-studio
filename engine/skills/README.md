@@ -33,3 +33,6 @@ The starting set was distilled, not copied, from these sources:
 - **The editing plugins installed in Claude Code:** video-shotcraft, video-cleanup, adobe-edit-quick-cut, video-processing-editing and ffmpeg-llm.
 - **[tenfoldmarc/video-edit-skill](https://github.com/tenfoldmarc/video-edit-skill):** picking takes, talking-head framing, Reels safe zones and looks.
 - **[juliandickie/creators-studio](https://github.com/juliandickie/creators-studio)** (MIT): platform limits, ad structures and content-type defaults.
+- **About 35 more open-source editing skill repos.** They cover talking-head editors (cut-video, ghost-editor, naive-video-skill, JJKoubo, jtxvideo-skill), short-form and ad editors (favstash, video-editor-agent, tiktok-video-skills, remotion-ads, qingyun-cine-skill), vlog and clipping tools (ai-video-editing-skill, newcut, smart-video-editor, easyedit) and full editors (OpenMontage, OpenChatCut, vex, cartcut). Where they disagreed, the rule kept is the one that most of them, or the measured examples, supported.
+
+Several of those repos are non-commercial or copyleft (CC BY-NC, PolyForm Noncommercial, AGPL, GPL). Only general editing practice was taken from them, rewritten in our own words, and none of their text or code is included here.

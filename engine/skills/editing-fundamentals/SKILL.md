@@ -32,7 +32,9 @@ formats: all
   3. A middle that alternates energy.
   4. The peak at the end, just before the end card.
 - Put the densest information right before the finale.
+- The last 5–10s weigh most in how the video is remembered. Save a strong shot for the end, rather than spending every good shot early.
 
 **Style**
 - Use each stylistic device, such as a speed ramp, a fast punch-in or a flashy transition, as the main feature at most once per video. Repeating it makes it a gimmick.
+- For pacing numbers (shot lengths, gaps, how often to punch in), follow the profile chosen in edit-styles.
 - Keep motion continuous across cuts. If something leaves the frame to the right, the next shot should pick it up moving the same way.

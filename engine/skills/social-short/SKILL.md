@@ -4,24 +4,26 @@ description: Structure and pacing for Reels, TikTok and Shorts
 formats: social_short
 ---
 
+See retention for the first frame, hooks and keeping viewers watching. See edit-styles for pacing numbers.
+
 **Length**
-- Default to 20 to 35s when the script doesn't say.
+- Default to 20 to 35s when the script doesn't say. Talking-head pieces can run 45–75s if the content holds.
 - For an upper bound like "under 30s", land a couple of seconds under it.
 
 **Structure**
-1. **Hook, 0 to 2s.** Use the most visually striking moment, or the most intriguing line from the transcript. Put a title on it stating the payoff or a question. Never open on a logo, an establishing shot of a building, or someone saying hello.
+1. **Hook, 0 to 2s.** Use the most striking moment, or the most intriguing line, with a hook title on screen from the first frame.
 2. **Payoff early, 2 to 8s.** Show what the video promises: the product, the result, the reveal.
-3. **Middle.** Use the highlight-reel flow:
-   - Shots of 1 to 2.5s, alternating close-ups and wides.
-   - One hero moment, like slow motion or a slow push.
-   - One accelerating run of cuts if the energy suits it.
-4. **Close.** End on the strongest image or line, then the end card. Keep the end card short, 1.5 to 2s, unless the brand asks otherwise.
+3. **Middle.** Deliver the value, about 70% of the runtime:
+   - Alternate close-ups and wides.
+   - Include one hero moment, like slow motion or a slow push.
+   - Put a re-hook (a line, a punch-in or a title) where the energy dips.
+4. **Close.** End on the strongest image or line, then the end card, or a loop if the brand prefers no end card.
 
 **Pacing**
-- Cut on action and on the beat of the speech.
-- Talking-to-camera stretches can hold longer, but hide cuts with static punch-ins (see punch-ins-and-reframing) rather than long unbroken takes.
+- B-roll and montage shots: follow the chosen edit style, usually 1.5–3s.
+- Talking-to-camera stretches run as long as the speech. Hide cuts with framing changes (see talking-head), not long unbroken takes.
 
 **Look and text**
-- Captions on, sized for a phone held at arm's length.
-- A `punchy` or `warm` look usually suits social. Stay `natural` if the brand is understated.
-- Transitions: mostly hard cuts. At most 2 or 3 slides or flashes on the biggest energy changes.
+- Captions on, one line, sized for a phone.
+- Look: from the brand. `punchy` or `warm` suit energetic B-roll; stay `natural` on talking heads.
+- Transitions: hard cuts, with at most 2 eye-catching transitions on the biggest energy changes.

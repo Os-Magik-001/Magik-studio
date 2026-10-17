@@ -6,26 +6,45 @@ formats: all
 
 **Captions** (`style: caption`)
 - When there's speech, caption it throughout. Most social video is watched muted.
-- Keep each caption to one short line of about 3 to 7 words. Break at natural phrase boundaries, never mid-phrase.
-- Time each caption to when its words are spoken in the transcript, on the finished timeline. Remember that speed changes and transitions shift it.
-- Leave each caption up at least 0.8s.
-- Clean up filler words ("um", "you know") in the caption text, but never change what someone means.
-- Captions say what was actually said. Automatic transcripts mishear names and keywords, so correct them using the spellings in the script, brief and client name. For example, a brand heard as a common word.
-- People speak about 2 to 2.7 words per second, so a 3 to 7 word caption usually covers 1.5 to 3s of speech.
-- No em dashes in on-screen text. Use a comma, a colon or a new caption.
-- Position:
-  - `bottom` by default. On vertical video the engine lifts it clear of the app's caption and buttons area automatically.
-  - `top` when the bottom of the frame holds the subject's hands, the product or text that's already in the shot.
-  - Never cover a face.
+- Captions are always one line:
+  - **Vertical video:** 2–5 words and about 22 characters at most.
+  - **1:1 and 16:9:** up to 6–8 words and about 42 characters.
+  - Split a long sentence into consecutive one-line captions, and divide its time between them by length.
+- **Where to break:**
+  - Break at punctuation and natural phrase boundaries.
+  - Never split a number from its unit, or break inside a name.
+  - Merge one- or two-word leftovers into the neighboring caption.
+  - Avoid a long caption followed by a tiny one.
+- **Words:**
+  - Captions show the words actually heard in the kept audio, never script words that weren't said, and never invented words.
+  - Leave out "um" and "uh", but don't paraphrase.
+  - Transcripts mishear names and keywords, so fix them using the spellings in the script, brief and client name.
+  - Check the final stretch especially: after silence or music, transcripts sometimes invent phrases like "thanks for watching".
+- **Timing:**
+  - Each caption appears with its first word and ends about 0.2s after its last.
+  - Keep consecutive captions back to back, so text doesn't flicker off between lines.
+  - Each caption stays up at least 0.5s.
+  - At 2 to 2.7 spoken words per second, a 3–5 word caption covers about 1.2–2.5s.
+  - Speed changes and transitions move speech on the finished timeline, so retime captions to match. On muted shots, captions only appear if there's a reason.
+- **Punctuation:** no full stops or ellipses at the end of a caption, and no em dashes anywhere. Question and exclamation marks are fine.
+- **Position:**
+  - `bottom` by default. On vertical video the engine keeps it clear of the app's UI automatically.
+  - `center` when the bottom holds hands, a product or text that's already in the shot.
+  - Never over a face.
+- **Hide the caption while a title is showing the same words.**
 
 **Titles** (`style: title`)
-- Use titles for the hook line, section headers and key claims. Use at most one title on screen at a time.
-- Make the copy concrete: name the product, the feature or the benefit ("Real pumpkin, made daily"), not abstract metaphors.
-- Hold a title at least 1.5s, and longer if it's more than 5 words. A reader needs about 0.3s per word plus 0.5s.
-- On silent footage, add a title or caption at least every 3 to 4 seconds so the video never goes "dark" for a muted viewer. Leave the end card clean.
+- Titles are for the hook, key numbers, contrasts, the main claim, section headers and the call to action.
+  - Pick the 5–8 moments that deserve one, and leave other sentences without one.
+  - When the footage already shows what's happening, add no text.
+- Show a title within 0.5s of when its idea or number is first spoken, never before it's said.
+- Keep a title to 6 words at most, one line, and concrete: name the product, number or benefit. No colon subtitles.
+- Hold a title long enough to read twice: about 0.5s plus 0.3s per word, and at least 1.5s.
+- Leave about 1s with no new text before a new section's title.
+- On silent footage, keep a title or caption up at least every 3–4s, so muted viewers always have something to read. Leave the end card itself clean.
 
 **End card**
-- The headline is a call to action or a payoff in 2 to 5 words: "Available now", "Book your table", "Link in bio".
+- The headline is a specific call to action or payoff in 2 to 5 words: "Book your free tasting", not "Learn more". Use one call to action only.
 - The call to action must never be the smallest or least visible text in the video.
-- Hold the end card at least 1.5s, and 2 to 3s for ads.
-- Spell brand names, product names, people's names and titles exactly as the brief and script do.
+- Hold the end card 2–3.5s for ads, and 1.5–2s for organic social.
+- Spell brand, product and people's names exactly as the brief and script do.
