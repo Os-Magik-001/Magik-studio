@@ -185,12 +185,13 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
   if (req.selfReview === false) return first;
 
   // Self-review: watch the render back, then revise it like a senior editor would.
-  await step("Watching the cut back");
-  const review = await reviewRender(output, first.plan, path.join(dir, "review"));
-  note(`self-review: ${review.notes.length} note(s)${review.summary.length ? `: ${review.summary.join(" | ")}` : ""}`);
-  await step("Claude is reviewing its own cut");
+  // Anything going wrong here leaves the first cut in place rather than failing the edit.
   let revised;
   try {
+    await step("Watching the cut back");
+    const review = await reviewRender(output, first.plan, path.join(dir, "review"));
+    note(`self-review: ${review.notes.length} note(s)${review.summary.length ? `: ${review.summary.join(" | ")}` : ""}`);
+    await step("Claude is reviewing its own cut");
     const { plan: raw2, usage: usage2 } = await planner({
       ...input,
       skills,

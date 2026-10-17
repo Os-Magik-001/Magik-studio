@@ -3,6 +3,7 @@
 // words said twice, freezes that drag, flash cuts. Claude then revises the plan from
 // those notes and the render's frames.
 
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { contactSheets } from "./media.ts";
 import { timelineOf, type EditPlan } from "./plan.ts";
@@ -15,6 +16,7 @@ const at = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(
 const QUIET_OK = /react|glance|look|stare|deadpan|beat|freeze|hold|b-roll|broll|cutaway|insert|establish|intro|logo|title|end card|ending|tag/i;
 
 export async function reviewRender(output: string, plan: EditPlan, dir: string) {
+  await mkdir(dir, { recursive: true });
   const notes: ReviewNote[] = [];
   const add = (t: number, body: string) => notes.push({ timecodeMs: Math.round(t * 1000), body, fromClient: false });
   const { shots, length } = timelineOf(plan);
