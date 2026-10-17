@@ -31,8 +31,9 @@ export async function reviewRender(output: string, plan: EditPlan, dir: string) 
       const gap = words[k].start - words[k - 1].end;
       const mid = words[k - 1].end + gap / 2;
       const shot = shotAt(mid);
-      if (gap > 0.45 && !covered(mid) && !(shot && (shot.seg.hold > 0 || QUIET_OK.test(shot.seg.purpose)))) {
-        add(words[k - 1].end, `Dead air: ${gap.toFixed(1)}s with nothing said between "${words[k - 1].text}" and "${words[k].text}". Tighten it unless it's a deliberate beat.`);
+      // Natural dialogue keeps 0.25-0.7 s between lines; only longer gaps are dead air.
+      if (gap > 0.9 && !covered(mid) && !(shot && (shot.seg.hold > 0 || shot.seg.beat !== "other" || QUIET_OK.test(shot.seg.purpose)))) {
+        add(words[k - 1].end, `Long gap: ${gap.toFixed(1)}s between "${words[k - 1].text}" and "${words[k].text}". Bring it to about 0.3-0.5 s unless it's the beat before a punchline or a reaction.`);
       }
       const a = bare(words[k - 1].text);
       if (a && a.length > 1 && a === bare(words[k].text)) add(words[k - 1].start, `"${words[k].text}" is said twice in a row (a stutter or a retake left in). Keep one.`);

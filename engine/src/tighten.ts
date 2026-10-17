@@ -11,12 +11,21 @@ import { shotLength, timelineOf, type Clip, type EditPlan } from "./plan.ts";
 type Shot = EditPlan["segments"][number];
 type Word = { start: number; end: number; text: string };
 
-// Frames kept around speech: a touch before the first word, a breath after the last.
-export const HEAD = 0.08;
-export const TAIL = 0.14;
-// Silence at a head or tail worth removing, and a pause inside a shot worth cutting out.
-const DEAD = 0.12;
-const PAUSE = 0.45;
+// Air kept around speech. Measured sitcoms keep a median 275-540 ms between lines
+// (Brooklyn Nine-Nine to The Office) and about 700 ms when the line change falls on
+// a cut; below about 200 ms lines step on each other. So a cut keeps ~0.12 s before
+// the first word and ~0.2 s after the last (plus what the split edit adds).
+export const HEAD = 0.12;
+export const TAIL = 0.2;
+// Silence at a head or tail worth trimming, and a pause inside a shot worth cutting out.
+const DEAD = 0.35;
+const PAUSE = 0.75;
+// When a long pause inside a shot is cut out, the natural gap left between the lines.
+const GAP_END = 0.18;
+const GAP_START = 0.14;
+// The beat before a punchline and the hold after it are part of the joke.
+const BEAT_BEFORE_PUNCH = 0.45;
+const HOLD_AFTER_PUNCH = 0.3;
 // Shots whose point is the silence (reactions, glances, beats) are left alone.
 const KEEP_SILENCE = /react|glance|look|stare|deadpan|beat|pause|silent|silence|freeze|hold|b-roll|broll|cutaway|insert|establish|intro clip|logo|title|walk|entrance|ending|end card|tag/i;
 
@@ -37,7 +46,7 @@ export function tighten(plan: EditPlan, clips: Clip[]): TightenResult {
       seg.audio === "keep" && seg.hold === 0
         ? (clip?.transcript ?? []).flatMap((l) => l.words ?? []).filter((w) => w.end > seg.start + 0.02 && w.start < seg.end - 0.02)
         : [];
-    if (!words.length || KEEP_SILENCE.test(seg.purpose)) {
+    if (!words.length || seg.beat === "reaction" || KEEP_SILENCE.test(seg.purpose)) {
       out.push(seg);
       origin.push({ old: i, srcStart: seg.start });
       return;
@@ -61,8 +70,9 @@ export function tighten(plan: EditPlan, clips: Clip[]): TightenResult {
       }
     }
 
-    const head = Math.max(seg.start, words[first].start - HEAD);
-    const tail = Math.min(seg.end, words.at(-1)!.end + TAIL);
+    const punch = seg.beat === "punchline";
+    const head = Math.max(seg.start, words[first].start - (punch ? BEAT_BEFORE_PUNCH : HEAD));
+    const tail = Math.min(seg.end, words.at(-1)!.end + (punch ? HOLD_AFTER_PUNCH : TAIL));
     let start = head - seg.start > DEAD ? head : seg.start;
     const end = seg.end - tail > DEAD ? tail : seg.end;
     if (start === seg.start && first > 0) start = Math.max(seg.start, words[first].start - HEAD);
@@ -72,9 +82,11 @@ export function tighten(plan: EditPlan, clips: Clip[]): TightenResult {
     let pieceStart = start;
     for (let k = first + 1; k < words.length; k++) {
       const gap = words[k].start - words[k - 1].end;
-      if (gap > PAUSE && words[k - 1].end + TAIL > pieceStart + 0.3 && words[k].start - HEAD < end - 0.3) {
-        pieces.push({ start: pieceStart, end: words[k - 1].end + TAIL });
-        pieceStart = words[k].start - HEAD;
+      // In a punchline, the pause before the last words is usually the beat: keep it.
+      if (punch && k >= words.length - 3) continue;
+      if (gap > PAUSE && words[k - 1].end + GAP_END > pieceStart + 0.3 && words[k].start - GAP_START < end - 0.3) {
+        pieces.push({ start: pieceStart, end: words[k - 1].end + GAP_END });
+        pieceStart = words[k].start - GAP_START;
         notes.push(`shot ${i + 1}: cut a ${gap.toFixed(1)}s pause`);
       }
     }

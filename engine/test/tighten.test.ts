@@ -16,15 +16,16 @@ const plan = (segments: EditPlan["segments"], extra: Partial<EditPlan> = {}): Ed
 test("dead heads and tails are trimmed to a few frames around the speech", () => {
   const c = clip("C1", words([["Je", 1.0, 1.2], ["suis", 1.2, 1.5], ["MI6.", 1.5, 2.0]]));
   const { plan: out, removed } = tighten(plan([shot("C1", 0.2, 3.2, "MI6 intro line")]), [c]);
-  assert.deepEqual([out.segments[0].start, out.segments[0].end], [0.92, 2.14]);
-  assert.ok(Math.abs(removed - 1.78) < 0.04, `removed ${removed}`); // within a frame
+  // 0.12 s of air before the first word, 0.2 s after the last (measured sitcom timing).
+  assert.deepEqual([out.segments[0].start, out.segments[0].end], [0.88, 2.2]);
+  assert.ok(Math.abs(removed - 1.68) < 0.04, `removed ${removed}`); // within a frame
 });
 
 test("a stuttered first word and a long pause inside a shot are cut out", () => {
   const c = clip("C1", words([["Comment?", 0.5, 0.9], ["Comment?", 1.2, 1.6], ["Je", 1.7, 1.9], ["construis", 1.9, 2.4], ["une", 3.6, 3.8], ["licorne.", 3.8, 4.4]]));
   const { plan: out, notes } = tighten(plan([shot("C1", 0.4, 4.6, "Joy Boy confessional")]), [c]);
   assert.equal(out.segments.length, 2, "split on the 1.2 s pause");
-  assert.equal(out.segments[0].start, 1.12, "starts on the second 'Comment?'");
+  assert.equal(out.segments[0].start, 1.08, "starts on the second 'Comment?'");
   assert.ok(out.segments[1].zoom.start > out.segments[0].zoom.start, "the second half punches in to hide the jump");
   assert.ok(notes.some((n) => n.includes("repeated")) && notes.some((n) => n.includes("pause")));
 });
@@ -57,4 +58,11 @@ test("an end lineup goes on the end freeze, not on a short comic freeze next to 
   });
   const out = anchorMotion(p);
   assert.deepEqual([out.motion[0].start, out.motion[0].end], [3, 5.4]);
+});
+
+test("a punchline keeps the beat before it and the hold after it", () => {
+  const c = clip("C1", words([["Un", 2.0, 2.2], ["milliard,", 2.2, 2.8], ["man.", 3.6, 4.0]]));
+  const { plan: out } = tighten(plan([shot("C1", 1.0, 5.0, "the ask", { beat: "punchline" })]), [c]);
+  assert.equal(out.segments.length, 1, "the pause before 'man.' is the beat: not cut");
+  assert.deepEqual([out.segments[0].start, out.segments[0].end], [1.55, 4.3]);
 });

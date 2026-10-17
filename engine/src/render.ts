@@ -8,6 +8,7 @@ import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from
 import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
 import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
+import { pictureShifts } from "./splits.ts";
 import { sfxFile, sfxLead } from "./sfx.ts";
 
 const FPS = 30;
@@ -55,7 +56,7 @@ const even = (n: number) => Math.ceil(n / 2) * 2;
 
 // One shot's picture: retime, fill the frame around the focus point with any
 // punch-in or push, then exposure fixes and the video's look.
-function shotVideo(seg: Shot, clip: Clip, W: number, H: number, look: EditPlan["look"]) {
+function shotVideo(seg: Shot, clip: Clip, W: number, H: number, look: EditPlan["look"], frameCount = Math.round(shotLength(seg) * FPS)) {
   const fill = Math.max(W / clip.width, H / clip.height);
   const [fw, fh] = [clip.width * fill, clip.height * fill];
   const { start: z0, end: z1 } = seg.zoom;
@@ -82,8 +83,7 @@ function shotVideo(seg: Shot, clip: Clip, W: number, H: number, look: EditPlan["
   if (LOOK_FILTERS[look]) steps.push(LOOK_FILTERS[look]);
   // Exactly the shot's frame count: the source can give a frame more or less after
   // retiming, and that used to add up into picture lagging behind the sound.
-  const frames = Math.round(shotLength(seg) * FPS);
-  steps.push(`tpad=stop_mode=clone:stop=2,trim=end_frame=${frames},setpts=PTS-STARTPTS`, "format=yuv420p");
+  steps.push(`tpad=stop_mode=clone:stop=2,trim=end_frame=${frameCount},setpts=PTS-STARTPTS`, "format=yuv420p");
   return steps.join(",");
 }
 
@@ -219,16 +219,29 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     `[${label}]asetpts=PTS-STARTPTS,${tempo}aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,apad=whole_dur=${seconds.toFixed(3)},atrim=end=${seconds.toFixed(3)}[${out}]`;
 
   const pieces: { seconds: number; transition: EditPlan["end_card"]["transition"] }[] = [];
+  // Split edits: each shot's picture may start and end a few frames off its sound.
+  const shifts = pictureShifts(plan, clips);
   plan.segments.forEach((seg, i) => {
     const clip = byId.get(seg.clip)!;
     const seconds = shotLength(seg);
-    args.push("-ss", seg.start.toFixed(3), "-t", (seg.end - seg.start).toFixed(3), "-i", clip.file);
+    const pin = seg.hold > 0 ? 0 : shifts[i];
+    const pout = seg.hold > 0 ? 0 : (shifts[i + 1] ?? 0);
+    // Source ranges: the sound exactly as planned, the picture moved by the split.
+    const vStart = Math.max(0, seg.start + pin * seg.speed);
+    const vEnd = Math.min(clip.duration, seg.end + pout * seg.speed);
+    const from = Math.min(seg.start, vStart);
+    const to = Math.max(seg.end, vEnd);
+    args.push("-ss", from.toFixed(3), "-t", (to - from).toFixed(3), "-i", clip.file);
     const v = input++;
+    const frameCount = Math.max(1, Math.round((seconds + pout - pin) * FPS));
+    const vTrim = `trim=start=${(vStart - from).toFixed(4)}:duration=${(vEnd - vStart).toFixed(4)},setpts=PTS-STARTPTS,`;
     // A freeze repeats its first frame for the hold; any push still plays over it.
     const freeze = seg.hold > 0 ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB,trim=duration=${seconds.toFixed(3)},` : "";
-    filters.push(`[${v}:v]${freeze}${shotVideo(seg, clip, W, H, plan.look)}[v${i}]`);
-    if (clip.hasAudio && seg.audio === "keep" && seg.hold === 0) filters.push(normA(`${v}:a`, `a${i}`, seconds, atempo(seg.speed)));
-    else filters.push(normA(`${addSilence(seconds)}:a`, `a${i}`, seconds));
+    filters.push(`[${v}:v]${vTrim}${freeze}${shotVideo(seg, clip, W, H, plan.look, frameCount)}[v${i}]`);
+    if (clip.hasAudio && seg.audio === "keep" && seg.hold === 0) {
+      filters.push(`[${v}:a]atrim=start=${(seg.start - from).toFixed(4)}:duration=${(seg.end - seg.start).toFixed(4)}[as${i}]`);
+      filters.push(normA(`as${i}`, `a${i}`, seconds, atempo(seg.speed)));
+    } else filters.push(normA(`${addSilence(seconds)}:a`, `a${i}`, seconds));
     pieces.push({ seconds, transition: seg.transition_in });
   });
 
@@ -263,8 +276,10 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
         `[${ac}][a${i}]acrossfade=d=${overlap.toFixed(3)}:c1=tri:c2=tri[ja${i}]`,
       );
     } else {
-      // concat changes the timebase, which a later xfade would reject.
-      filters.push(`[${vc}][${ac}][v${i}][a${i}]concat=n=2:v=1:a=1[cv${i}][ja${i}]`, `[cv${i}]settb=1/${FPS}[jv${i}]`);
+      // Picture and sound join separately: with split edits a shot's picture and sound
+      // differ by a few frames, and only their totals match. concat changes the
+      // timebase, which a later xfade would reject.
+      filters.push(`[${vc}][v${i}]concat=n=2:v=1:a=0[cv${i}]`, `[cv${i}]settb=1/${FPS}[jv${i}]`, `[${ac}][a${i}]concat=n=2:v=0:a=1[ja${i}]`);
     }
     [vc, ac] = [`jv${i}`, `ja${i}`];
     length += p.seconds - overlap;

@@ -37,6 +37,10 @@ const Segment = z.object({
     .object({ brightness: z.number(), contrast: z.number(), saturation: z.number() })
     .describe("Corrections for this shot only. Neutral is brightness 0, contrast 1, saturation 1. Brightness -0.3 to 0.3, contrast 0.7 to 1.4, saturation 0 to 2."),
   transition_in: Transition.describe("How this shot comes in from the previous one. Ignored on the first shot."),
+  beat: z
+    .enum(["setup", "punchline", "reaction", "other"])
+    .default("other")
+    .describe("What this shot does in the comedy: setup (builds to a joke), punchline (the line that lands the joke: never cut away before its last syllable), reaction (a face reacting, the stand-in for a laugh), other. The engine times cuts and split edits from this."),
   hold: z
     .number()
     .default(0)
@@ -53,6 +57,7 @@ export const PLAIN_SHOT = {
   focus: { x: 0.5, y: 0.5 },
   adjust: { brightness: 0, contrast: 1, saturation: 1 },
   transition_in: { type: "cut", seconds: 0 },
+  beat: "other",
   hold: 0,
 } satisfies Omit<Shot, "clip" | "start" | "end" | "purpose">;
 

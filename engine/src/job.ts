@@ -219,8 +219,8 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
 const CLEAN = `EDITING STYLE: CLEAN (like Cluely's skits). Cuts, framing and subtitles only. Do not use motion templates, freeze frames (hold), titles, labels, stickers, graphics, cards, sound effects, transitions other than cut, pushes or highlight words: they will be removed. Music only as a section under the series intro clip, never under dialogue. All the quality comes from choosing the best takes and cutting them with perfect comic timing.`;
 
 const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you are now the senior editor reviewing it before anyone sees it. Watch the render sheets and read the notes pinned to its timeline, then deliver the final cut:
-- Cut every dead frame: no silence at the heads or tails of shots, no pauses over 0.3 s unless they are a deliberate comic beat, no second take of a line, no stutter.
-- Keep every line the script needs, and keep the jokes' timing: a reaction beat of 0.4 to 0.8 s after a punchline is good.
+- Natural timing, not maximum tightness: 0.25 to 0.45 s between lines on the same shot, about 0.5 to 0.7 s when a speaker change falls on a cut. Long gaps (over 0.9 s) go, unless they are the beat before a punchline or a reaction. No second take of a line, no stutter.
+- Keep every line the script needs and the jokes' timing: keep the beat before a punchline, never cut away from a punchline before its last syllable, hold the reaction after it until it peaks (usually 0.6 to 1.2 s). Label each shot's beat (setup, punchline, reaction).
 - Freezes for character intros 2.2 to 2.8 s, a comic freeze 0.8 to 1.2 s.
 - Where it sags, tighten it: a tighter cut, a cut to the listener's reaction, a punch-in or a cutaway (or a motion graphic, unless the editing style is clean).
 - If a note is wrong (a deliberate pause), keep it as it is. Don't change what already works.`;

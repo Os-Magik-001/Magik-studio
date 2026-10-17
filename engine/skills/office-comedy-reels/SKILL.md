@@ -41,18 +41,15 @@ Use this for scripted workplace or startup comedy: office scenes intercut with s
 - 1–4 shots, no captions. One relatable line in `caption` style at mid-frame (about 45% height) for the whole video. Music bed at medium. The cut, if any, lands on the beat.
 
 ## Pacing and cutting rules
-- **Snapping:** snap every in/out to word edges.
-  - Leave about 0.08 s of tail after the last word.
-  - Start the next shot no more than 0.05 s before its first word.
-- **Dialogue gaps:** crush to 0.15–0.3 s. Remove ums, restarts and breaths.
-- **Kept pauses:** a pause stays only if it is a reaction beat, held 0.6–1.5 s, up to 2 s for an awkward stare. Over 2 s requires visible physical comedy.
-- **Shot lengths:** 1.5–4 s for dialogue scenes, 3–8 s for confessionals. Never exceed 9 s without a cut or a punch-in.
-- **Cut on reactions:** show the listener's face for the last 0.5 s of an insult rather than the speaker.
-- **Punchline punch-in:** zoom 1.0→1.3 instantly on the punchline word, or a slow push 1.0→1.15 across a confessional rant.
-  - Use at most one punch-in per 10 s.
-- **Freeze frame:** besides character intros, use one comic `hold` of 0.8–1.2 s only on the single biggest reaction of the episode.
-- **Speed:** keep 1x. Use 1.5–2x only for a comedic scramble, such as everyone fleeing.
-- **Transitions:** use `cut` 98% of the time. `glitch` or `zoom_in` are allowed only into a `character_intro`. No crossfades or dips.
+- **Natural gaps, not crushed ones:** 0.25-0.45 s between lines on the same shot, 0.5-0.7 s when a speaker change falls on a cut (measured on 30 sitcoms: Brooklyn Nine-Nine 275 ms, Modern Family 310 ms, The Office 540 ms). Under 0.2 s the edit feels rushed.
+- **Remove fillers, stutters, retakes and gaps over about 0.9 s**, not the timing between lines.
+- **Label each shot's beat** (setup, punchline, reaction). Punchlines keep their beat before and a hold after, and the picture never leaves them early. Reactions are held until they peak (0.6-1.2 s).
+- **Split edits are automatic** (L-cut onto reactions, J-cut into a new speaker).
+- **Shot lengths:** 1.5-4 s for dialogue scenes, 3-8 s for confessionals. Never exceed 9 s without a cut or a punch-in.
+- **Cut to the listener** for the end of an absurd line; in confessionals, the next shot contradicts the claim, hard cut on the last word.
+- **Punchline punch-in:** zoom 1.0 to 1.3 on the punchline, at most once per 10 s.
+- **Speed:** keep 1x.
+- **Transitions:** `cut`.
 
 ## Framing
 - 9:16 vertical. Reframe on the speaker's face with eyes at about 35–40% from the top.
