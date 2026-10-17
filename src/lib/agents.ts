@@ -149,3 +149,45 @@ export async function runScriptwriter(input: {
     plan: { concept: draft.concept, length_seconds: draft.length_seconds, scenes: draft.scenes, broll: draft.broll, props_wardrobe: draft.props_wardrobe },
   };
 }
+
+// ---------------------------------------------------------------- Agent 3, fast track
+
+const Adapted = z.object({
+  concept: z.string().describe("The idea of the video in 1 to 2 sentences, from the script."),
+  length_seconds: z.number().describe("Target length of the finished video."),
+  shots: z.array(z.string()).describe("The shots the script needs, one short line each (for the checklist)."),
+  edit_prompt: Script.shape.edit_prompt,
+});
+
+const ADAPTER = `You are the head scriptwriter at Magik Studio. The studio already has a final script for this video and the footage is shot or being shot. Do not rewrite the script, its story or its lines: they are final.
+
+Your job is to brief the studio's automatic video editor so the edit gets the most out of this script: structure with timings that follow the script's beats, the hook, pacing, captions (preset, language, highlight words), which motion templates to use where (character_intro, cast_lineup, title_3d, stat_card, lower_third_3d), transitions, music and sound effects, ending and call to action. Use the brand strategy and the viral research when they are given.`;
+
+export async function adaptScript(input: {
+  clientName: string;
+  title: string;
+  format: string;
+  aspect: string;
+  brief: string | null;
+  script: string;
+  notes?: string;
+  strategy: { niche: string | null; business: string | null; audience: string | null; needs: string[]; pillars: unknown; charte: unknown } | null;
+  findings: TrendFindings | null;
+  styleRules: string | null;
+}) {
+  const s = input.strategy;
+  const prompt = [
+    `Client: ${input.clientName}`,
+    `Video: ${input.title}`,
+    `Format: ${input.format}, aspect ratio ${input.aspect}`,
+    input.brief && `Brief:\n${input.brief}`,
+    `The final script (keep it exactly):\n${input.script}`,
+    input.notes && `Notes from the studio:\n${input.notes}`,
+    s && `Brand strategy:\nNiche: ${s.niche}\nBusiness: ${s.business}\nAudience: ${s.audience}\nNeeds: ${s.needs.join("; ")}\nCharte graphique: ${JSON.stringify(s.charte)}`,
+    input.styleRules && `Editing style rules for this client:\n${input.styleRules}`,
+    input.findings && `What works in viral videos in this niche:\n${JSON.stringify(input.findings)}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return ask(Adapted, ADAPTER, prompt, "medium");
+}

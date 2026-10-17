@@ -7,7 +7,7 @@ import { notify } from "@/lib/notify";
 import { objectExists } from "@/lib/storage";
 import { DriveError, driveConfigured, parseDriveLink, resolveDriveVideos } from "@/lib/drive";
 import { claudeConfigured } from "@/lib/claude";
-import { runScriptwriter } from "@/lib/agents";
+import { adaptScript, runScriptwriter } from "@/lib/agents";
 import { asFindings } from "@/lib/agent-types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -118,6 +118,85 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       ? "Script, shoot plan and edit prompt are ready. Review them before sending to the client."
       : "Script ready. Run the brand strategist on the client page for sharper scripts.",
   );
+}
+
+// Fast track: the studio already has the script (and often the footage). Keep the
+// script as it is, let the scriptwriter brief the engine from it, skip the client's
+// approval if asked, and start the edit right away when the footage is in.
+export async function fastTrackScript(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const viewer = await requireRole("admin", "editor");
+  const videoId = text(formData, "videoId");
+  const video = await visibleVideo(videoId);
+  if (!video) return fail("Video not found.");
+  const body = text(formData, "script");
+  if (!body) return fail("Paste the script first.");
+  const writePrompt = formData.get("writePrompt") === "on";
+  const skipApproval = formData.get("skipApproval") === "on";
+  const startEdit = formData.get("startEdit") === "on";
+  if (writePrompt && !claudeConfigured()) return fail("Claude isn't connected yet: ANTHROPIC_API_KEY is missing.");
+
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  const [{ data: client }, { data: kit }, { data: current }, { data: strategy }, { data: report }, { count: footageCount }, { count: openJobs }] = await Promise.all([
+    supabase.from("clients").select("name").eq("id", video.client_id).single(),
+    supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
+    supabase.from("scripts").select("shot_list, edit_prompt").eq("video_id", videoId).maybeSingle(),
+    admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
+    admin.from("trend_reports").select("id, findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
+    admin.from("edit_jobs").select("id", { count: "exact", head: true }).eq("video_id", videoId).in("status", ["queued", "running"]),
+  ]);
+
+  let editPrompt = optionalText(formData, "editPrompt") ?? current?.edit_prompt ?? null;
+  let shots = current?.shot_list ?? [];
+  if (writePrompt) {
+    try {
+      const adapted = await adaptScript({
+        clientName: client?.name ?? "Client",
+        title: video.title,
+        format: video.format.replace("_", " "),
+        aspect: video.aspect,
+        brief: video.brief,
+        script: body,
+        notes: optionalText(formData, "editPrompt") ?? undefined,
+        strategy,
+        findings: asFindings(report?.findings),
+        styleRules: kit?.style_rules ?? null,
+      });
+      editPrompt = adapted.edit_prompt;
+      shots = adapted.shots.map((s) => ({ text: s }));
+    } catch (e) {
+      return fail(e instanceof Error ? e.message : "The scriptwriter couldn't write the edit prompt.");
+    }
+  }
+
+  const { error } = await supabase.from("scripts").upsert({
+    video_id: videoId,
+    body,
+    shot_list: shots,
+    edit_prompt: editPrompt,
+    trend_report_id: writePrompt ? report?.id ?? null : null,
+    drafted_by_claude: false,
+    status: skipApproval ? "approved" : "draft",
+    approved_at: skipApproval ? new Date().toISOString() : null,
+    approved_by: skipApproval ? viewer.id : null,
+  });
+  if (error) return fail("Couldn't save the script.");
+  if (skipApproval) await advance(videoId, footageCount ? "footage_in" : "shoot");
+
+  let started = false;
+  if (startEdit && footageCount && !openJobs) {
+    const { error: jobError } = await admin.from("edit_jobs").insert({ video_id: videoId, source: "launch", instructions: editPrompt, requested_by: viewer.id });
+    if (jobError) return fail("The script is saved, but the edit couldn't start.");
+    await admin.from("videos").update({ footage_complete_at: new Date().toISOString() }).eq("id", videoId);
+    await advance(videoId, "editing");
+    started = true;
+  }
+  refresh();
+  if (started) return done("Script saved and the edit started with it.");
+  if (startEdit && !footageCount) return done("Script saved. Add the footage, then launch the edit.");
+  if (startEdit && openJobs) return done("Script saved. An edit is already running.");
+  return done(writePrompt ? "Script saved and the edit prompt is ready." : "Script saved.");
 }
 
 export async function sendScriptToClient(_: ActionResult, formData: FormData): Promise<ActionResult> {

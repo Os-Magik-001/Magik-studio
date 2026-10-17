@@ -21,6 +21,7 @@ import {
   DeliverButton,
   DraftUpload,
   FootageDrop,
+  FastTrackForm,
   LaunchEditForm,
   ScheduleShootForm,
   ScriptEditor,
@@ -100,6 +101,19 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex min-w-0 flex-col gap-6">
+          {/* Fast track: script and footage already exist */}
+          {script?.status !== "approved" && (
+            <Card>
+              <CardHeader
+                title="Fast track"
+                description="Already have the script and the footage? Skip the agents: paste the script and the engine edits from it."
+              />
+              <div className="p-5">
+                <FastTrackForm videoId={video.id} script={script?.body ?? ""} footageCount={footage?.length ?? 0} hasStrategy={!!strategy} />
+              </div>
+            </Card>
+          )}
+
           {/* Script */}
           <Card>
             <CardHeader

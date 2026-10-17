@@ -12,6 +12,7 @@ import { markDelivered, scheduleShoot, updateVideo } from "@/app/actions/studio"
 import {
   addDriveFootage,
   draftScriptWithClaude,
+  fastTrackScript,
   launchEdit,
   markFootageComplete,
   registerDraftVersion,
@@ -301,6 +302,46 @@ export function LaunchEditForm({ videoId, disabledReason, prompt }: { videoId: s
           <Sparkles size={14} aria-hidden /> Launch the edit
         </SubmitButton>
         {disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
+      </div>
+    </ActionForm>
+  );
+}
+
+// For videos that already have a script (and footage): skip the agents and go straight to the edit.
+export function FastTrackForm({ videoId, script, footageCount, hasStrategy }: { videoId: string; script: string; footageCount: number; hasStrategy: boolean }) {
+  const box = "h-4 w-4 accent-[var(--accent)]";
+  return (
+    <ActionForm action={fastTrackScript} className="flex flex-col gap-4">
+      <input type="hidden" name="videoId" value={videoId} />
+      <Field label="Your script" hint="Paste it as it is: scenes, lines, on-screen text. It won't be rewritten.">
+        <Textarea name="script" rows={10} defaultValue={script} className="font-mono text-[13px]" required />
+      </Field>
+      <Field label="Notes for the edit (optional)" hint="Anything the engine must know: length, style, what to open on.">
+        <Textarea name="editPrompt" rows={2} placeholder="Episode style like the series, 40 to 50 seconds, English subtitles" />
+      </Field>
+      <fieldset className="flex flex-col gap-2 text-sm text-ink-2">
+        <legend className="mb-1 text-[13px] font-medium text-ink-2">Skip steps</legend>
+        <label className="flex items-start gap-2.5">
+          <input type="checkbox" name="writePrompt" defaultChecked className={box} />
+          <span>
+            Let the scriptwriter write the edit prompt from this script
+            <span className="block text-xs text-muted">{hasStrategy ? "Uses the brand strategy and viral research too." : "Keeps your script; adds pacing, captions, motion and music for the engine."}</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2.5">
+          <input type="checkbox" name="skipApproval" defaultChecked className={box} />
+          <span>Skip the client&apos;s script approval</span>
+        </label>
+        <label className="flex items-start gap-2.5">
+          <input type="checkbox" name="startEdit" defaultChecked={footageCount > 0} className={box} />
+          <span>
+            Start the edit now
+            <span className="block text-xs text-muted">{footageCount ? `${footageCount} footage file${footageCount > 1 ? "s" : ""} ready.` : "Add the footage first (upload or Google Drive link under Raw footage)."}</span>
+          </span>
+        </label>
+      </fieldset>
+      <div>
+        <SubmitButton pendingText="Working (up to a minute with the scriptwriter)…">Use this script</SubmitButton>
       </div>
     </ActionForm>
   );
