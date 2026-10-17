@@ -3,7 +3,7 @@ import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
-import { frameSize } from "./media.ts";
+import { clipLoudness, frameSize } from "./media.ts";
 import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
 import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
 import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
@@ -200,6 +200,9 @@ function fillBox(clip: Clip, w: number, h: number, focus: { x: number; y: number
   return `scale=${even(clip.width * fill)}:${even(clip.height * fill)},crop=${w}:${h}:x='clip(${focus.x}*iw-${w / 2},0,iw-${w})':y='clip(${focus.y}*ih-${h / 2},0,ih-${h})',setsar=1`;
 }
 
+// The level every clip's dialogue is brought to before the final loudness pass.
+const DIALOGUE_LUFS = -20;
+
 // Pass 1, the picture edit: shots, moves, transitions, the end card and video
 // overlays (cutaways and cards), with the shots' own sound.
 async function pictureEdit(opts: RenderOptions, W: number, H: number, file: string) {
@@ -221,6 +224,13 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
   const pieces: { seconds: number; transition: EditPlan["end_card"]["transition"] }[] = [];
   // Split edits: each shot's picture may start and end a few frames off its sound.
   const shifts = pictureShifts(plan, clips);
+  // Dialogue levels matched across clips: a quiet take next to a loud one is a giveaway.
+  const level = new Map<string, number>();
+  for (const id of new Set(plan.segments.filter((s) => s.audio === "keep").map((s) => s.clip))) {
+    const clip = byId.get(id);
+    const lufs = clip?.hasAudio ? await clipLoudness(clip.preview) : null;
+    if (lufs !== null) level.set(id, Math.max(-9, Math.min(9, DIALOGUE_LUFS - lufs)));
+  }
   plan.segments.forEach((seg, i) => {
     const clip = byId.get(seg.clip)!;
     const seconds = shotLength(seg);
@@ -242,7 +252,8 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
       // 15 ms fades at both ends: a hard audio cut clicks and jumps in room tone.
       const fadeOut = Math.max(0, (seg.end - seg.start) - 0.015);
       filters.push(`[${v}:a]atrim=start=${(seg.start - from).toFixed(4)}:duration=${(seg.end - seg.start).toFixed(4)},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st=${fadeOut.toFixed(4)}:d=0.015[as${i}]`);
-      filters.push(normA(`as${i}`, `a${i}`, seconds, atempo(seg.speed)));
+      const gain = level.get(seg.clip);
+      filters.push(normA(`as${i}`, `a${i}`, seconds, `${gain ? `volume=${gain.toFixed(1)}dB,` : ""}${atempo(seg.speed)}`));
     } else filters.push(normA(`${addSilence(seconds)}:a`, `a${i}`, seconds));
     pieces.push({ seconds, transition: seg.transition_in });
   });

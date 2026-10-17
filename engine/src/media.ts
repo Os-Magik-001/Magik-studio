@@ -89,3 +89,22 @@ export async function contactSheets(file: string, outDir: string, interval: numb
   const files = (await readdir(outDir)).filter((f) => f.startsWith("sheet_")).sort();
   return files.map((f) => path.join(outDir, f));
 }
+
+// A clip's integrated loudness (LUFS; gated, so silences don't pull it down), or null
+// when it has no measurable sound. Measured once per file.
+const loudness = new Map<string, Promise<number | null>>();
+export function clipLoudness(file: string) {
+  if (!loudness.has(file)) {
+    loudness.set(
+      file,
+      run(config.ffmpeg, ["-hide_banner", "-i", file, "-vn", "-af", "loudnorm=print_format=json", "-f", "null", "-"]).then(
+        ({ stderr }) => {
+          const i = Number(stderr.match(/"input_i"\s*:\s*"(-?[\d.]+)"/)?.[1]);
+          return Number.isFinite(i) && i > -60 ? i : null;
+        },
+        () => null,
+      ),
+    );
+  }
+  return loudness.get(file)!;
+}
