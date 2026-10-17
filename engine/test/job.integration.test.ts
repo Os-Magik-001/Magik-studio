@@ -8,7 +8,7 @@ import { after, before, test } from "node:test";
 import { db } from "../src/config.ts";
 import { processJob, type Job } from "../src/job.ts";
 import type { EditPlan, PlanInput } from "../src/plan.ts";
-import { makeClip, makeLogo } from "./fixtures.ts";
+import { CUT, makeClip, makeLogo, shot } from "./fixtures.ts";
 
 const enabled = process.env.ENGINE_INTEGRATION === "1";
 const tag = `engine-it-${Date.now().toString(36)}`;
@@ -67,13 +67,14 @@ after(async () => {
 });
 
 const firstCut: EditPlan = {
+  look: "natural",
   summary: "Pour hook, then the barista, then the end card.",
   segments: [
-    { clip: "C1", start: 0.5, end: 2.5, purpose: "hook: pour" },
-    { clip: "C2", start: 0, end: 2, purpose: "barista" },
+    shot("C1", 0.5, 2.5, "hook: pour"),
+    shot("C2", 0, 2, "barista"),
   ],
   on_screen_text: [{ text: "Pumpkin latte is back", start: 0, end: 2, style: "title", position: "top" }],
-  end_card: { include: true, headline: "Available now", seconds: 1.5 },
+  end_card: { include: true, headline: "Available now", seconds: 1.5, transition: CUT },
   open_questions: ["Is the barista shot bright enough?"],
 };
 
@@ -121,7 +122,7 @@ test("client changes: Claude gets the previous cut and comments mapped to shots"
   let seen: PlanInput | null = null;
   await processJob(job, async (input) => {
     seen = input;
-    return { plan: { ...firstCut, segments: [firstCut.segments[0], { clip: "C2", start: 0, end: 3, purpose: "barista, longer" }] }, usage: "stub" };
+    return { plan: { ...firstCut, segments: [firstCut.segments[0], shot("C2", 0, 3, "barista, longer")] }, usage: "stub" };
   });
   await db.auth.admin.deleteUser(clientUser.user!.id);
 

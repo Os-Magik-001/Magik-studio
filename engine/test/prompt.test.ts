@@ -1,15 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildContent, type EditPlan, type PlanInput } from "../src/plan.ts";
+import { buildContent, buildSystem, parseStoredPlan, type EditPlan, type PlanInput } from "../src/plan.ts";
+import { CUT, shot } from "./fixtures.ts";
 
 const plan: EditPlan = {
+  look: "natural",
   summary: "",
   segments: [
-    { clip: "C1", start: 0.5, end: 2.5, purpose: "hook" },
-    { clip: "C2", start: 0, end: 2, purpose: "barista" },
+    shot("C1", 0.5, 2.5, "hook"),
+    shot("C2", 0, 2, "barista"),
   ],
   on_screen_text: [],
-  end_card: { include: true, headline: "Available now", seconds: 1.5 },
+  end_card: { include: true, headline: "Available now", seconds: 1.5, transition: CUT },
   open_questions: [],
 };
 
@@ -24,6 +26,7 @@ const input: PlanInput = {
   brandKit: { colors: ["#111111"], fonts: [], musicMood: null, styleRules: "Captions always on.", hasLogo: true },
   instructions: "Client note: warmer",
   source: "client_changes",
+  skills: [],
   clips: [],
   previous: {
     number: 1,
@@ -46,4 +49,41 @@ test("revision prompt pins each comment to the shot it falls on", async () => {
   assert.match(text, /Style rules: Captions always on\./);
   assert.match(text, /What was asked for this revision:\nClient note: warmer/);
   assert.match(text, /Address every open comment/);
+});
+
+test("the timeline accounts for speed and transitions when pinning comments", async () => {
+  const moved: EditPlan = {
+    ...plan,
+    segments: [
+      shot("C1", 0, 1, "slow hook", { speed: 0.5 }),
+      shot("C2", 0, 2, "barista", { transition_in: { type: "crossfade", seconds: 0.5 } }),
+    ],
+    end_card: { include: true, headline: null, seconds: 1, transition: { type: "dip_to_black", seconds: 0.5 } },
+  };
+  const blocks = await buildContent({
+    ...input,
+    previous: { number: 2, plan: moved, comments: [{ timecodeMs: 1000, body: "a", fromClient: true }, { timecodeMs: 3000, body: "b", fromClient: true }, { timecodeMs: 3600, body: "c", fromClient: true }] },
+  });
+  const text = blocks.map((b) => (b.type === "text" ? b.text : "")).join("\n");
+  assert.match(text, /1\. 0\.0s–2\.0s on the timeline = C1 0\.0s–1\.0s at 0\.5x/);
+  assert.match(text, /2\. 1\.5s–3\.5s on the timeline/);
+  assert.match(text, /at 1\.0s → shot 1 \(C1 at 0\.5s\): a/);
+  assert.match(text, /at 3\.0s → shot 2 \(C2 at 1\.5s\): b/);
+  assert.match(text, /at 3\.6s → the end card: c/);
+  assert.match(text, /End card: 3\.0s–4\.0s/);
+});
+
+test("older saved plans read as plain hard cuts", () => {
+  const old = { summary: "", segments: [{ clip: "C1", start: 0, end: 2, purpose: "hook" }], on_screen_text: [], end_card: { include: false, headline: null, seconds: 0 }, open_questions: [] };
+  const parsed = parseStoredPlan(old);
+  assert.equal(parsed?.look, "natural");
+  assert.equal(parsed?.segments[0].speed, 1);
+  assert.deepEqual(parsed?.end_card.transition, CUT);
+  assert.equal(parseStoredPlan({ nonsense: true }), null);
+});
+
+test("skills are added to Claude's instructions", () => {
+  assert.doesNotMatch(buildSystem([]), /Editing skills/);
+  const system = buildSystem([{ name: "hooks", description: "d", formats: "all", enabled: true, body: "Open on the pour." }]);
+  assert.match(system, /# Editing skills\n\n<skill name="hooks">\nOpen on the pour\.\n<\/skill>/);
 });

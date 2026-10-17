@@ -1,0 +1,31 @@
+# Editing skills
+
+These are the house techniques the edit engine gives Claude on every edit. Each one is a folder holding a `SKILL.md`, in the same layout as Claude's Agent Skills:
+
+```markdown
+---
+name: punch-ins-and-reframing
+description: When to punch in, push in and reframe a shot
+formats: all
+---
+
+The technique, written the way you would brief a human editor.
+```
+
+- **`name`** is the skill's name. It defaults to the folder name.
+- **`description`** is one line saying what the skill covers. It's required.
+- **`formats`** says which videos the skill applies to: `all` (the default), or a comma-separated list of `social_short`, `ad` and `podcast_clip`.
+- **`enabled`** can be set to `false` to switch a skill off without deleting it.
+
+Skills are read fresh for every job, so a new or edited skill applies to the next edit with no restart. The Mac background service runs from its own copy of the engine, so after changing skills here, run `engine/scripts/mac-service.sh update`. Alternatively, point `ENGINE_SKILLS_DIR` at a folder of your choice.
+
+A skill with broken front matter is skipped, and the engine log says why. The log line `skills: …` lists which skills each job used.
+
+## Writing a good skill
+
+- **Write only what the engine can do.** It can cut, add transitions (crossfade, dip to black or white, slide, wipe, zoom, circle), change speed, punch in or push in, reframe on a focus point, fix exposure and color per shot, apply an overall look, add captions and titles, and add a branded end card. If a skill asks for music, sound effects or J/L cuts, Claude can't deliver them yet.
+- **Use concrete numbers.** "Hold the product 1.5s after it lands" works; "let it breathe" doesn't.
+- **Expect to be overridden.** The brand kit, the script and the editor's notes always beat a skill.
+- **Keep each skill short and on one topic.** All matching skills go into every edit's instructions, so long skills cost tokens on every job.
+
+The starting set was distilled from the editing plugins installed in Claude Code: video-shotcraft, video-cleanup, adobe-edit-quick-cut, video-processing-editing and ffmpeg-llm.

@@ -24,6 +24,11 @@ FFMPEG_DIR="$(dirname "$(command -v ffmpeg)")"
 
 stop() {
   launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+  # bootout returns before the service is gone; bootstrapping too early fails with error 5.
+  for _ in $(seq 1 20); do
+    launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 || return 0
+    sleep 0.5
+  done
 }
 
 install() {

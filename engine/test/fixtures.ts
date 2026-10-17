@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { createCanvas } from "@napi-rs/canvas";
+import { PLAIN_SHOT, type EditPlan } from "../src/plan.ts";
 
 export type FixtureClip = { file: string; label: string; w: number; h: number; seconds: number; tone: number | null; color: string };
 
@@ -58,3 +59,12 @@ export async function makeLogo(file: string) {
   ctx.fillText("QA ☕", 300, 155);
   await writeFile(file, await c.encode("png"));
 }
+
+type Shot = EditPlan["segments"][number];
+
+// A plan shot with no moves unless `moves` adds some.
+export function shot(clip: string, start: number, end: number, purpose: string, moves: Partial<Shot> = {}): Shot {
+  return { clip, start, end, purpose, ...PLAIN_SHOT, ...moves };
+}
+
+export const CUT = PLAIN_SHOT.transition_in;

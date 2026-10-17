@@ -11,6 +11,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile --ignore-workspace
 COPY src ./src
+COPY skills ./skills
 
 ENV NODE_ENV=production ENGINE_WORK_DIR=/tmp/magik-engine
 USER node

@@ -5,8 +5,9 @@ import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { config, db } from "./config.ts";
 import { contactSheets, download, probe } from "./media.ts";
-import { EditPlan, planEdit, validatePlan, type BrandKit, type Clip } from "./plan.ts";
+import { parseStoredPlan, planEdit, validatePlan, type BrandKit, type Clip } from "./plan.ts";
 import { render } from "./render.ts";
+import { loadSkills } from "./skills.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
 export const log = (job: string | null, msg: string) =>
@@ -111,7 +112,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
         log(job.id, `Skipping ${f.file_name}: not a usable video`);
         continue;
       }
-      clips.push({ id: `C${clips.length + 1}`, fileName: f.file_name, file, duration: p.duration, width: p.width, height: p.height, hasAudio: p.hasAudio, sheets: [], interval: 1, transcript: null });
+      clips.push({ id: `C${clips.length + 1}`, fileName: f.file_name, file, duration: p.duration, width: p.width, height: p.height, fps: p.fps, hasAudio: p.hasAudio, sheets: [], interval: 1, transcript: null });
     }
     if (!clips.length) throw new Error("None of the footage files could be read as video.");
 
@@ -132,8 +133,8 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     let previous = null;
     if (job.base_version_id) {
       const { data: base } = await db.from("versions").select("number, edit_plan").eq("id", job.base_version_id).single();
-      const parsed = EditPlan.safeParse(base?.edit_plan);
-      if (base && parsed.success) {
+      const plan = parseStoredPlan(base?.edit_plan);
+      if (base && plan) {
         const { data: comments } = await db
           .from("comments")
           .select("timecode_ms, body, author:profiles(role)")
@@ -143,7 +144,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
           .order("timecode_ms", { ascending: true, nullsFirst: true });
         previous = {
           number: base.number,
-          plan: parsed.data,
+          plan,
           comments: (comments ?? []).map((c) => ({ timecodeMs: c.timecode_ms, body: c.body, fromClient: c.author?.role === "client" })),
         };
       }
@@ -157,6 +158,9 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     const brandKit: BrandKit | null = kit
       ? { colors: kit.colors, fonts: kit.fonts, musicMood: kit.music_mood, styleRules: kit.style_rules, hasLogo: !!logoFile }
       : null;
+
+    const skills = await loadSkills(video.format, undefined, (msg) => log(job.id, msg));
+    log(job.id, `skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
 
     await progress(job.id, "Claude is planning the cut");
     const shots = Array.isArray(script.shot_list)
@@ -173,6 +177,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       brandKit,
       instructions: job.instructions,
       source: job.source,
+      skills,
       clips,
       previous,
     });
