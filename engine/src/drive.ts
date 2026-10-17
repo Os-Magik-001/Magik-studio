@@ -104,10 +104,14 @@ async function relay(id: string) {
 }
 
 // Hardware HEVC on a Mac keeps 4K small and fast; elsewhere, high-quality H.264.
+// q 70 keeps skin and hair texture (about 25 Mbps for 4K); q 58 measured 3 Mbps
+// and smeared faces, which punch-ins then magnify.
 const ENCODE =
   process.platform === "darwin"
-    ? ["-c:v", "hevc_videotoolbox", "-q:v", "58", "-tag:v", "hvc1"]
+    ? ["-c:v", "hevc_videotoolbox", "-q:v", "70", "-tag:v", "hvc1"]
     : ["-c:v", "libx264", "-preset", "veryfast", "-crf", "19"];
+// Part of every cached file name: bump it when ENCODE changes so old copies aren't reused.
+const COPY_VERSION = "q70";
 
 function transcode(input: string, output: string, duration: number, onProgress: (fraction: number) => void) {
   return new Promise<void>((resolve, reject) => {
@@ -142,7 +146,7 @@ export async function driveWorkingCopy(id: string, onProgress: (fraction: number
   const meta = await driveMeta(id);
   const version = (meta.md5Checksum ?? meta.modifiedTime ?? "v").replace(/[^\w]/g, "").slice(0, 16);
   await mkdir(config.cacheDir, { recursive: true });
-  const file = path.join(config.cacheDir, `${id}-${version}.mp4`);
+  const file = path.join(config.cacheDir, `${id}-${version}-${COPY_VERSION}.mp4`);
   try {
     await stat(file);
     const now = new Date();
