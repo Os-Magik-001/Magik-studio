@@ -45,7 +45,8 @@ Glows and neon; lens flares; particle bursts; shine sweeps across cards; drip, g
 Return css, html and js.
 - The stage is #stage, 1080x1920, transparent: where you draw nothing, the video shows. Full-frame scenes paint their own background.
 - Build your DOM in html (static) and/or in window.init() (async, runs once; create elements, measure text). Then define window.render = (t) => { ... }: it sets every style from t (seconds on the timeline) and nothing else. It may be called for any t in any order, so it must not depend on previous calls.
-- No CSS transitions or animations, no requestAnimationFrame, no timers, no Math.random (use M.rand(n)), no network, no external libraries.
+- No CSS transitions or animations, no requestAnimationFrame, no timers, no Math.random (use M.rand(n)), no network, no external libraries except three.js.
+- For real 3D (phones, coins, logos, cards with reflections), use three.js: `const THREE = await import("three")` in init, addons from "three/addons/..." (RoomEnvironment, RoundedBoxGeometry, EffectComposer, UnrealBloomPass). Render into your own canvas (WebGLRenderer with preserveDrawingBuffer: true, pixel ratio 2) inside render(t), with every transform set from t. CSS 3D is fine for flat type, not for devices: they look cheap.
 - Helpers on window.M: clamp, lerp, span(t, a, b) (0..1 progress), easeOut, easeIn, easeInOut, expoOut, spring(t, {stiffness}), rand(n), frame(name, t) (URL of a video asset's frame), image(name) (URL of an image asset), wordsAt(t).
 - window.DATA: { W, H, length, fps, words: [{text, start, end}], shots: [{start, end, beat, purpose, hold}], brand: {colors, fonts}, assets: [{name, kind, url, fps, frames, duration, description}] }.
 - Keep the DOM light (under ~400 elements) and the code clear; use opacity and transform for motion.

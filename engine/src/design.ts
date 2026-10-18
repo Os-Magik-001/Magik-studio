@@ -17,6 +17,8 @@ import { launch, serve } from "./motion.ts";
 
 const DESIGN_DIR = fileURLToPath(new URL("../design", import.meta.url));
 const FONTS_DIR = fileURLToPath(new URL("../assets/fonts", import.meta.url));
+// three.js, for compositions that need real 3D (import "three" and "three/addons/..." in the page).
+const THREE_DIR = fileURLToPath(new URL("../node_modules/three", import.meta.url));
 const SUB = 4;
 const SHUTTER = 0.5;
 const BATCH = 30;
@@ -98,7 +100,7 @@ async function prepareAssets(assets: DesignAsset[], dir: string, fps: number) {
 
 // Opens the composition in the browser; `shoot` renders and screenshots one time.
 async function openComposition(comp: Comp, data: unknown, assetsDir: string, W: number, H: number) {
-  const server = await serve({ design: DESIGN_DIR, fonts: FONTS_DIR, assets: assetsDir });
+  const server = await serve({ design: DESIGN_DIR, fonts: FONTS_DIR, assets: assetsDir, three: THREE_DIR });
   const browser = await launch();
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   const errors: string[] = [];
