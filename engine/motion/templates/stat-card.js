@@ -1,7 +1,7 @@
-// A floating 3D proof card: tilted glass card with a big number counting up,
+// A floating 3D proof card: tilted dark card with a big number counting up,
 // a label and a small rising bar chart, turning slowly so the depth reads.
 
-import { backOut, easeIn, easeInOut, easeOut, el, fit, lerp, rgba, span, spring } from "../kit.js";
+import { easeIn, easeOut, el, fit, lerp, rgba, span, spring } from "../kit.js";
 
 const parse = (s) => (s.includes(":") ? s.split(":").reduce((n, x) => n * 60 + Number(x), 0) : Number(s.replace(/[^\d.-]/g, "")));
 function format(v, like) {
@@ -16,7 +16,7 @@ function format(v, like) {
 }
 
 export default function statCard(root, spec) {
-  const { W, H, duration, props } = spec;
+  const { W, H, duration, props, fps } = spec;
   const S = Math.min(W, H) / 1080;
   const accent = props.accent;
   const outAt = duration - 0.3;
@@ -30,27 +30,26 @@ export default function statCard(root, spec) {
   const top = props.position === "top" ? H * 0.16 : props.position === "center" ? H * 0.36 : H * 0.5;
   const card = el("div", {
     position: "absolute", left: `${(W - cardW) / 2}px`, top: `${top}px`, width: `${cardW}px`, padding: `${36 * S}px ${44 * S}px`,
-    borderRadius: `${40 * S}px`, background: "rgba(14,14,20,0.78)", backdropFilter: `blur(${20 * S}px)`, color: "#fff",
-    border: `${2 * S}px solid rgba(255,255,255,0.2)`, boxShadow: `0 ${40 * S}px ${90 * S}px rgba(0,0,0,0.5), 0 0 ${60 * S}px ${rgba(accent, 0.35)}`, overflow: "hidden",
+    borderRadius: `${40 * S}px`, background: "rgba(14,14,20,0.94)", color: "#fff",
+    border: `${2 * S}px solid rgba(255,255,255,0.14)`, boxShadow: `0 ${40 * S}px ${90 * S}px rgba(0,0,0,0.5)`, overflow: "hidden",
   }, stage);
-  const num = el("div", { fontFamily: "Magik Heavy", lineHeight: "1", whiteSpace: "nowrap", color: "#fff", textShadow: `0 0 ${30 * S}px ${rgba(accent, 0.7)}` }, card, countable ? format(to, toRaw) : toRaw);
+  const num = el("div", { fontFamily: "Magik Heavy", lineHeight: "1", whiteSpace: "nowrap", color: "#fff" }, card, countable ? format(to, toRaw) : toRaw);
   fit(num, cardW - 88 * S, 170 * S);
   const label = el("div", { fontFamily: "Magik Sans", fontWeight: "600", fontSize: `${40 * S}px`, color: "rgba(255,255,255,0.8)", marginTop: `${10 * S}px` }, card, props.subtitle);
   const bars = el("div", { display: "flex", alignItems: "flex-end", gap: `${10 * S}px`, height: `${90 * S}px`, marginTop: `${24 * S}px` }, card);
   const barEls = Array.from({ length: 9 }, (_, i) => el("div", { flex: "1", height: "0%", borderRadius: `${6 * S}px`, background: i === 8 ? accent : rgba(accent, 0.35 + i * 0.05) }, bars));
-  const sweep = el("div", { position: "absolute", top: "-30%", bottom: "-30%", width: `${140 * S}px`, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)", transform: "skewX(-20deg)" }, card);
 
   return {
     frame(t) {
-      const e = spring(t - 0.05, { stiffness: 150, damping: 14 });
+      const e = spring(t - 0.05, { stiffness: 150 });
       const out = easeIn(span(t, outAt, duration));
       card.style.transform = `translate3d(0, ${(1 - e) * 200 * S}px, ${(1 - e) * -500 * S}px) rotateY(${-16 + Math.sin(t * 1.2) * 6}deg) rotateX(${8 + (1 - e) * 40}deg) scale(${1 - out * 0.15})`;
       card.style.opacity = Math.min(1, e * 1.5) * (1 - out);
-      const c = easeOut(span(t, 0.2, Math.min(duration - 0.4, 1.6)));
+      // Counted on whole frames, so motion blur never mixes two numbers.
+      const c = easeOut(span(Math.round(t * fps) / fps, 0.2, Math.min(duration - 0.4, 1.6)));
       if (countable) num.textContent = format(lerp(from, to, c), toRaw);
       label.style.opacity = span(t, 0.35, 0.6);
       barEls.forEach((b, i) => (b.style.height = `${(18 + i * 10) * easeOut(span(t, 0.3 + i * 0.05, 0.8 + i * 0.05))}%`));
-      sweep.style.left = `${lerp(-30, 130, easeInOut(span(t, 0.9, 1.6)))}%`;
     },
   };
 }

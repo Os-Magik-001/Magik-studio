@@ -1,0 +1,53 @@
+{
+ "trainedAt": "2026-10-18T06:04:33.465Z",
+ "accounts": [],
+ "reels": [
+  {
+   "url": "https://www.instagram.com/p/DdO63LGPBsn/",
+   "owner": "slateacademy_",
+   "plays": 281839,
+   "duration": 15.5,
+   "cutsPerSecond": 0.13,
+   "shots": 3,
+   "medianShot": 6.3,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "slateacademy_",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28536927685937735"
+   }
+  }
+ ],
+ "summary": {
+  "reels": 1,
+  "medianDuration": 15.533333,
+  "medianCutsPerSecond": 0.13,
+  "medianShot": 6.3,
+  "medianWordsPerMinute": null,
+  "medianSpeechShare": null,
+  "medianLongestPause": null,
+  "originalAudioShare": 1,
+  "songs": []
+ },
+ "music": {
+  "summary": "The reference is 100% original audio: a single rap/hip-hop track with no voiceover, and its lyrics are typed on screen as the kinetic typography. The beat drives every scene change and text swap. The moody, slightly aggressive vocal gives the dark neon visuals attitude, and the clean ending lands on the logo.",
+  "recommendation": "If the client supplies a track or the footage has its own audio, keep the original audio at full volume for the whole piece and time all text to its beats and lyrics. Otherwise pick a dark, medium-energy hip-hop bed around 85 to 95 BPM. Use beat-thee (91 BPM) first; use spec-ops (120 BPM, dramatic) for a harder, tense feel, or kings-trailer (80 BPM) for an epic logo payoff. Set volume high, since there is no speech so nothing to dip under. Set the start point so a strong downbeat or drop hits within the first 0.5s, rather than the intro. Music enters on frame 1 and ends on a bar line at the logo, with a 0.3 to 0.5s dip_to_black to cover any tail.",
+  "library_moods": [
+   "hip-hop",
+   "dark",
+   "moody",
+   "trap",
+   "dramatic-suspense",
+   "cinematic",
+   "bass-heavy",
+   "urban",
+   "neon",
+   "confident"
+  ]
+ }
+}

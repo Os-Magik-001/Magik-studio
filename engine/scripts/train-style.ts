@@ -4,6 +4,7 @@
 //
 //   node --env-file=../.env.local scripts/train-style.ts --name office-comedy-reels \
 //     --accounts themarketinginterns cluely --reels https://www.instagram.com/reel/XXXX/ [--per 7]
+//     [--style clean|dynamic] [--when word,word]   (--when: load the skill only when a brief names a word)
 //
 // Writes skills/<name>/SKILL.md and skills/<name>/reference.json (what it studied).
 
@@ -25,6 +26,8 @@ const { values, positionals } = parseArgs({
     reels: { type: "string", multiple: true },
     per: { type: "string", default: "7" },
     notes: { type: "string" },
+    when: { type: "string" },
+    style: { type: "string" },
   },
   allowPositionals: true,
 });
@@ -150,7 +153,7 @@ const skillDir = path.join(import.meta.dirname, "..", "skills", values.name);
 await mkdir(skillDir, { recursive: true });
 await writeFile(
   path.join(skillDir, "SKILL.md"),
-  `---\nname: ${values.name}\ndescription: ${out.description.replace(/\n/g, " ")}\nformats: social_short, ad\n---\n\n${out.body.trim()}\n\n**Music and sound** (from the reference reels)\n- ${out.music.recommendation.trim()}\n- Library moods: ${out.music.library_moods.join(", ")}.\n`,
+  `---\nname: ${values.name}\ndescription: ${out.description.replace(/\n/g, " ")}\nformats: social_short, ad\n${values.style ? `style: ${values.style}\n` : ""}${values.when ? `when: ${values.when}\n` : ""}---\n\n${out.body.trim()}\n\n**Music and sound** (from the reference reels)\n- ${out.music.recommendation.trim()}\n- Library moods: ${out.music.library_moods.join(", ")}.\n`,
 );
 await writeFile(
   path.join(skillDir, "reference.json"),

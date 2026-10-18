@@ -1,6 +1,4 @@
-// Shared motion helpers: easing, springs, layout and a three.js particle field.
-
-import * as THREE from "three";
+// Shared motion helpers: easing, springs and layout.
 
 export const clamp01 = (x) => Math.min(1, Math.max(0, x));
 export const lerp = (a, b, p) => a + (b - a) * p;
@@ -9,12 +7,9 @@ export const span = (t, a, b) => clamp01((t - a) / (b - a));
 export const easeOut = (p) => 1 - (1 - clamp01(p)) ** 3;
 export const easeIn = (p) => clamp01(p) ** 3;
 export const easeInOut = (p) => (p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
-export const backOut = (p, c = 1.9) => {
-  const x = clamp01(p) - 1;
-  return 1 + (c + 1) * x ** 3 + c * x ** 2;
-};
-// A damped spring from 0 to 1: overshoots, then settles. Seconds since it started.
-export function spring(t, { stiffness = 170, damping = 14 } = {}) {
+// A damped spring from 0 to 1. Seconds since it started. The default damping (ratio 0.8)
+// overshoots by about 1.5%: sharp, never bouncy.
+export function spring(t, { stiffness = 170, damping = 1.6 * Math.sqrt(stiffness) } = {}) {
   if (t <= 0) return 0;
   const w = Math.sqrt(stiffness);
   const z = damping / (2 * w);
@@ -67,62 +62,57 @@ export function hexToRgb(hex) {
 }
 export const rgba = (hex, a) => `rgba(${hexToRgb(hex).join(",")},${a})`;
 
-// Drifting glowing particles flying toward the camera, drawn with three.js.
-export function particleField(parent, W, H, accent, count = 260) {
-  const canvas = el("canvas", {}, parent);
-  canvas.className = "gl";
-  canvas.width = W;
-  canvas.height = H;
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(1);
-  renderer.setSize(W, H, false);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
-  camera.position.z = 8;
-  const sprite = (() => {
-    const c = document.createElement("canvas");
-    c.width = c.height = 64;
-    const g = c.getContext("2d");
-    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    grd.addColorStop(0, "rgba(255,255,255,1)");
-    grd.addColorStop(0.25, "rgba(255,255,255,0.7)");
-    grd.addColorStop(1, "rgba(255,255,255,0)");
-    g.fillStyle = grd;
-    g.fillRect(0, 0, 64, 64);
-    return new THREE.CanvasTexture(c);
-  })();
-  const geo = new THREE.BufferGeometry();
-  const base = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const [ar, ag, ab] = hexToRgb(accent).map((v) => v / 255);
-  for (let i = 0; i < count; i++) {
-    base[i * 3] = (rand(i) - 0.5) * 14;
-    base[i * 3 + 1] = (rand(i + 500) - 0.5) * 22;
-    base[i * 3 + 2] = rand(i + 900) * 16 - 12;
-    const white = rand(i + 77) > 0.55;
-    colors.set(white ? [1, 1, 1] : [ar, ag, ab], i * 3);
-  }
-  const pos = new Float32Array(base);
-  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  const mat = new THREE.PointsMaterial({ size: 0.12, map: sprite, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-  const points = new THREE.Points(geo, mat);
-  scene.add(points);
+// Where an overlay's block sits vertically.
+export const anchorY = (position, H) => (position === "top" ? H * 0.2 : position === "center" ? H * 0.47 : H * 0.6);
+
+// A dark stage with soft light orbs drifting slowly: the backdrop of the full-frame
+// motion-design templates (logo reveals, flows, devices).
+export function backdrop(parent, W, H, accent) {
+  const S = Math.min(W, H) / 1080;
+  const stage = el("div", { position: "absolute", inset: "0", background: "#050506", overflow: "hidden" }, parent);
+  const orbs = [
+    { x: 0.2, y: 0.18, r: 520, c: rgba(accent, 0.28), sp: 0.31 },
+    { x: 0.85, y: 0.55, r: 620, c: rgba(accent, 0.18), sp: 0.23 },
+    { x: 0.35, y: 0.92, r: 480, c: "rgba(255,255,255,0.07)", sp: 0.37 },
+  ].map((o) => ({ ...o, e: el("div", { position: "absolute", width: `${o.r * 2 * S}px`, height: `${o.r * 2 * S}px`, borderRadius: "50%", background: `radial-gradient(circle, ${o.c}, transparent 68%)` }, stage) }));
   return {
-    canvas,
-    frame(t, opacity = 1) {
-      for (let i = 0; i < count; i++) {
-        // Each particle travels toward the camera and wraps around.
-        const z = ((base[i * 3 + 2] + 12 + t * (2.2 + rand(i + 3) * 2.5)) % 16) - 12;
-        pos[i * 3 + 2] = z;
-        pos[i * 3] = base[i * 3] + Math.sin(t * 0.7 + i) * 0.15;
+    stage,
+    frame(t) {
+      for (const [i, o] of orbs.entries()) {
+        const x = (o.x + Math.sin(t * o.sp + i * 2) * 0.05) * W - o.r * S;
+        const y = (o.y + Math.cos(t * o.sp * 0.8 + i) * 0.04) * H - o.r * S;
+        o.e.style.transform = `translate(${x}px, ${y}px)`;
       }
-      geo.attributes.position.needsUpdate = true;
-      mat.opacity = opacity;
-      renderer.render(scene, camera);
     },
   };
 }
 
-// Where an overlay's block sits vertically.
-export const anchorY = (position, H) => (position === "top" ? H * 0.2 : position === "center" ? H * 0.47 : H * 0.6);
+// Plays a clip inside a template: the engine extracts the clip's frames, and each
+// frame of the graphic shows the matching one (decoded before the screenshot). Rounded
+// to the nearest frame, so motion blur's sub-frames never mix two pictures of the clip.
+export function screenPlayer(img, screen, fps) {
+  let shown = -1;
+  return (t) => {
+    if (!screen?.count) return undefined;
+    const i = Math.max(0, Math.min(screen.count - 1, Math.round(t * fps)));
+    if (i === shown) return undefined;
+    shown = i;
+    img.src = `${screen.base}/${String(i).padStart(5, "0")}.jpg`;
+    return img.decode().catch(() => {});
+  };
+}
+
+// A four-point sparkle, the icon of pills and kickers.
+export function sparkle(parent, size, color) {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  const p = document.createElementNS(ns, "path");
+  p.setAttribute("d", "M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0 Z");
+  p.setAttribute("fill", color);
+  svg.appendChild(p);
+  parent.appendChild(svg);
+  return svg;
+}

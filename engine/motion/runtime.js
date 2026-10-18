@@ -1,5 +1,6 @@
 // The motion page: the engine calls setup(spec) once per graphic, then renderAt(t)
-// for every frame and takes a screenshot. Nothing animates on its own (no CSS
+// for every frame and takes a screenshot (renderAt may return a promise: a template
+// showing a clip waits for its frame to decode). Nothing animates on its own (no CSS
 // transitions, no requestAnimationFrame), so every frame is exactly reproducible.
 
 const templates = {
@@ -8,6 +9,11 @@ const templates = {
   title_3d: () => import("./templates/title-3d.js"),
   stat_card: () => import("./templates/stat-card.js"),
   lower_third_3d: () => import("./templates/lower-third-3d.js"),
+  phone_3d: () => import("./templates/phone-3d.js"),
+  browser_3d: () => import("./templates/browser-3d.js"),
+  pill_flow: () => import("./templates/pill-flow.js"),
+  kinetic_type: () => import("./templates/kinetic-type.js"),
+  logo_reveal: () => import("./templates/logo-reveal.js"),
 };
 
 let current = null;

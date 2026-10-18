@@ -4,7 +4,7 @@
 // and composites over the edit like any other layer.
 
 import { createReadStream } from "node:fs";
-import { access, mkdir } from "node:fs/promises";
+import { access, copyFile, mkdir, readdir, rm } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,14 +18,18 @@ const MOTION_DIR = fileURLToPath(new URL("../motion", import.meta.url));
 const THREE_DIR = fileURLToPath(new URL("../node_modules/three", import.meta.url));
 const FONTS_DIR = fileURLToPath(new URL("../assets/fonts", import.meta.url));
 
+// Sub-frames per frame for motion blur, and the shutter as a fraction of a frame.
+const SUB = 4;
+const SHUTTER = 0.5;
+const BATCH = 30;
+
 export type MotionLayer = { dir: string; start: number; end: number; frames: number };
 type Motion = EditPlan["motion"][number];
 
-const TYPES: Record<string, string> = { ".js": "text/javascript", ".html": "text/html", ".png": "image/png", ".jpg": "image/jpeg", ".ttf": "font/ttf" };
+const TYPES: Record<string, string> = { ".js": "text/javascript", ".html": "text/html", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ttf": "font/ttf" };
 
-// Serves the templates, three.js, the fonts and this render's images to the page.
-function serve(assetsDir: string) {
-  const roots: Record<string, string> = { motion: MOTION_DIR, three: THREE_DIR, fonts: FONTS_DIR, assets: assetsDir };
+// Serves folders to the page, each under its own first path segment (/motion/..., /fonts/...).
+export function serve(roots: Record<string, string>) {
   const server = http.createServer((req, res) => {
     const [, root, ...rest] = decodeURIComponent((req.url ?? "/").split("?")[0]).split("/");
     const base = roots[root];
@@ -50,7 +54,7 @@ function serve(assetsDir: string) {
 }
 
 // Google Chrome when it's installed (GPU-accelerated on macOS), else Playwright's own Chromium.
-async function launch(): Promise<Browser> {
+export async function launch(): Promise<Browser> {
   const args = ["--use-angle=metal", "--ignore-gpu-blocklist", "--enable-gpu-rasterization", "--force-color-profile=srgb"];
   try {
     return await chromium.launch({ channel: "chrome", args });
@@ -102,7 +106,7 @@ const fillBox = (clip: Clip, w: number, h: number, focus: { x: number; y: number
   return `scale=${even(clip.width * fill)}:${even(clip.height * fill)},crop=${w}:${h}:x='clip(${focus.x}*iw-${w / 2},0,iw-${w})':y='clip(${focus.y}*ih-${h / 2},0,ih-${h})',setsar=1`;
 };
 
-export type MotionInput = { plan: EditPlan; clips: Clip[]; picture: string; W: number; H: number; fps: number; accent: string; workDir: string };
+export type MotionInput = { plan: EditPlan; clips: Clip[]; picture: string; W: number; H: number; fps: number; accent: string; workDir: string; logo?: string | null };
 
 // Renders every motion item into a folder of transparent PNG frames.
 export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
@@ -138,6 +142,24 @@ export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
       }
       assets.people = people;
     }
+    if (item.screen) {
+      // The clip on a device's screen, as one frame per output frame.
+      const clip = byId.get(item.screen.clip);
+      if (clip) {
+        const dir = path.join(assetsDir, `m${i}-screen`);
+        await mkdir(dir, { recursive: true });
+        await run(config.ffmpeg, [
+          "-v", "error", "-y", "-ss", item.screen.start.toFixed(3), "-t", (item.end - item.start + 0.1).toFixed(3), "-i", clip.file,
+          "-vf", `fps=${fps},scale='min(1440,iw)':-2`, "-q:v", "3", "-start_number", "0", path.join(dir, "%05d.jpg"),
+        ]);
+        assets.screen = { base: `/assets/${path.basename(dir)}`, count: (await readdir(dir)).length };
+      }
+    }
+    if (item.template === "logo_reveal" && input.logo) {
+      const logo = path.join(assetsDir, `logo${path.extname(input.logo)}`);
+      await copyFile(input.logo, logo);
+      assets.logo = `/assets/${path.basename(logo)}`;
+    }
     specs.push({
       item,
       spec: {
@@ -149,7 +171,7 @@ export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
     });
   }
 
-  const server = await serve(assetsDir);
+  const server = await serve({ motion: MOTION_DIR, three: THREE_DIR, fonts: FONTS_DIR, assets: assetsDir });
   const browser = await launch();
   try {
     const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
@@ -161,9 +183,26 @@ export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
       await mkdir(dir, { recursive: true });
       await page.evaluate((s) => (window as unknown as { setup: (s: unknown) => Promise<boolean> }).setup(s), spec);
       const frames = Math.round((item.end - item.start) * fps);
-      for (let f = 0; f < frames; f++) {
-        await page.evaluate((t) => (window as unknown as { renderAt: (t: number) => void }).renderAt(t), f / fps);
-        await page.screenshot({ path: path.join(dir, `${String(f).padStart(5, "0")}.png`), omitBackground: true, type: "png" });
+      // Motion blur: each frame is the average of SUB moments spread over half a frame
+      // (a 180-degree shutter, like a camera), blended with premultiplied alpha. Blended
+      // 30 frames at a time, so the sub-frames never fill the disk.
+      const sub = path.join(dir, "sub");
+      for (let from = 0; from < frames; from += BATCH) {
+        await mkdir(sub, { recursive: true });
+        const to = Math.min(frames, from + BATCH);
+        for (let f = from; f < to; f++) {
+          for (let k = 0; k < SUB; k++) {
+            const t = Math.max(0, (f + ((k - (SUB - 1) / 2) * SHUTTER) / SUB) / fps);
+            await page.evaluate((t) => (window as unknown as { renderAt: (t: number) => unknown }).renderAt(t), t);
+            await page.screenshot({ path: path.join(sub, `${String((f - from) * SUB + k).padStart(5, "0")}.png`), omitBackground: true, type: "png" });
+          }
+        }
+        await run(config.ffmpeg, [
+          "-v", "error", "-y", "-framerate", String(fps * SUB), "-i", path.join(sub, "%05d.png"),
+          "-vf", `format=rgba,premultiply=inplace=1,tmix=frames=${SUB},unpremultiply=inplace=1,select='eq(mod(n\\,${SUB})\\,${SUB - 1})'`,
+          "-fps_mode", "passthrough", "-start_number", String(from), path.join(dir, "%05d.png"),
+        ]);
+        await rm(sub, { recursive: true, force: true });
       }
       if (!(await exists(path.join(dir, "00000.png")))) continue;
       layers.push({ dir, start: item.start, end: item.end, frames });

@@ -1,6 +1,6 @@
 ---
 name: motion-graphics
-description: Using the 3D motion templates (freeze-frame character intros, cast lineups, 3D titles, stat cards, 3D name plates) to make edits dynamic
+description: Using the 3D motion templates (freeze-frame character intros, cast lineups, 3D titles, stat cards, 3D name plates, and motion-design scenes: 3D phone and browser, pill flows, kinetic type, logo reveals) to make edits dynamic
 formats: social_short, ad
 style: dynamic
 ---
@@ -22,6 +22,14 @@ The motion templates are what make an edit feel produced rather than just cut. U
   - Keep it to 1–4 words, at `top` or `center`, where it won't cover a face. Put a `hit` under it.
 - **`stat_card`** (2–3s, overlay): one proof number, such as views, money, a time saved or a price. `title` is "from|to" ("0|1000000"), `subtitle` the label.
 - **`lower_third_3d`** (2–3.5s, overlay): names a speaker while they keep talking, with no freeze. Use it when a full intro would be too much, at `top` or `center`.
+
+**Motion-design scenes** (full frame, on their own dark stage with soft light orbs; for websites, apps, brands and reels with little or no footage)
+- **`phone_3d`** (3–6s): a 3D phone flies in and turns slowly with a clip on its screen. Set `screen` to the clip (a mobile screen recording) and where it starts. `title` is an optional headline above it (2–6 words), `subtitle` a small kicker.
+- **`browser_3d`** (3–6s): a floating 3D browser window playing a desktop screen recording. `subtitle` is the address shown in its bar, `title` an optional headline below.
+- **`pill_flow`** (3–6s): 2–5 steps as pills joined by a line that draws itself: a method, a process, pillars. `lines` are the steps (1–3 words each), `title` an optional small heading.
+- **`kinetic_type`** (1.8–4s): 1–4 short lines of big text coming out of a blur, one after another. Put *stars* around the one word to set in the accent serif. Hooks, slogans, claims.
+- **`logo_reveal`** (2.5–4s): the brand's logo out of a blur, `subtitle` as the tagline and `title` as the website. The ending.
+- Place them back to back over plain segments of the footage (they cover it completely) and change scene every 2–5s. A scene's text is part of the scene: don't add titles or captions on top of it.
 
 **Rules**
 - Any full-frame template (character_intro, cast_lineup) needs a `hold` shot of the same length under it, or the speech under it gets covered. Shift every later caption, title and sound effect by the hold's length.

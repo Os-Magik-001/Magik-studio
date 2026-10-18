@@ -71,7 +71,7 @@ export const TEXT_ANIMATIONS = ["none", "pop", "fade", "slide_up", "typewriter"]
 export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal", "subtitle"] as const;
 export const GRAPHICS = ["comment_cta", "follow_pill", "progress_bar", "counter", "emoji", "circle"] as const;
 export const SFX = ["whoosh", "pop", "hit", "riser", "click", "ding"] as const;
-export const MOTION_TEMPLATES = ["character_intro", "cast_lineup", "title_3d", "stat_card", "lower_third_3d"] as const;
+export const MOTION_TEMPLATES = ["character_intro", "cast_lineup", "title_3d", "stat_card", "lower_third_3d", "phone_3d", "browser_3d", "pill_flow", "kinetic_type", "logo_reveal"] as const;
 
 const Hex = z.string().describe("A hex color like #FFD84D");
 
@@ -154,17 +154,22 @@ const Motion = z.object({
   template: z
     .enum(MOTION_TEMPLATES)
     .describe(
-      "3D motion graphics. character_intro = full-frame freeze intro: the frame under it freezes, the person is cut out and pops forward in color over a darkened, tinted background, a giant name sits behind them and a 3D card flips in with the role and stat bars (put it over a `hold` shot, 2.5 to 4 s); cast_lineup = full-frame 3D fan of cards, one cut-out per person with name and role, for an opener or a 'meet the team' beat (2.5 to 4 s, 2 to 6 people); title_3d = an extruded 3D title that slams in with camera shake and glow, over the picture (1.5 to 3 s); stat_card = a floating, slowly turning 3D card with a big number counting up and a label, for proof (2 to 3 s); lower_third_3d = a 3D name plate that swings in beside a person while they keep talking, no freeze (2 to 3.5 s)",
+      "3D motion graphics. character_intro = full-frame freeze intro: the frame under it freezes, the person is cut out and pops forward in color over a darkened, tinted background, a giant name sits behind them and a 3D card flips in with the role and stat bars (put it over a `hold` shot, 2.5 to 4 s); cast_lineup = full-frame 3D fan of cards, one cut-out per person with name and role, for an opener or a 'meet the team' beat (2.5 to 4 s, 2 to 6 people); title_3d = an extruded 3D title that slams in with camera shake, over the picture (1.5 to 3 s); stat_card = a floating, slowly turning 3D card with a big number counting up and a label, for proof (2 to 3 s); lower_third_3d = a 3D name plate that swings in beside a person while they keep talking, no freeze (2 to 3.5 s). Motion-design scenes (full frame, on their own dark stage with soft light orbs, so the picture under them doesn't show; for websites, apps, brands and videos with little or no footage): phone_3d = a 3D phone flies in and turns slowly with a clip playing on its screen, e.g. a mobile website or app scrolling (3 to 6 s; set `screen`); browser_3d = a floating 3D browser window with a clip playing inside (a desktop website scrolling) and the address in its bar (3 to 6 s; set `screen`); pill_flow = 2 to 5 steps as pills with a sparkle icon joined by a line that draws itself (a method, a process, pillars; 3 to 6 s); kinetic_type = 1 to 4 lines of big text coming forward out of a blur, *starred* words in the accent serif (a hook, a slogan, a claim; 1.8 to 4 s); logo_reveal = the brand's logo out of a blur with a tagline and the website, for the ending (2.5 to 4 s)",
     ),
   start: z.number().describe("Seconds on the finished timeline"),
   end: z.number(),
-  title: z.string().describe("character_intro/lower_third_3d: the name; title_3d: 1 to 4 words; stat_card: the number or 'from|to' like '0|1000000'; cast_lineup: an optional header like 'MEET THE BOYZ'"),
-  subtitle: z.string().describe("character_intro/lower_third_3d: the role; title_3d: an optional small line; stat_card: the label; cast_lineup: optional"),
+  title: z.string().describe("character_intro/lower_third_3d: the name; title_3d: 1 to 4 words; stat_card: the number or 'from|to' like '0|1000000'; cast_lineup: an optional header like 'MEET THE BOYZ'; phone_3d/browser_3d: an optional headline (2 to 6 words); pill_flow: an optional small heading; kinetic_type: unused when lines are given; logo_reveal: the website (or the brand name when there is no logo)"),
+  subtitle: z.string().describe("character_intro/lower_third_3d: the role; title_3d: an optional small line; stat_card: the label; cast_lineup: optional; phone_3d: an optional kicker above the headline; browser_3d: the address shown in the bar (e.g. 'magikmanagement.com'); logo_reveal: the tagline"),
   lines: z
     .array(z.string())
-    .describe("character_intro only: 0 to 3 stat lines, 'LABEL|0-100' draws an animated bar (e.g. 'VISION|98'), plain text draws a line (e.g. 'Sleeps 3 h a night')"),
+    .describe("character_intro: 0 to 3 stat lines, 'LABEL|0-100' draws an animated bar (e.g. 'VISION|98'), plain text draws a line (e.g. 'Sleeps 3 h a night'); pill_flow: the 2 to 5 steps, 1 to 3 words each; kinetic_type: the 1 to 4 lines, short, with *stars* around the accent words. Other templates: empty"),
   people: z.array(Person).describe("cast_lineup: the people to show (2 to 6). Other templates: empty (character_intro cuts the person out of the frozen frame under it)."),
-  accent: Hex.nullable().describe("Accent color for glows, bars and card edges; null = the brand's accent or the caption highlight color"),
+  screen: z
+    .object({ clip: z.string(), start: z.number().describe("Seconds into the clip where the screen starts playing") })
+    .nullable()
+    .default(null)
+    .describe("phone_3d/browser_3d: the clip that plays on the device's screen (e.g. a screen recording of the website). Other templates: null"),
+  accent: Hex.nullable().describe("Accent color for bars, card edges, light and highlighted words; null = the brand's accent or the caption highlight color"),
   position: z.enum(["top", "center", "bottom"]).describe("title_3d, stat_card and lower_third_3d: where on screen. Full-frame templates ignore it."),
 });
 
@@ -812,8 +817,16 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
       }
       return [{ ...p, clip: clip.id, time: round(clamp(p.time, 0, Math.max(0, clip.duration - 0.05))), focus: { x: round(clamp(p.focus.x, 0, 1, 0.5)), y: round(clamp(p.focus.y, 0, 1, 0.5)) }, name: p.name.trim(), role: p.role.trim() }];
     });
-    const item = { ...span(m), title: m.title.trim(), subtitle: m.subtitle.trim(), lines: m.lines.map((l) => l.trim()).filter(Boolean).slice(0, 3), people: people.slice(0, 6), accent: hex(m.accent) };
+    const screenClip = m.screen ? byId.get(m.screen.clip.trim().toUpperCase()) : undefined;
+    if (m.screen && !screenClip) problems.push(`The ${m.template} screen uses unknown clip ${m.screen.clip}.`);
+    const screen = screenClip && m.screen ? { clip: screenClip.id, start: round(clamp(m.screen.start, 0, Math.max(0, screenClip.duration - 0.5))) } : null;
+    const maxLines = m.template === "pill_flow" ? 5 : m.template === "kinetic_type" ? 4 : 3;
+    const item = { ...span(m), title: m.title.trim(), subtitle: m.subtitle.trim(), lines: m.lines.map((l) => l.trim()).filter(Boolean).slice(0, maxLines), people: people.slice(0, 6), screen, accent: hex(m.accent) };
     if (item.end - item.start < 0.8) continue;
+    if ((m.template === "phone_3d" || m.template === "browser_3d") && !item.screen) {
+      problems.push(`Dropped a ${m.template} with no screen clip.`);
+      continue;
+    }
     if (m.template === "cast_lineup" && item.people.length < 1) {
       problems.push("Dropped a cast_lineup with no usable people.");
       continue;

@@ -1,0 +1,49 @@
+{
+ "trainedAt": "2026-10-18T06:04:38.340Z",
+ "accounts": [],
+ "reels": [
+  {
+   "url": "https://www.instagram.com/p/DbOCjKssdqT/",
+   "owner": "justdodani",
+   "plays": 314114,
+   "duration": 36.4,
+   "cutsPerSecond": 0.19,
+   "shots": 8,
+   "medianShot": 4.2,
+   "wordsPerMinute": 191,
+   "speechShare": 0.98,
+   "longestPause": 0.3,
+   "audio": {
+    "artist_name": "justdodani",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "28029490566739948"
+   }
+  }
+ ],
+ "summary": {
+  "reels": 1,
+  "medianDuration": 36.436042,
+  "medianCutsPerSecond": 0.19,
+  "medianShot": 4.2,
+  "medianWordsPerMinute": 191,
+  "medianSpeechShare": 0.98,
+  "medianLongestPause": 0.3,
+  "originalAudioShare": 1,
+  "songs": []
+ },
+ "music": {
+  "summary": "The reference uses 100% original audio: a dense, scripted voiceover at 191 wpm that fills 98% of the runtime, with no recognisable song. The tension and polish come from the voice delivery, the moody cinematic grade and the kinetic captions. A track would compete with how fast the information is delivered, so the speech-first mix keeps every word clear.",
+  "recommendation": "Default to original audio only, with no music bed. Add a bed only if the source voiceover is dry or the room tone is noisy. In that case use ambient-minimal or low-energy electronic (meditating-beat at 92 BPM, or blippy-trance at 100 BPM for a more techy feel) at LOW volume, ducked under speech so it sits roughly 20–24 dB below the voice. Start it at 0s with no intro build and run it under the whole reel. Let it rise slightly (still low) for the last 1s after the CTA line ends, then end on the cut. Never use upbeat-pop, funk or epic trailer tracks, and never sync cuts to beats, because the cuts follow sentences.",
+  "library_moods": [
+   "ambient-minimal",
+   "electronic-tech",
+   "low energy",
+   "atmospheric",
+   "cinematic night",
+   "subtle tech"
+  ]
+ }
+}

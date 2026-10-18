@@ -1,0 +1,52 @@
+{
+ "trainedAt": "2026-10-18T06:04:29.442Z",
+ "accounts": [],
+ "reels": [
+  {
+   "url": "https://www.instagram.com/p/DXzurbATRQT/",
+   "owner": "youmotioncom",
+   "plays": 930950,
+   "duration": 32.9,
+   "cutsPerSecond": 0.12,
+   "shots": 4,
+   "medianShot": 10.6,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null,
+   "audio": {
+    "artist_name": "youmotioncom",
+    "song_name": "Original audio",
+    "uses_original_audio": true,
+    "should_mute_audio": false,
+    "should_mute_audio_reason": "",
+    "audio_id": "26682353581404723"
+   }
+  }
+ ],
+ "summary": {
+  "reels": 1,
+  "medianDuration": 32.92449,
+  "medianCutsPerSecond": 0.12,
+  "medianShot": 10.6,
+  "medianWordsPerMinute": null,
+  "medianSpeechShare": null,
+  "medianLongestPause": null,
+  "originalAudioShare": 1,
+  "songs": []
+ },
+ "music": {
+  "summary": "The reference uses original audio with no speech: a soft ambient/electronic bed that breathes with the motion, swelling into section changes and settling on the logo. Because there is no voice, the music carries the whole emotional arc. Its calm, airy texture matches the slow pushes, glows and fades, and the sparse transition accents make each reveal feel designed rather than cut.",
+  "recommendation": "Use a library music bed, not clip audio. First choice is meditating-beat (ambient-minimal, 92 BPM). Alternatives are blippy-trance (electronic-tech, medium energy, 100 BPM) for a techier brand and finally-see-the-light (luxury-elegant, 93 BPM) for a premium brand. Set volume high because there is no dialogue to dip under. Start the track at 0s from its intro (start point 0), so the opening point of light appears over near-silence that builds. Place the dip_to_white at about 11s and dip_to_black at about 21s on bar lines (at about 92 BPM, one bar is about 2.6s). Let the track run under the logo hold to the final frame with no cut-off. Layer sparse SFX at low volume: a riser into the first phrase, a whoosh on each dip, and a ding on the logo. Avoid hip-hop, funk, upbeat-pop and epic trailer tracks.",
+  "library_moods": [
+   "ambient-minimal",
+   "electronic-tech",
+   "luxury-elegant",
+   "atmospheric",
+   "airy",
+   "futuristic",
+   "calm",
+   "glowing",
+   "sleek"
+  ]
+ }
+}

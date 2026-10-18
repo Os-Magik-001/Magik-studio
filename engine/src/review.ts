@@ -49,8 +49,12 @@ export async function reviewRender(output: string, plan: EditPlan, dir: string) 
       }
     }
   }
+  // A motion-design scene (3D phone, flow, logo...) covers its hold completely: the
+  // freeze under it is never seen, so its length is the scene's, not a drag.
+  const SCENES = new Set(["phone_3d", "browser_3d", "pill_flow", "kinetic_type", "logo_reveal"]);
+  const underScene = (s: (typeof shots)[number]) => plan.motion.some((m) => SCENES.has(m.template) && m.start <= s.start + 0.1 && m.end >= s.end - 0.1);
   for (const s of shots) {
-    if (s.seg.hold > 2.9) add(s.start, `This freeze lasts ${s.seg.hold.toFixed(1)}s: it drags. 2.2 to 2.8s is enough for an intro, about 1s for a comic beat.`);
+    if (s.seg.hold > 2.9 && !underScene(s)) add(s.start, `This freeze lasts ${s.seg.hold.toFixed(1)}s: it drags. 2.2 to 2.8s is enough for an intro, about 1s for a comic beat.`);
     if (s.seg.hold === 0 && s.end - s.start < 0.35 && !/flash|whip|snap/i.test(s.seg.purpose)) add(s.start, `A ${(s.end - s.start).toFixed(2)}s flash cut: it reads as a glitch. Merge it or hold it longer.`);
   }
 

@@ -149,15 +149,20 @@ export async function watchClips(clips: Clip[], dir: string, hint: string, step:
   }
 }
 
-export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand; selfReview?: boolean; clean?: boolean };
+export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand; selfReview?: boolean; clean?: boolean; bare?: boolean };
+
+// The cut with no graphics at all, for the design pass to design over: the plan's
+// captions, titles and motion stay in the plan as the editor's suggestions.
+export const bareOf = (plan: EditPlan): EditPlan => ({ ...plan, captions: { ...plan.captions, mode: "off" }, on_screen_text: [], graphics: [], motion: [], end_card: { ...plan.end_card, include: false } });
 
 // Claude plans the cut, the plan is checked against the real footage, and the edit
 // renders to `output`.
 export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit) {
-  const { formatKey, brand, clean, ...rest } = req;
+  const { formatKey, brand, clean, bare, ...rest } = req;
+  const shown = (plan: EditPlan) => (bare ? bareOf(plan) : plan);
   const skills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic", [rest.brief, rest.instructions, rest.title].filter(Boolean).join(" "));
   // The clean style is stated up front, so the plan is built for it rather than stripped after.
-  const input = clean ? { ...rest, instructions: [CLEAN, rest.instructions].filter(Boolean).join("\n\n") } : rest;
+  const input = { ...rest, instructions: [clean && CLEAN, bare && DESIGNED, rest.instructions].filter(Boolean).join("\n\n") || null };
   note(`skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
   await step("Claude is planning the cut");
   const library = await loadLibrary().catch(() => []);
@@ -183,7 +188,7 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
     return t ? await trackFile(t).catch((err) => (note(`music unavailable: ${err.message}`), null)) : null;
   };
   await step(`Rendering ${first.length.toFixed(1)}s`);
-  await render({ plan: first.plan, clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(first.plan, clips), musicFile: await music(first.plan) });
+  await render({ plan: shown(first.plan), clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(first.plan, clips), musicFile: await music(first.plan) });
   if (req.selfReview === false) return first;
 
   // Self-review: watch the render back, then revise it like a senior editor would.
@@ -212,11 +217,13 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
     return first;
   }
   await step(`Rendering the reviewed cut, ${revised.length.toFixed(1)}s`);
-  await render({ plan: revised.plan, clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output, words: timelineWords(revised.plan, clips), musicFile: await music(revised.plan) });
+  await render({ plan: shown(revised.plan), clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output, words: timelineWords(revised.plan, clips), musicFile: await music(revised.plan) });
   return revised;
 }
 
 const CLEAN = `EDITING STYLE: CLEAN (like Cluely's skits). Cuts, framing and subtitles only. Do not use motion templates, freeze frames (hold), titles, labels, stickers, graphics, cards, sound effects, transitions other than cut, pushes or highlight words: they will be removed. Music only as a section under the series intro clip, never under dialogue. All the quality comes from choosing the best takes and cutting them with perfect comic timing.`;
+
+const DESIGNED = `GRAPHICS ARE DESIGNED AFTER YOU: a motion designer designs every caption, title, card, motion graphic and the end card over your finished cut. Still fill in captions, on_screen_text and motion as your suggestions (what text goes where and when, which moments deserve a graphic or a full-frame scene); they guide the designer and are not rendered as they are. Leave the end card out. Your job is the cut itself: takes, timing, shots, framing, holds where a graphic needs a still frame, music and sound effects.`;
 
 const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you are now the senior editor reviewing it before anyone sees it. Watch the render sheets and read the notes pinned to its timeline, then deliver the final cut:
 - Natural timing, not maximum tightness: 0.25 to 0.45 s between lines on the same shot, about 0.5 to 0.7 s when a speaker change falls on a cut. Long gaps (over 0.9 s) go, unless they are the beat before a punchline or a reaction. No second take of a line, no stutter.

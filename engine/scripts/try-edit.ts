@@ -7,6 +7,9 @@
 //
 // --fix revises the video's latest version the way an editor's fix request would.
 // --plan <file.plan.json> re-renders a saved plan without asking Claude again.
+// --design: Claude designs every graphic as code after the cut (the design pass);
+//   --asset name=file::description adds a screen recording or image it can use;
+//   --design-from comp-N.json reuses a saved composition instead of designing again.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -16,7 +19,9 @@ import { db } from "../src/config.ts";
 import { listDriveVideos } from "../src/drive.ts";
 import { planAndRender, prepareClips, watchClips, type Source } from "../src/job.ts";
 import { probe } from "../src/media.ts";
-import { parseStoredPlan, type EditPlan } from "../src/plan.ts";
+import { parseStoredPlan, timelineOf, timelineWords, type EditPlan } from "../src/plan.ts";
+import { designPass, type DesignAsset } from "../src/design.ts";
+import { loadSkills } from "../src/skills.ts";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -31,9 +36,13 @@ const { values, positionals } = parseArgs({
     title: { type: "string", default: "Test edit" },
     brief: { type: "string" },
     colors: { type: "string" },
+    logo: { type: "string" },
     out: { type: "string", default: "cut.mp4" },
     plan: { type: "string" },
     clean: { type: "boolean" },
+    design: { type: "boolean" },
+    "design-from": { type: "string" },
+    asset: { type: "string", multiple: true },
   },
 });
 
@@ -85,7 +94,7 @@ if (values.video) {
   }
   request = {
     formatKey: values.format!,
-    brand: { colors: values.colors?.split(",") ?? [], fonts: [], logoFile: null },
+    brand: { colors: values.colors?.split(",") ?? [], fonts: [], logoFile: values.logo ? path.resolve(values.logo) : null },
     clientName: values.client!,
     title: values.title!,
     format: values.format!.replace("_", " "),
@@ -105,8 +114,39 @@ const clips = await prepareClips(sources, dir, say, say, new Set());
 await watchClips(clips, dir, `${request.clientName}. ${request.title}. ${request.script}`, say);
 const saved = values.plan ? (JSON.parse(await readFile(values.plan, "utf8")) as EditPlan) : null;
 // A saved plan is rendered as it is: no second planning pass.
-const { plan, length } = await planAndRender({ ...request, selfReview: !saved, clean: values.clean ?? request.clean }, clips, dir, output, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined);
+const cut = values.design ? output.replace(/\.mp4$/, "-cut.mp4") : output;
+const { plan, length } = await planAndRender({ ...request, selfReview: !saved, clean: values.clean ?? request.clean, bare: values.design }, clips, dir, cut, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined);
 await writeFile(output.replace(/\.mp4$/, ".plan.json"), JSON.stringify(plan, null, 1));
+if (values.design) {
+  // The design pass: the editor's text and motion ideas, the client's style references
+  // (skills named in the notes) and the assets go to Claude as the design brief.
+  const named = (await loadSkills(request.formatKey, undefined, () => {}, "dynamic", [request.brief, request.instructions, request.title].filter(Boolean).join(" "))).filter((s) => s.when.length);
+  const assets: DesignAsset[] = (values.asset ?? []).map((a) => {
+    const [, name, file, description] = a.match(/^([\w-]+)=([^:]+)(?:::(.*))?$/) ?? [];
+    if (!name) throw new Error(`--asset ${a}: use name=file::description`);
+    return { name, file: path.resolve(file), kind: /\.(mp4|mov|webm)$/i.test(file) ? "video" : "image", description: description ?? "" };
+  });
+  if (request.brand.logoFile) assets.push({ name: "logo", file: request.brand.logoFile, kind: "image", description: "The brand's logo" });
+  const brief = [
+    `Client: ${request.clientName}. Video: ${request.title}. Format: ${request.format}, ${request.aspect}.`,
+    request.brief && `Client brief:\n${request.brief}`,
+    request.instructions && `Notes from the studio:\n${request.instructions}`,
+    request.script && `Script:\n${request.script}`,
+    `The editor's summary of the cut:\n${plan.summary}`,
+    `The editor's graphics suggestions (ideas only; you design them):\n${JSON.stringify({ captions: plan.captions, on_screen_text: plan.on_screen_text, motion: plan.motion.map(({ people: _, ...m }) => m), look: plan.look })}`,
+    named.length && `Style references for this video:\n${named.map((s) => `<style name="${s.name}">\n${s.body}\n</style>`).join("\n")}`,
+    assets.length && `Assets: ${assets.map((a) => `${a.name} (${a.kind}): ${a.description}`).join("; ")}`,
+  ].filter(Boolean).join("\n\n");
+  const subtitles = plan.captions.mode === "translate" ? plan.on_screen_text.filter((t) => t.style === "caption").map((t) => ({ text: t.text, start: t.start, end: t.end })) : undefined;
+  const { shots } = timelineOf(plan);
+  const { log } = await designPass({
+    video: cut, words: timelineWords(plan, clips), subtitles,
+    shots: shots.map((s) => ({ start: s.start, end: s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
+    brief, brand: { colors: request.brand.colors, fonts: request.brand.fonts }, assets,
+    workDir: path.join(dir, "design"), output, onStep: say, from: values["design-from"] ? path.resolve(values["design-from"]) : undefined,
+  });
+  log.forEach((l) => say(`design ${l}`));
+}
 const p = await probe(output);
 say(`done: ${output} (${p.duration.toFixed(1)}s of a planned ${length.toFixed(1)}s, ${p.width}x${p.height})`);
 say(`summary: ${plan.summary}`);

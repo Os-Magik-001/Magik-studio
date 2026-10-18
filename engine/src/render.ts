@@ -410,7 +410,7 @@ export async function render(opts: RenderOptions) {
   if (plan.motion.length) {
     if (await motionAvailable()) {
       const accent = opts.brand.colors.find((c, i) => i > 0 && isColor(c)) ?? plan.captions.highlight_color;
-      const layers = await renderMotion({ plan, clips: opts.clips, picture: base, W, H, fps: FPS, accent, workDir });
+      const layers = await renderMotion({ plan, clips: opts.clips, picture: base, W, H, fps: FPS, accent, workDir, logo: opts.brand.logoFile });
       if (layers.length) {
         // One input for every graphic: separate image-sequence inputs stall ffmpeg's overlay
         // sync now and then (a graphic froze on its 8th frame), a single timed list never does.
