@@ -155,7 +155,7 @@ export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { form
 // renders to `output`.
 export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit) {
   const { formatKey, brand, clean, ...rest } = req;
-  const skills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic");
+  const skills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic", [rest.brief, rest.instructions, rest.title].filter(Boolean).join(" "));
   // The clean style is stated up front, so the plan is built for it rather than stripped after.
   const input = clean ? { ...rest, instructions: [CLEAN, rest.instructions].filter(Boolean).join("\n\n") } : rest;
   note(`skills: ${skills.map((s) => s.name).join(", ") || "none"}`);

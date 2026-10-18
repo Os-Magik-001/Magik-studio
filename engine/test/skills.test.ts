@@ -44,5 +44,9 @@ test("broken and disabled skills are skipped, not fatal", async () => {
   assert.equal(warnings.length, 1);
   assert.match(warnings[0], /b-broken/);
   assert.deepEqual(await loadSkills("ad", path.join(dir, "missing")), []);
+  // A skill with `when` words loads only when the request names one.
+  await add("e-opt-in", "---\ndescription: a creator's style\nwhen: omgadrian, adrian style\n---\nEdit like him.");
+  assert.deepEqual((await loadSkills("ad", dir, () => {})).map((s) => s.name), ["a-good"]);
+  assert.deepEqual((await loadSkills("ad", dir, () => {}, "dynamic", "Cut it like @omgadrian")).map((s) => s.name), ["a-good", "e-opt-in"]);
   await rm(dir, { recursive: true, force: true });
 });

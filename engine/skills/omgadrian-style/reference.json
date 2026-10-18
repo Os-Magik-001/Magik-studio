@@ -1,0 +1,191 @@
+{
+ "trainedAt": "2026-10-18T05:07:48.484Z",
+ "account": "omgadrian",
+ "measured": {
+  "reels": 268,
+  "medianDuration": 77,
+  "medianCutsPerSecond": 0.35,
+  "medianShot": 1.7,
+  "medianWordsPerMinute": 180,
+  "medianSpeechShare": 0.91,
+  "medianLongestPause": 0.9
+ },
+ "reels": [
+  {
+   "url": "https://www.instagram.com/p/C_vhdNIvDeU/",
+   "plays": 23932036,
+   "duration": 82.8,
+   "cutsPerSecond": 0.23,
+   "shots": 20,
+   "medianShot": 3.8,
+   "wordsPerMinute": 204,
+   "speechShare": 0.94,
+   "longestPause": 0.5
+  },
+  {
+   "url": "https://www.instagram.com/p/C3fj1SgLKik/",
+   "plays": 6532612,
+   "duration": 85.2,
+   "cutsPerSecond": 0.47,
+   "shots": 41,
+   "medianShot": 1.5,
+   "wordsPerMinute": 178,
+   "speechShare": 0.83,
+   "longestPause": 2.1
+  },
+  {
+   "url": "https://www.instagram.com/p/DYKZSg3JnZ1/",
+   "plays": 5135653,
+   "duration": 98.4,
+   "cutsPerSecond": 0.46,
+   "shots": 46,
+   "medianShot": 1.7,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null
+  },
+  {
+   "url": "https://www.instagram.com/p/DSXxWPwkv3p/",
+   "plays": 5051269,
+   "duration": 52.3,
+   "cutsPerSecond": 0.61,
+   "shots": 33,
+   "medianShot": 1.1,
+   "wordsPerMinute": 209,
+   "speechShare": 0.9,
+   "longestPause": 0.8
+  },
+  {
+   "url": "https://www.instagram.com/p/DYSH4tiNVH1/",
+   "plays": 2370560,
+   "duration": 74.3,
+   "cutsPerSecond": 0.82,
+   "shots": 62,
+   "medianShot": 0.8,
+   "wordsPerMinute": 199,
+   "speechShare": 0.88,
+   "longestPause": 1.5
+  },
+  {
+   "url": "https://www.instagram.com/p/DX4XksWJlLL/",
+   "plays": 2240135,
+   "duration": 75.6,
+   "cutsPerSecond": 0.28,
+   "shots": 22,
+   "medianShot": 1.5,
+   "wordsPerMinute": 201,
+   "speechShare": 0.99,
+   "longestPause": 0.5
+  },
+  {
+   "url": "https://www.instagram.com/p/DQ13WFXCcV_/",
+   "plays": 1969885,
+   "duration": 79.7,
+   "cutsPerSecond": 0.46,
+   "shots": 38,
+   "medianShot": 1.5,
+   "wordsPerMinute": 191,
+   "speechShare": 0.9,
+   "longestPause": 0.7
+  },
+  {
+   "url": "https://www.instagram.com/p/C2FcstOx36x/",
+   "plays": 1656923,
+   "duration": 69.7,
+   "cutsPerSecond": 0.2,
+   "shots": 15,
+   "medianShot": 2.8,
+   "wordsPerMinute": 203,
+   "speechShare": 0.96,
+   "longestPause": 2.1
+  },
+  {
+   "url": "https://www.instagram.com/p/C9H8lb3x9aP/",
+   "plays": 1504050,
+   "duration": 66.2,
+   "cutsPerSecond": 0.47,
+   "shots": 32,
+   "medianShot": 1.5,
+   "wordsPerMinute": 182,
+   "speechShare": 0.93,
+   "longestPause": 0.6
+  },
+  {
+   "url": "https://www.instagram.com/p/Daaskwfo9TA/",
+   "plays": 1369259,
+   "duration": 74.8,
+   "cutsPerSecond": 0.43,
+   "shots": 33,
+   "medianShot": 1.7,
+   "wordsPerMinute": 207,
+   "speechShare": 0.88,
+   "longestPause": 0.9
+  },
+  {
+   "url": "https://www.instagram.com/p/C-kve13RoL9/",
+   "plays": 1254784,
+   "duration": 79.4,
+   "cutsPerSecond": 0.76,
+   "shots": 61,
+   "medianShot": 1.1,
+   "wordsPerMinute": 194,
+   "speechShare": 0.95,
+   "longestPause": 1.3
+  },
+  {
+   "url": "https://www.instagram.com/p/DG-5t5lJxOO/",
+   "plays": 1223508,
+   "duration": 89.9,
+   "cutsPerSecond": 0.68,
+   "shots": 61,
+   "medianShot": 1.2,
+   "wordsPerMinute": null,
+   "speechShare": null,
+   "longestPause": null
+  },
+  {
+   "url": "https://www.instagram.com/p/DLDvemIsSwr/",
+   "plays": 1102229,
+   "duration": 67.3,
+   "cutsPerSecond": 0.27,
+   "shots": 18,
+   "medianShot": 0.9,
+   "wordsPerMinute": 181,
+   "speechShare": 0.98,
+   "longestPause": 0
+  },
+  {
+   "url": "https://www.instagram.com/p/DKXMd7mx2EX/",
+   "plays": 1101350,
+   "duration": 79,
+   "cutsPerSecond": 0.08,
+   "shots": 7,
+   "medianShot": 4.8,
+   "wordsPerMinute": 150,
+   "speechShare": 0.92,
+   "longestPause": 0.1
+  },
+  {
+   "url": "https://www.instagram.com/p/DKpN_t4xUEM/",
+   "plays": 971171,
+   "duration": 53.6,
+   "cutsPerSecond": 0.21,
+   "shots": 12,
+   "medianShot": 4.6,
+   "wordsPerMinute": 176,
+   "speechShare": 0.96,
+   "longestPause": 0.8
+  },
+  {
+   "url": "https://www.instagram.com/p/DRr8GfuiWFU/",
+   "plays": 931596,
+   "duration": 84,
+   "cutsPerSecond": 0.55,
+   "shots": 47,
+   "medianShot": 1.1,
+   "wordsPerMinute": 179,
+   "speechShare": 0.98,
+   "longestPause": 0.5
+  }
+ ]
+}
