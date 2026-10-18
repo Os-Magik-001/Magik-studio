@@ -36,6 +36,8 @@ export type DesignInput = {
   onStep?: (s: string) => unknown;
   // A composition saved by an earlier run (comp-N.json): reviewed and rendered without designing again.
   from?: string;
+  // false renders `from` as it is, with no review by Claude (a composition a person wrote and checked).
+  review?: boolean;
 };
 
 const Code = {
@@ -119,10 +121,11 @@ async function openComposition(comp: Comp, data: unknown, assetsDir: string, W: 
 }
 
 // Frames of the composition over the picture, for Claude to look at.
-async function reviewFrames(comp: Comp, data: { length: number }, assetsDir: string, video: string, dir: string, W: number, H: number) {
+async function reviewFrames(comp: Comp, data: { length: number }, assetsDir: string, video: string, dir: string, W: number, H: number, spread = true) {
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
-  const times = [...new Set([...comp.checkpoints, ...[0.15, 0.5, 0.85].map((p) => p * data.length)].map((t) => Math.round(Math.min(data.length - 0.05, Math.max(0, t)) * 10) / 10))].sort((a, b) => a - b).slice(0, 12);
+  const at = spread ? [...comp.checkpoints, ...[0.15, 0.5, 0.85].map((p) => p * data.length)] : comp.checkpoints;
+  const times = [...new Set(at.map((t) => Math.round(Math.min(data.length - 0.2, Math.max(0, t)) * 100) / 100))].sort((a, b) => a - b).slice(0, spread ? 12 : 60);
   const page = await openComposition(comp, data, assetsDir, W, H);
   const frames: { t: number; file: string }[] = [];
   try {
@@ -152,24 +155,37 @@ const RUBRIC = `Review these frames of your composition over the video like the 
 - Captions: right words at the right time, phrases not single jumping words, never over faces.
 Be harsh: list every issue. Then return the complete revised composition (all css, html and js, not a diff), or verdict ship with the same code if nothing is left to fix.`;
 
-export async function designPass(input: DesignInput) {
-  const step = input.onStep ?? (() => {});
+// What the page needs for one video: its size, DATA, and the assets' frames.
+async function prepare(input: DesignInput) {
   const { video, workDir } = input;
   await mkdir(workDir, { recursive: true });
   const p = await probe(video);
-  const W = p.width;
-  const H = p.height;
   const fps = 30;
   const assetsDir = path.join(workDir, "assets");
   await mkdir(assetsDir, { recursive: true });
   const data = {
-    W, H, length: p.duration, fps,
+    W: p.width, H: p.height, length: p.duration, fps,
     words: input.words.map((w) => ({ text: w.text, start: +w.start.toFixed(2), end: +w.end.toFixed(2) })),
     subtitles: input.subtitles?.map((w) => ({ text: w.text, start: +w.start.toFixed(2), end: +w.end.toFixed(2) })) ?? [],
     shots: input.shots.map((s) => ({ ...s, start: +s.start.toFixed(2), end: +s.end.toFixed(2) })),
     brand: input.brand,
     assets: await prepareAssets(input.assets, assetsDir, fps),
   };
+  return { p, W: p.width, H: p.height, fps, assetsDir, data };
+}
+
+const readComp = async (file: string) => Composition.parse(JSON.parse(await readFile(file, "utf8")));
+
+// Frames of the composition in `input.from` over the picture at the given times, to look at.
+export async function designPreview(input: DesignInput, times: number[], dir: string) {
+  const { W, H, assetsDir, data } = await prepare(input);
+  return reviewFrames({ ...(await readComp(input.from!)), checkpoints: times }, data, assetsDir, input.video, dir, W, H, false);
+}
+
+export async function designPass(input: DesignInput) {
+  const step = input.onStep ?? (() => {});
+  const { video, workDir } = input;
+  const { p, W, H, fps, assetsDir, data } = await prepare(input);
 
   // What the designer sees of the cut: 16 frames across it.
   const sheet = path.join(workDir, "cut-sheet.jpg");
@@ -191,7 +207,7 @@ export async function designPass(input: DesignInput) {
   // Every version is kept on disk, so a failed call never loses the design.
   const keep = (n: number, c: Comp) => writeFile(path.join(workDir, `comp-${n}.json`), JSON.stringify(c, null, 1));
   let comp: Comp;
-  if (input.from) comp = Composition.parse(JSON.parse(await readFile(input.from, "utf8")));
+  if (input.from) comp = await readComp(input.from);
   else {
     await step("Claude is designing the graphics");
     comp = await ask(Composition, system, messages);
@@ -199,7 +215,7 @@ export async function designPass(input: DesignInput) {
   await keep(0, comp);
   const log: string[] = [`concept: ${comp.concept}`];
 
-  for (let round = 1; round <= 3; round++) {
+  for (let round = 1; round <= (input.review === false ? 0 : 3); round++) {
     await step(`Checking the design (round ${round})`);
     const { frames, errors } = await reviewFrames(comp, data, assetsDir, video, path.join(workDir, `review-${round}`), W, H);
     if (round === 3) {
