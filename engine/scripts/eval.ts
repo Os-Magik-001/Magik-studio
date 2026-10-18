@@ -58,6 +58,7 @@ type Result = { episode: number; reference: Side; engine?: Side & { file: string
 
 // A finished video measured: its words, its cuts and which take each line came from.
 async function measure(file: string, dir: string, sources: Clip[]): Promise<Side> {
+  await mkdir(dir, { recursive: true });
   const lines: TranscriptLine[] = (await transcribe(file, dir)) ?? [];
   const words = lines.flatMap((l) => l.words ?? []);
   const { duration } = await probe(file);
