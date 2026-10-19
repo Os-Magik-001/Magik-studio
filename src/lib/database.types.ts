@@ -648,10 +648,114 @@ export type Database = {
           },
         ]
       }
+      sound_files: {
+        Row: {
+          analysis: Json | null
+          created_at: string
+          drive_file_id: string
+          duration: number
+          folder: string
+          id: string
+          library_id: string
+          mood: string | null
+          name: string
+          tags: string[]
+        }
+        Insert: {
+          analysis?: Json | null
+          created_at?: string
+          drive_file_id: string
+          duration?: number
+          folder?: string
+          id?: string
+          library_id: string
+          mood?: string | null
+          name: string
+          tags?: string[]
+        }
+        Update: {
+          analysis?: Json | null
+          created_at?: string
+          drive_file_id?: string
+          duration?: number
+          folder?: string
+          id?: string
+          library_id?: string
+          mood?: string | null
+          name?: string
+          tags?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sound_files_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "sound_libraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sound_libraries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          drive_folder_id: string | null
+          error: string | null
+          file_count: number
+          id: string
+          kind: Database["public"]["Enums"]["sound_library_kind"]
+          license: string
+          name: string
+          progress: string | null
+          source: string
+          status: Database["public"]["Enums"]["agent_status"]
+          synced_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          drive_folder_id?: string | null
+          error?: string | null
+          file_count?: number
+          id?: string
+          kind: Database["public"]["Enums"]["sound_library_kind"]
+          license?: string
+          name: string
+          progress?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["agent_status"]
+          synced_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          drive_folder_id?: string | null
+          error?: string | null
+          file_count?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["sound_library_kind"]
+          license?: string
+          name?: string
+          progress?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["agent_status"]
+          synced_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sound_libraries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trend_reports: {
         Row: {
           accounts: string[]
           attempts: number
+          audio: Json
           client_id: string
           created_at: string
           error: string | null
@@ -668,6 +772,7 @@ export type Database = {
         Insert: {
           accounts?: string[]
           attempts?: number
+          audio?: Json
           client_id: string
           created_at?: string
           error?: string | null
@@ -684,6 +789,7 @@ export type Database = {
         Update: {
           accounts?: string[]
           attempts?: number
+          audio?: Json
           client_id?: string
           created_at?: string
           error?: string | null
@@ -726,6 +832,7 @@ export type Database = {
           notes: string | null
           number: number
           sent_at: string | null
+          sound: Json | null
           status: Database["public"]["Enums"]["version_status"]
           storage_path: string
           video_id: string
@@ -741,6 +848,7 @@ export type Database = {
           notes?: string | null
           number: number
           sent_at?: string | null
+          sound?: Json | null
           status?: Database["public"]["Enums"]["version_status"]
           storage_path: string
           video_id: string
@@ -756,6 +864,7 @@ export type Database = {
           notes?: string | null
           number?: number
           sent_at?: string | null
+          sound?: Json | null
           status?: Database["public"]["Enums"]["version_status"]
           storage_path?: string
           video_id?: string
@@ -881,6 +990,7 @@ export type Database = {
         | "client_review"
         | "changes_requested"
         | "approved"
+      sound_library_kind: "music" | "sfx"
       user_role: "admin" | "editor" | "videographer" | "client"
       version_status:
         | "draft"
@@ -1043,6 +1153,7 @@ export const Constants = {
         "changes_requested",
         "approved",
       ],
+      sound_library_kind: ["music", "sfx"],
       user_role: ["admin", "editor", "videographer", "client"],
       version_status: [
         "draft",

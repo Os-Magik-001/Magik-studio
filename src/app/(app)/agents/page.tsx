@@ -4,12 +4,12 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
-import { asCharte, asFindings, asPillars, asReels, asShootPlan } from "@/lib/agent-types";
+import { asCharte, asFindings, asPillars, asReels, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
 import { parseShotList } from "@/lib/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { EmptyState, LinkButton, PageHeader, cx } from "@/components/ui";
 import { AgentHud, type HudEvent, type HudLink, type HudNode, type NodeId, type NodeState } from "@/components/agents/hud";
-import { FindingsView, ShootPlanView, StrategyView } from "@/components/agents/views";
+import { FindingsView, ShootPlanView, SoundView, StrategyView } from "@/components/agents/views";
 
 export const metadata: Metadata = { title: "Agents" };
 
@@ -37,7 +37,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     supabase.from("brand_strategies").select("*").eq("client_id", client.id).maybeSingle(),
     supabase
       .from("trend_reports")
-      .select("id, status, hashtags, accounts, progress, error, created_at, started_at, finished_at, findings, reels")
+      .select("id, status, hashtags, accounts, progress, error, created_at, started_at, finished_at, findings, reels, audio")
       .eq("client_id", client.id)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -50,7 +50,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
         supabase.from("scripts").select("body, shot_list, shoot_plan, edit_prompt, updated_at").eq("video_id", video.id).maybeSingle(),
         supabase.from("footage").select("file_name, created_at").eq("video_id", video.id).order("created_at"),
         supabase.from("edit_jobs").select("id, source, status, progress, error, created_at, started_at, finished_at").eq("video_id", video.id).order("created_at"),
-        supabase.from("versions").select("number, status, made_by, created_at").eq("video_id", video.id).order("number"),
+        supabase.from("versions").select("number, status, made_by, created_at, sound").eq("video_id", video.id).order("number"),
         supabase.from("script_revisions").select("kind, request, reply, created_at").eq("video_id", video.id).in("kind", ["revised", "client"]).order("created_at"),
       ])
     : [{ data: null }, { data: null }, { data: null }, { data: null }, { data: null }];
@@ -62,10 +62,14 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const doneReport = (reports ?? []).find((r) => r.status === "done") ?? null;
   const findings = asFindings(doneReport?.findings);
   const reels = asReels(doneReport?.reels);
+  const trendAudio = asTrendAudio(doneReport?.audio);
+  const scored = [...(versions ?? [])].reverse().find((v) => asSoundReport(v.sound));
+  const sound = asSoundReport(scored?.sound);
   const charte = asCharte(strategy?.charte);
   const plan = asShootPlan(script?.shoot_plan);
   const shots = parseShotList(script?.shot_list);
   const openJob = (jobs ?? []).find((j) => j.status === "queued" || j.status === "running");
+  const scoring = !!openJob?.progress && /sound designer/i.test(openJob.progress);
   const lastJob = jobs?.at(-1);
   const researching = latestReport && (latestReport.status === "queued" || latestReport.status === "running");
   const plays = reels.reduce((a, r) => a + Math.max(0, r.plays ?? 0), 0);
@@ -77,6 +81,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     { id: "apify", kind: "SOURCE", title: "APIFY", role: "Instagram search", meta: latestReport ? [...latestReport.hashtags.map((h) => `#${h}`)].slice(0, 2).join(" ") || "accounts" : "idle", state: st(!!researching && latestReport?.progress?.startsWith("Searching") === true, !!doneReport) },
     { id: "a2", kind: "AGENT 02", title: "RESEARCHER", role: "Watches the top reels, writes what works", meta: doneReport ? `${reels.length} reels · ${compact(plays)} plays` : "waiting", state: st(!!researching, !!doneReport, latestReport?.status === "failed"), progress: researching ? latestReport?.progress ?? "Queued on the engine" : null },
     { id: "a3", kind: "AGENT 03", title: "SCRIPTWRITER", role: "Script, shoot plan, edit prompt", meta: plan ? `${plan.scenes.length} scenes · ${Math.round(plan.length_seconds)}s` : script ? "script only" : "waiting", state: st(false, !!script?.edit_prompt) },
+    { id: "a4", kind: "AGENT 04", title: "SOUND DESIGNER", role: "Music, sound effects, trending audio", meta: sound ? (sound.track ? sound.track.title : "dialogue only") : trendAudio.length ? `${trendAudio.length} trending sounds in` : "waiting for a cut", state: st(scoring, !!sound), progress: scoring ? openJob?.progress ?? null : null },
     { id: "shoot", kind: "HUMAN", title: "VIDEOGRAPHER", role: "Shoots from the plan", meta: footage?.length ? `${footage.length} file${footage.length > 1 ? "s" : ""}` : `${shots.length} shots to get`, state: st(!!footage?.length && !video?.footage_complete_at, !!video?.footage_complete_at) },
     { id: "engine", kind: "ENGINE", title: "EDIT ENGINE", role: "Cuts, captions, 3D motion, music", meta: openJob ? "editing" : versions?.length ? `v${versions.at(-1)!.number} rendered` : "waiting for footage", state: st(!!openJob, !!versions?.length, !openJob && lastJob?.status === "failed"), progress: openJob ? openJob.progress ?? "Queued" : null },
     { id: "video", kind: "OUTPUT", title: "VIDEO", role: video?.title ?? "No video yet", meta: versions?.length ? `v${versions.at(-1)!.number} · ${versions.at(-1)!.status.replace("_", " ")}` : "—", state: st(false, !!versions?.length) },
@@ -92,6 +97,8 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     { a: "a3", b: "engine", label: "edit prompt", hot: true, active: !!script?.edit_prompt },
     { a: "shoot", b: "engine", label: "footage", active: !!footage?.length },
     { a: "engine", b: "video", label: "render", active: !!versions?.length },
+    { a: "a2", b: "a4", label: trendAudio.length ? `${trendAudio.length} trending sounds` : "trending sounds", hot: true, active: !!trendAudio.length },
+    { a: "a4", b: "engine", label: "music + effects", hot: true, active: !!sound },
   ];
 
   // ------------------------------------------------------------ the comm log, from timestamps
@@ -131,7 +138,11 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     if (j.started_at) events.push({ at: j.started_at, who: "ENGINE", msg: "Claude is editing" });
     if (j.finished_at && j.status === "failed") events.push({ at: j.finished_at, who: "ENGINE", msg: `Failed: ${j.error ?? ""}`, tone: "bad" });
   }
-  for (const v of versions ?? []) events.push({ at: v.created_at, who: "ENGINE → VIDEO", msg: `v${v.number} ready (${v.made_by === "claude" ? "Claude" : "editor"})`, link: 9 });
+  for (const v of versions ?? []) {
+    const s = asSoundReport(v.sound);
+    if (s) events.push({ at: v.created_at, who: "SOUND DESIGNER → ENGINE", msg: `${s.track ? `"${s.track.title}" (${s.track.library})` : "No music"}, ${s.sfx.length} effects${s.trend ? `, post with "${s.trend.title}"` : ""}`, link: 11 });
+    events.push({ at: v.created_at, who: "ENGINE → VIDEO", msg: `v${v.number} ready (${v.made_by === "claude" ? "Claude" : "editor"})`, link: 9 });
+  }
   events.sort((a, b) => a.at.localeCompare(b.at));
 
   // ------------------------------------------------------------ panels
@@ -168,7 +179,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       empty("No search yet", "Agent 2 sends the strategy's hashtags here.", brandLink, "Start a research run")
     ),
     a2: findings ? (
-      <FindingsView findings={findings} reels={reels} />
+      <FindingsView findings={findings} reels={reels} audio={trendAudio} />
     ) : researching ? (
       <p className="text-sm text-ink-2">{latestReport?.progress ?? "Queued on the edit engine."}</p>
     ) : (
@@ -186,6 +197,19 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       ) : (
         empty("No script from the scriptwriter yet", video ? "Open the video and press Write with the scriptwriter." : "Create a video for this client first.", video ? `/videos/${video.id}` : `/clients/${client.id}`, "Open")
       ),
+    a4: sound ? (
+      <div className="flex flex-col gap-3">
+        <div className="kicker">v{scored?.number}</div>
+        <SoundView sound={sound} />
+      </div>
+    ) : (
+      empty(
+        "No cut scored yet",
+        "After the editor locks each cut, the sound designer picks the music from every library, lines it up, adds the effects and the trending sound to post with.",
+        "/sounds",
+        "See the libraries",
+      )
+    ),
     shoot: (
       <div className="flex flex-col gap-3 text-sm">
         <div className="kicker">Footage</div>

@@ -14,8 +14,8 @@ import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClas
 import { ScriptStatusBadge, StatusStepper, VersionStatusBadge, VideoStatusBadge } from "@/components/status";
 import { deleteFootage, cancelEditJob, restoreScriptRevision, retryEditJob } from "@/app/actions/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { ShootPlanView } from "@/components/agents/views";
-import { asShootPlan } from "@/lib/agent-types";
+import { ShootPlanView, SoundView } from "@/components/agents/views";
+import { asShootPlan, asSoundReport } from "@/lib/agent-types";
 import { LocalDate } from "@/components/local-date";
 import { deleteShoot, deleteVideo } from "@/app/actions/studio";
 import {
@@ -67,7 +67,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
       supabase.from("edit_jobs").select("*").eq("video_id", videoId).order("created_at", { ascending: false }),
       supabase
         .from("versions")
-        .select("id, number, status, made_by, notes, created_at, file_name")
+        .select("id, number, status, made_by, notes, created_at, file_name, sound")
         .eq("video_id", videoId)
         .order("number", { ascending: false }),
       supabase.from("profiles").select("id, full_name, email, role").in("role", ["editor", "videographer"]),
@@ -84,6 +84,8 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
   const openJobs = (jobs ?? []).filter((j) => j.status === "queued" || j.status === "running");
   const changeRounds = (versions ?? []).filter((v) => v.status === "changes_requested").length;
   const latest = versions?.[0];
+  const scored = versions?.find((v) => asSoundReport(v.sound));
+  const sound = asSoundReport(scored?.sound);
   const people = (role: string) =>
     (staff ?? []).filter((p) => p.role === role).map((p) => ({ id: p.id, name: displayName(p) }));
   const scriptStatus = script?.status ?? "draft";
@@ -286,6 +288,28 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 </>
               )}
             </div>
+          </Card>
+
+          {/* Sound */}
+          <Card>
+            <CardHeader
+              title="Sound"
+              description={
+                sound
+                  ? `What the sound designer chose for v${scored?.number}.`
+                  : "After the editor locks each cut, the sound designer (agent 4) picks the music from every library, lines it up with the cut, adds sound effects and the trending sound to post with."
+              }
+              actions={
+                <Link href="/sounds" className="text-[13px] text-accent hover:underline">
+                  Libraries
+                </Link>
+              }
+            />
+            {sound && (
+              <div className="p-5">
+                <SoundView sound={sound} />
+              </div>
+            )}
           </Card>
 
           {/* Versions */}

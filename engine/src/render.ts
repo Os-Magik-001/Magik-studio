@@ -9,7 +9,7 @@ import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
 import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 import { pictureShifts } from "./splits.ts";
-import { sfxFile, sfxLead } from "./sfx.ts";
+import { sfxSource, type SfxEntry } from "./sfx.ts";
 
 const FPS = 30;
 
@@ -360,9 +360,15 @@ export type RenderOptions = {
   words?: Word[];
   // The chosen music track, already downloaded and normalized.
   musicFile?: string | null;
+  // Where the sound designer's recorded effects come from (the built-in ones need nothing).
+  sfxCatalog?: SfxEntry[];
+  warn?: (msg: string) => void;
 };
 
 const MUSIC_LEVEL = { low: 0.16, medium: 0.28, high: 0.5 };
+const SFX_GAIN = { soft: 0.3, normal: 0.45, loud: 0.62 };
+// How far the music dips under speech: the sidechain's threshold and ratio.
+const DUCK = { light: "threshold=0.035:ratio=4", normal: "threshold=0.02:ratio=8", deep: "threshold=0.012:ratio=14" };
 
 // Pass 2, finishing: the graphics layer (text behind people too), music that dips
 // under speech, sound effects, and loudness for social.
@@ -435,18 +441,22 @@ export async function render(opts: RenderOptions) {
   if (opts.musicFile && plan.music.track) {
     filters.push(`[0:a]asplit=2[dlg][side]`);
     args.push("-ss", plan.music.start.toFixed(3), "-i", opts.musicFile);
-    const fadeOut = Math.max(0, length - 1.5).toFixed(3);
+    // A track the sound designer back-timed ends on its own last hit: no long fade over it.
+    const fadeOut = plan.music.align === "end" ? Math.max(0, length - 0.25) : Math.max(0, length - 1.5);
+    const enter = Math.round(Math.max(0, plan.music.at ?? 0) * 1000);
     filters.push(
-      `[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=duration=${length.toFixed(3)},${musicLevel(plan.music, length, fadeOut)}[mus]`,
-      `[mus][side]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=400:makeup=1[duck]`,
+      `[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,${enter ? `adelay=${enter}|${enter},` : ""}atrim=duration=${length.toFixed(3)},${musicLevel(plan.music, length, fadeOut)}[mus]`,
+      `[mus][side]sidechaincompress=${DUCK[plan.music.duck ?? "normal"]}:attack=20:release=400:makeup=1[duck]`,
     );
     input++;
     mix.push("[dlg]", "[duck]");
   } else mix.push("[0:a]");
   for (const [k, fx] of plan.sfx.entries()) {
-    args.push("-i", await sfxFile(fx.kind));
-    const delay = Math.max(0, Math.round((fx.at - sfxLead[fx.kind]) * 1000));
-    filters.push(`[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,adelay=${delay}|${delay},volume=0.45[fx${k}]`);
+    const source = await sfxSource(fx, opts.sfxCatalog ?? [], opts.warn);
+    if (!source) continue;
+    args.push("-i", source.file);
+    const delay = Math.max(0, Math.round((fx.at - source.lead) * 1000));
+    filters.push(`[${input}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,adelay=${delay}|${delay},volume=${SFX_GAIN[fx.gain ?? "normal"]}[fx${k}]`);
     input++;
     mix.push(`[fx${k}]`);
   }
@@ -492,8 +502,9 @@ async function motionTrack(layers: MotionLayer[], W: number, H: number, length: 
 
 // The music's level over the timeline: the whole video at one level, or only inside
 // its sections, each ramping in and out over 0.2 s.
-function musicLevel(music: EditPlan["music"], length: number, fadeOut: string) {
-  if (!music.sections?.length) return `afade=t=in:d=0.5,afade=t=out:st=${fadeOut}:d=1.5,volume=${MUSIC_LEVEL[music.volume]}`;
+function musicLevel(music: EditPlan["music"], length: number, fadeOut: number) {
+  const out = `afade=t=out:st=${fadeOut.toFixed(3)}:d=${Math.min(1.5, length - fadeOut).toFixed(3)}`;
+  if (!music.sections?.length) return `afade=t=in:st=${(music.at ?? 0).toFixed(3)}:d=0.5,${out},volume=${MUSIC_LEVEL[music.volume]}`;
   const ramp = 0.2;
   const terms = music.sections.map((s) => `${MUSIC_LEVEL[s.volume]}*clip(min((t-${s.start.toFixed(3)})/${ramp},(${Math.min(s.end, length).toFixed(3)}-t)/${ramp}),0,1)`);
   return `volume='${terms.join("+")}':eval=frame`;

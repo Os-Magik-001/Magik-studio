@@ -7,6 +7,7 @@ import path from "node:path";
 import { after, before, test } from "node:test";
 import { db } from "../src/config.ts";
 import { processJob, type Job } from "../src/job.ts";
+import type { scoreSound } from "../src/sound.ts";
 import type { EditPlan, PlanInput } from "../src/plan.ts";
 import { CUT, EXTRAS, makeClip, makeLogo, shot, txt } from "./fixtures.ts";
 
@@ -79,13 +80,25 @@ const firstCut: EditPlan = {
   open_questions: ["Is the barista shot bright enough?"],
 };
 
+// A sound designer that keeps the dialogue alone, so no test calls Claude.
+const quiet: typeof scoreSound = async (_req, plan) => ({
+  plan: { ...plan, music: { ...plan.music, track: null } },
+  report: { concept: "dialogue only", notes: "", track: null, start: 0, at: 0, align: "start", sfx: [], trend: null, credits: [], limits: [] },
+  problems: [],
+  usage: "stub sound",
+});
+
 test("first edit: Claude's inputs, the rendered draft and the hand-off", { skip: !enabled }, async () => {
   const job = await queue({ source: "launch", instructions: "Keep it short" });
   let seen: PlanInput | null = null;
-  await processJob(job, async (input) => {
-    seen = input;
-    return { plan: firstCut, usage: "stub" };
-  });
+  await processJob(
+    job,
+    async (input) => {
+      seen = input;
+      return { plan: firstCut, usage: "stub" };
+    },
+    quiet,
+  );
 
   assert.ok(seen, "planner was called");
   const input = seen as PlanInput;
@@ -98,7 +111,9 @@ test("first edit: Claude's inputs, the rendered draft and the hand-off", { skip:
 
   const { data: j } = await db.from("edit_jobs").select("status, error, result_version_id").eq("id", job.id).single();
   assert.equal(j?.status, "done", j?.error ?? "");
-  const { data: version } = await db.from("versions").select("number, status, made_by, notes, edit_plan, storage_path").eq("id", j!.result_version_id!).single();
+  const { data: version } = await db.from("versions").select("number, status, made_by, notes, edit_plan, storage_path, sound").eq("id", j!.result_version_id!).single();
+  assert.equal((version?.sound as { concept?: string } | null)?.concept, "dialogue only");
+  assert.match(version?.notes ?? "", /No music/);
   assert.equal(version?.number, 1);
   assert.equal(version?.status, "draft");
   assert.equal(version?.made_by, "claude");
@@ -121,10 +136,14 @@ test("client changes: Claude gets the previous cut and comments mapped to shots"
 
   const job = await queue({ source: "client_changes", base_version_id: v1!.id, instructions: "Client note: warmer" });
   let seen: PlanInput | null = null;
-  await processJob(job, async (input) => {
-    seen = input;
-    return { plan: { ...firstCut, segments: [firstCut.segments[0], shot("C2", 0, 3, "barista, longer")] }, usage: "stub" };
-  });
+  await processJob(
+    job,
+    async (input) => {
+      seen = input;
+      return { plan: { ...firstCut, segments: [firstCut.segments[0], shot("C2", 0, 3, "barista, longer")] }, usage: "stub" };
+    },
+    null,
+  );
   await db.auth.admin.deleteUser(clientUser.user!.id);
 
   const prev = (seen as PlanInput | null)?.previous;
@@ -140,9 +159,13 @@ test("client changes: Claude gets the previous cut and comments mapped to shots"
 
 test("a planner failure marks the job failed and tells the editor", { skip: !enabled }, async () => {
   const job = await queue({ source: "editor_fix", instructions: "Tighter" });
-  await processJob(job, async () => {
-    throw new Error("Claude declined to plan this edit.");
-  });
+  await processJob(
+    job,
+    async () => {
+      throw new Error("Claude declined to plan this edit.");
+    },
+    null,
+  );
   const { data: j } = await db.from("edit_jobs").select("status, error").eq("id", job.id).single();
   assert.equal(j?.status, "failed");
   assert.equal(j?.error, "Claude declined to plan this edit.");

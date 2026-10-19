@@ -21,13 +21,16 @@ The workspace that runs Magik Studio: videographers bring in the footage, Claude
 - Notes staff leave during draft check are internal and hidden from clients.
 - Change requests beyond the client's included revision rounds are flagged as billable.
 
-## The three agents before the edit
+## The agents
 
 Each client has a **Brand & strategy** page (`/clients/<id>/brand`); clients fill in their side under **Your brand**.
 
 1. **Brand strategist** (`src/lib/agents.ts`, runs in the app): turns the brand questionnaire into the niche, search hashtags and reference accounts, the charte graphique (palette, fonts, caption and motion style, tone, do's and don'ts), and the business, audience and needs. It also fills the brand kit, so every edit follows it.
 2. **Trend researcher** (`engine/src/research.ts`, runs on the edit engine): finds reels for the niche's hashtags and accounts through Apify (`APIFY_TOKEN`), watches the top 10 by reach (contact sheets, transcript, cut rate), and has Claude write the key points: hooks, structures, editing, text, sound, scripting notes and video ideas. About $0.10 to $0.50 of Apify credit per run.
-3. **Scriptwriter** (`src/lib/agents.ts`, the "Write with the scriptwriter" button on a video): strategy + latest research + brief become the script for the client, a scene-by-scene shoot plan for the videographer (framing, action, lines, B-roll, props) and the edit prompt.
+3. **Scriptwriter** (`src/lib/agents.ts`, the "Write with the scriptwriter" button on a video): strategy + latest research + brief become the script for the client, a scene-by-scene shoot plan for the videographer (framing, action, lines, B-roll, props) and the edit prompt. Under the script, **Ask the scriptwriter for changes** revises only what you ask; every version stays in the video's thread (`script_revisions`) and can come back.
+4. **Sound designer** (`engine/src/sound.ts`, runs on the edit engine after the editor locks the cut): searches every music library (the studio's picks, FreePD, Mixkit, Incompetech and the studio's Google Drive folders added on the **Sound** page), measures its shortlist (`engine/src/analysis.ts`: tempo, bars, sections, drops, ending), lines a drop or the ending up with the cut, places built-in or recorded sound effects, and recommends the trending sound the researcher found to add in Instagram when posting. Its choice, with any credit line the post needs, is on the video page.
+
+Every agent remembers the client's other videos: their scripts, edit prompts, what was asked to change, and the music they used (`src/lib/memory.ts`, `engine/src/memory.ts`).
 
 When the videographer presses **All footage is in: start the edit** on their shoot page, the engine starts editing with that edit prompt; the editor can still change the prompt on the video page before then.
 
@@ -54,7 +57,7 @@ A separate Node worker that turns raw footage into an edited draft. It runs anyw
    Claude follows the studio's editing skills in [`engine/skills/`](engine/skills/README.md), Markdown files matched to the video's format. Revisions start from the previous cut's plan, with each comment pinned to the shot it falls on.
 5. **Validates** the plan against the real footage, snapping cut points to word edges, then **renders** it in two passes:
    - **Picture:** shots cropped to 9:16, 1:1 or 16:9 around each focus point, transitions, speed, punch-ins, looks, B-roll cutaways over the voice, and floating cards.
-   - **Finishing:** a graphics layer drawn frame by frame (word-timed captions in six styles, English subtitles translated from other languages, animated titles, hero words and dripping series logos, comment and follow buttons, progress bars, counters, emojis), text behind the person (a person cut-out made with Apple Vision on macOS), a royalty-free music bed that dips under speech (`engine/music/library.json`, CC0), synthesized sound effects, and -14 LUFS loudness.
+   - **Finishing:** a graphics layer drawn frame by frame (word-timed captions in six styles, English subtitles translated from other languages, animated titles, hero words and dripping series logos, comment and follow buttons, progress bars, counters, emojis), text behind the person (a person cut-out made with Apple Vision on macOS), the sound designer's music bed ducked under speech (`engine/music/*.json`, built by `engine/scripts/sound-catalog.ts`), built-in and recorded sound effects (`engine/sfx/*.json`), and -14 LUFS loudness.
 6. **Hands off** the result as a new version in **editor check**, and notifies the editor. Failures show up on the video page with a plain reason and a Retry button.
 
 Footage from Google Drive needs a Google Cloud service account with the Drive API turned on.
@@ -104,7 +107,7 @@ It runs from `~/Library/Application Support/Magik Edit Engine` with a private co
 
 To run it on a server, `engine/Dockerfile` builds an image with FFmpeg and fonts.
 
-Not there yet: music (the mood is in the brand kit, but there's no track library), and the Phase 1 blind test, where editors compare Claude's cut with a pro edit of the same footage.
+Not there yet: the Phase 1 blind test, where editors compare Claude's cut with a pro edit of the same footage.
 
 ## Local development
 

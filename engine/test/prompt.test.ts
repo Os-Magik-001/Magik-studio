@@ -91,7 +91,7 @@ test("older saved plans read as plain hard cuts", () => {
 
 test("skills are added to Claude's instructions", () => {
   assert.doesNotMatch(buildSystem([]), /Editing skills/);
-  const system = buildSystem([{ name: "hooks", description: "d", formats: "all", enabled: true, style: "any", when: [], body: "Open on the pour." }]);
+  const system = buildSystem([{ name: "hooks", description: "d", formats: "all", enabled: true, style: "any", when: [], agents: ["editor"], body: "Open on the pour." }]);
   assert.match(system, /# Editing skills\n\n<skill name="hooks">\nOpen on the pour\.\n<\/skill>/);
 });
 

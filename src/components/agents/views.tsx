@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Charte, Pillar, ShootPlan, TrendFindings, TrendReel } from "@/lib/agent-types";
+import type { Charte, Pillar, ShootPlan, SoundReport, TrendAudio, TrendFindings, TrendReel } from "@/lib/agent-types";
 
 // Read-only views of what the agents wrote.
 
@@ -131,7 +131,7 @@ export function StrategyView({
 
 const compact = (n: number | null) => (n === null ? "?" : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n));
 
-export function FindingsView({ findings, reels }: { findings: TrendFindings; reels: TrendReel[] }) {
+export function FindingsView({ findings, reels, audio = [] }: { findings: TrendFindings; reels: TrendReel[]; audio?: TrendAudio[] }) {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm leading-relaxed text-ink">{findings.summary}</p>
@@ -176,6 +176,27 @@ export function FindingsView({ findings, reels }: { findings: TrendFindings; ree
           <Bullets items={findings.scripting} />
         </Section>
       </div>
+      {audio.length > 0 && (
+        <Section title="Trending sounds">
+          <ul className="divide-y divide-line rounded-xl border border-line">
+            {audio.map((a, i) => (
+              <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 text-sm">
+                <span className="font-medium text-ink">{a.title}</span>
+                <span className="text-ink-2">{a.artist}</span>
+                <span className="text-xs text-muted">
+                  {a.original ? "original audio" : "licensed song"} · {a.reels} reel{a.reels > 1 ? "s" : ""} by {a.creators} account{a.creators > 1 ? "s" : ""} · {compact(a.plays)} plays
+                  {a.bpm ? ` · ${Math.round(a.bpm)} BPM` : ""}
+                </span>
+                {a.link && (
+                  <a href={a.link} target="_blank" rel="noreferrer" className="ml-auto text-[13px] text-accent hover:underline">
+                    Open in Instagram
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
       <Section title="Video ideas for this client">
         <div className="grid gap-3 md:grid-cols-2">
           {findings.ideas.map((x, i) => (
@@ -203,11 +224,88 @@ export function FindingsView({ findings, reels }: { findings: TrendFindings; ree
                 </span>
               </div>
               {r.hook && <div className="text-ink-2">Hook: {r.hook}</div>}
+              {r.audio && <div className="text-[13px] text-ink-2">Sound: {r.audio}</div>}
               {r.why && <div className="text-[13px] text-muted">{r.why}</div>}
             </li>
           ))}
         </ul>
       </Section>
+    </div>
+  );
+}
+
+const ALIGN = { start: "starts on a downbeat", hit: "lined up so a drop lands on a key moment", end: "back-timed to end on the last frame" };
+
+// What the sound designer (agent 4) chose for a version.
+export function SoundView({ sound }: { sound: SoundReport }) {
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      <p className="leading-relaxed text-ink">{sound.concept}</p>
+      <div className="rounded-xl bg-white/[0.04] p-3">
+        <div className="kicker mb-1">Music</div>
+        {sound.track ? (
+          <>
+            <div className="text-ink">
+              <span className="font-medium">{sound.track.title}</span> <span className="text-ink-2">by {sound.track.artist}</span>
+            </div>
+            <div className="text-[13px] text-muted">
+              {sound.track.library} · {sound.track.license}
+              {sound.track.bpm ? ` · ${Math.round(sound.track.bpm)} BPM` : ""} · {ALIGN[sound.align]}
+              {sound.at > 0 ? `, comes in at ${sound.at.toFixed(1)}s` : `, from ${sound.start.toFixed(1)}s into the track`}
+            </div>
+            {sound.track.page && (
+              <a href={sound.track.page} target="_blank" rel="noreferrer" className="text-[13px] text-accent hover:underline">
+                Source and licence
+              </a>
+            )}
+          </>
+        ) : (
+          <div className="text-ink-2">No music: the dialogue plays alone.</div>
+        )}
+      </div>
+      {sound.trend && (
+        <div className="rounded-xl bg-accent-soft p-3">
+          <div className="kicker mb-1">Trending sound to add when posting</div>
+          <div className="text-ink">
+            <span className="font-medium">{sound.trend.title}</span> <span className="text-ink-2">by {sound.trend.artist}</span>
+            {sound.trend.link && (
+              <a href={sound.trend.link} target="_blank" rel="noreferrer" className="ml-2 text-[13px] text-accent hover:underline">
+                Open in Instagram
+              </a>
+            )}
+          </div>
+          <p className="mt-1 text-[13px] text-ink-2">{sound.trend.use}</p>
+          <p className="mt-1 text-xs text-muted">Add it in the Instagram app when posting: licensed songs can&apos;t be in the exported file.</p>
+        </div>
+      )}
+      {sound.credits.length > 0 && (
+        <div className="rounded-xl border border-warning/40 p-3">
+          <div className="kicker mb-1 text-warning">Credit to put in the caption</div>
+          {sound.credits.map((c, i) => (
+            <p key={i} className="select-all font-mono text-[12.5px] text-ink-2">
+              {c}
+            </p>
+          ))}
+        </div>
+      )}
+      {sound.limits.map((l, i) => (
+        <p key={i} className="text-xs text-warning">
+          {l}
+        </p>
+      ))}
+      {sound.sfx.length > 0 && (
+        <div>
+          <div className="kicker mb-1">Sound effects ({sound.sfx.length})</div>
+          <ul className="flex flex-col gap-0.5 text-[13px] text-ink-2">
+            {sound.sfx.map((x, i) => (
+              <li key={i}>
+                <span className="font-mono text-muted">{x.at.toFixed(1)}s</span> {x.title} <span className="text-muted">· {x.library}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {sound.notes && <p className="text-[13px] text-muted">{sound.notes}</p>}
     </div>
   );
 }

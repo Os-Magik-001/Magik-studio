@@ -8,6 +8,7 @@ import { mkdir } from "node:fs/promises";
 import os from "node:os";
 import { config, db } from "./config.ts";
 import { claim, log, processJob, recoverStale } from "./job.ts";
+import { claimLibrarySync, recoverStaleLibraries, registerBuiltins, syncLibrary } from "./libraries.ts";
 import { claimResearch, recoverStaleResearch, runResearch } from "./research.ts";
 import { transcriptionAvailable } from "./transcribe.ts";
 
@@ -16,6 +17,7 @@ const worker = `${os.hostname()}:${process.pid}`;
 let stopping = false;
 let current: string | null = null;
 let currentResearch: string | null = null;
+let currentLibrary: string | null = null;
 
 // ---------------------------------------------------------------- loop
 
@@ -32,6 +34,10 @@ async function shutdown() {
     await db.from("trend_reports").update({ status: "queued", progress: null }).eq("id", currentResearch).eq("status", "running");
     log(currentResearch, "research requeued: the engine is stopping");
   }
+  if (currentLibrary) {
+    await db.from("sound_libraries").update({ status: "queued", progress: null }).eq("id", currentLibrary).eq("status", "running");
+    log(currentLibrary, "library sync requeued: the engine is stopping");
+  }
   log(null, "stopped");
   process.exit(0);
 }
@@ -42,6 +48,9 @@ log(null, `edit engine ${worker} started (model ${config.model}, transcription $
 await mkdir(config.workDir, { recursive: true });
 await recoverStale();
 await recoverStaleResearch();
+await recoverStaleLibraries().catch((err) => log(null, `library recovery failed: ${err.message}`));
+// The app's Sound page lists the libraries this engine ships with.
+await registerBuiltins().catch((err) => log(null, `couldn't list the built-in sound libraries: ${err.message}`));
 let lastRecovery = Date.now();
 
 while (!stopping) {
@@ -66,6 +75,16 @@ while (!stopping) {
     currentResearch = research.id;
     await runResearch(research);
     currentResearch = null;
+    if (once) break;
+    continue;
+  }
+  // Drive sound libraries sync last: measuring a big folder takes a while.
+  const library = await claimLibrarySync().catch(() => null);
+  if (library) {
+    log(library.id, `syncing the sound library ${library.name}`);
+    currentLibrary = library.id;
+    await syncLibrary(library);
+    currentLibrary = null;
     if (once) break;
     continue;
   }

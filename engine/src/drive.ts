@@ -160,7 +160,7 @@ export function listDriveVideos(id: string): Promise<{ id: string; name: string 
 }
 
 // Every file behind a Drive link that `keep` accepts: the file itself, or a folder's files (and its subfolders').
-export async function listDriveFiles(id: string, keep: (f: { name: string; mimeType: string }) => boolean): Promise<{ id: string; name: string; parent: string }[]> {
+export async function listDriveFiles(id: string, keep: (f: { name: string; mimeType: string }) => boolean, limit = 500): Promise<{ id: string; name: string; parent: string }[]> {
   const get = async (q: string) => {
     const res = await fetch(`https://www.googleapis.com/drive/v3/${q}`, { headers: { authorization: `Bearer ${await accessToken()}` } });
     if (!res.ok) throw new Error(`Google Drive returned ${res.status}: share the footage with ${serviceAccount()?.client_email}.`);
@@ -170,7 +170,7 @@ export async function listDriveFiles(id: string, keep: (f: { name: string; mimeT
   if (root.mimeType !== "application/vnd.google-apps.folder") return keep(root) ? [{ id: root.id, name: root.name, parent: "" }] : [];
   const out: { id: string; name: string; parent: string }[] = [];
   const queue = [{ id: root.id as string, name: root.name as string }];
-  while (queue.length && out.length < 500) {
+  while (queue.length && out.length < limit) {
     const folder = queue.shift()!;
     const page = await get(`files?q=${encodeURIComponent(`'${folder.id}' in parents and trashed = false`)}&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=1000&orderBy=name&fields=files(id,name,mimeType)`);
     for (const f of page.files) {

@@ -3,6 +3,7 @@ name: omgadrian-editing-dynamic-music-motion-look
 description: Music-first editing, energy-matched framing, sparse sound effects, purposeful speed and transitions, and correct-then-look colour for dynamic reels (learned from @omgadrian)
 formats: all
 style: dynamic
+agents: editor, sound
 ---
 
 # Music, motion and look (dynamic)

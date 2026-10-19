@@ -1,6 +1,7 @@
-// Adds every audio file in a Google Drive folder (and its subfolders) to the music
-// library: measures length, tempo and first beat from the audio, guesses the mood
-// from the file name, and writes music/library.json.
+// Adds every audio file in a Google Drive folder (and its subfolders) to the studio's picks
+// (music/library.json): measures length, tempo and first beat from the audio (analysis.ts)
+// and guesses the mood from the file name. For whole libraries, add the folder on the app's
+// Sound page instead: the engine measures it and the sound designer searches it.
 //
 //   node --env-file=../.env.local scripts/add-drive-music.ts --folder <drive folder id> --license "Pixabay Content License"
 //
@@ -10,10 +11,9 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { config } from "../src/config.ts";
+import { analyzeTrack } from "../src/analysis.ts";
 import { fetchDriveFile } from "../src/drive.ts";
-import { run } from "../src/exec.ts";
-import { MOODS, type Track } from "../src/music.ts";
+import { MOODS, type StudioTrack } from "../src/music.ts";
 
 const { values } = parseArgs({ options: { folder: { type: "string" }, license: { type: "string", default: "Pixabay Content License" } } });
 if (!values.folder) throw new Error("--folder <drive folder id> is required");
@@ -25,45 +25,9 @@ async function listAudio(folder: string): Promise<{ id: string; name: string; pa
   return listDriveFiles(folder, (f) => f.mimeType.startsWith("audio/") || /\.(mp3|wav|m4a|aac|flac|ogg)$/i.test(f.name));
 }
 
-// Tempo from the onset envelope's autocorrelation; first beat from the best-aligned comb.
-async function measure(file: string) {
-  const pcm = `${file}.f32`;
-  await run(config.ffmpeg, ["-v", "error", "-y", "-i", file, "-ac", "1", "-ar", "11025", "-f", "f32le", pcm]);
-  const buf = await readFile(pcm);
-  await rm(pcm, { force: true });
-  const samples = new Float32Array(buf.buffer, buf.byteOffset, Math.floor(buf.length / 4));
-  const hop = 256;
-  const env: number[] = [];
-  let prev = 0;
-  for (let i = 0; i + hop <= samples.length; i += hop) {
-    let e = 0;
-    for (let k = 0; k < hop; k++) e += samples[i + k] ** 2;
-    const l = Math.log(1e-9 + e);
-    env.push(Math.max(0, l - prev));
-    prev = l;
-  }
-  const fps = 11025 / hop;
-  const n = Math.min(env.length, Math.round(fps * 60));
-  let best = { bpm: 120, score: -1 };
-  for (let bpm = 70; bpm <= 180; bpm += 0.5) {
-    const lag = (fps * 60) / bpm;
-    let sc = 0;
-    for (let i = 0; i + lag * 2 < n; i++) sc += env[i] * (env[Math.round(i + lag)] + 0.5 * env[Math.round(i + lag * 2)]);
-    if (sc > best.score) best = { bpm, score: sc };
-  }
-  const period = (fps * 60) / best.bpm;
-  let phase = { at: 0, score: -1 };
-  for (let p = 0; p < period; p++) {
-    let sc = 0;
-    for (let b = p; b < n; b += period) sc += env[Math.round(b)] ?? 0;
-    if (sc > phase.score) phase = { at: p, score: sc };
-  }
-  return { bpm: best.bpm, firstBeat: Math.round((phase.at / fps) * 1000) / 1000, duration: Math.round(samples.length / 11025) };
-}
-
-function moodOf(name: string): { mood: Track["mood"]; energy: Track["energy"] } {
+function moodOf(name: string): { mood: StudioTrack["mood"]; energy: StudioTrack["energy"] } {
   const n = name.toLowerCase();
-  const pick = (mood: Track["mood"], energy: Track["energy"]) => ({ mood, energy });
+  const pick = (mood: StudioTrack["mood"], energy: StudioTrack["energy"]) => ({ mood, energy });
   if (/funk|groove|groovy/.test(n)) return pick("funky-groovy", /upbeat|energy|party|happy/.test(n) ? "high" : "medium");
   if (/rock|party|sport|energy/.test(n)) return pick("upbeat-pop", "high");
   if (/hip.?hop|trap|rap/.test(n)) return pick("hip-hop", "high");
@@ -77,7 +41,7 @@ function moodOf(name: string): { mood: Track["mood"]; energy: Track["energy"] } 
   return pick("upbeat-pop", "medium");
 }
 
-const library = JSON.parse(await readFile(LIBRARY, "utf8")) as Track[];
+const library = JSON.parse(await readFile(LIBRARY, "utf8")) as StudioTrack[];
 const files = await listAudio(values.folder);
 console.log(`${files.length} audio files`);
 for (const f of files) {
@@ -92,12 +56,12 @@ for (const f of files) {
     continue;
   }
   await writeFile(tmp, Buffer.from(await res.arrayBuffer()));
-  const m = await measure(tmp);
+  const m = await analyzeTrack(tmp);
   await rm(tmp, { force: true });
   const artist = /^alexguz/i.test(base) ? "Alex Guz" : base.split(/[-_]/)[0];
   const unique = library.some((t) => t.id === id) ? `${id}-${f.id.slice(0, 4).toLowerCase()}` : id;
   const title = base.replace(/^[a-z]+-/i, "").replace(/-\d{5,}$/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const entry: Track = { id: unique, title, artist, ...moodOf(base), bpm: m.bpm, firstBeat: m.firstBeat, duration: m.duration, url, page: `https://drive.google.com/file/d/${f.id}/view`, license: values.license! };
+  const entry: StudioTrack = { id: unique, title, artist, ...moodOf(base), bpm: m.bpm, firstBeat: m.firstBeat, duration: Math.round(m.duration), url, page: `https://drive.google.com/file/d/${f.id}/view`, license: values.license! };
   if (!MOODS.includes(entry.mood)) continue;
   library.push(entry);
   console.log(`added ${entry.id}: ${entry.mood}, ${entry.energy}, ${entry.bpm} BPM, first beat ${entry.firstBeat}s, ${entry.duration}s`);

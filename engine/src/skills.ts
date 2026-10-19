@@ -9,6 +9,7 @@
 //   enabled: true                    (optional)
 //   style: clean                     (optional: clean or dynamic; only loaded in that editing style)
 //   when: omgadrian                  (optional: only loaded when the brief or notes name one of these words)
+//   agents: editor, sound            (optional: which agents read it; the editor when left out)
 //   ---
 //   The technique, in Markdown.
 //
@@ -19,7 +20,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type EditStyle = "clean" | "dynamic";
-export type Skill = { name: string; description: string; formats: string[] | "all"; enabled: boolean; style: EditStyle | "any"; when: string[]; body: string };
+// The editor plans the cut; the sound designer does the music and effects after it.
+export type Agent = "editor" | "sound";
+export type Skill = { name: string; description: string; formats: string[] | "all"; enabled: boolean; style: EditStyle | "any"; when: string[]; agents: string[]; body: string };
 
 export const skillsDir = process.env.ENGINE_SKILLS_DIR ?? fileURLToPath(new URL("../skills", import.meta.url));
 
@@ -45,14 +48,15 @@ export function parseSkill(text: string, fallbackName: string): Skill {
     enabled: meta.enabled !== "false",
     style: meta.style === "clean" || meta.style === "dynamic" ? meta.style : "any",
     when: (meta.when ?? "").split(",").map((w) => w.trim().toLowerCase()).filter(Boolean),
+    agents: (meta.agents ?? "editor").split(",").map((a) => a.trim().toLowerCase()).filter(Boolean),
     body: match[2].trim(),
   };
 }
 
-// Every skill that applies to a video format and editing style, in folder-name order.
+// Every skill one agent reads for a video format and editing style, in folder-name order.
 // Skills with `when` words load only when `request` (the brief and notes) names one.
 // A broken skill is skipped with a warning rather than failing the edit.
-export async function loadSkills(format: string, dir = skillsDir, warn: (msg: string) => void = console.warn, style: EditStyle = "dynamic", request = ""): Promise<Skill[]> {
+export async function loadSkills(format: string, dir = skillsDir, warn: (msg: string) => void = console.warn, style: EditStyle = "dynamic", request = "", agent: Agent = "editor"): Promise<Skill[]> {
   const asked = request.toLowerCase();
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
   const skills: Skill[] = [];
@@ -62,7 +66,7 @@ export async function loadSkills(format: string, dir = skillsDir, warn: (msg: st
     if (text === null) continue;
     try {
       const skill = parseSkill(text, entry.name);
-      const fits = (skill.style === "any" || skill.style === style) && (!skill.when.length || skill.when.some((w) => asked.includes(w)));
+      const fits = (skill.style === "any" || skill.style === style) && (!skill.when.length || skill.when.some((w) => asked.includes(w))) && skill.agents.includes(agent);
       if (skill.enabled && fits && (skill.formats === "all" || skill.formats.includes(format))) skills.push(skill);
     } catch (err) {
       warn(`Skipping skill ${entry.name}: ${(err as Error).message}`);

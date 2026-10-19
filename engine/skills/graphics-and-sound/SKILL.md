@@ -3,6 +3,7 @@ name: graphics-and-sound
 description: Using automatic captions, animated text, graphics, overlays, music and sound effects
 formats: all
 style: dynamic
+agents: editor, sound
 ---
 
 **Captions**

@@ -4,6 +4,7 @@ description: Cinematic AI-tool demo reels: a creator voiceover at ~190 wpm over 
 formats: social_short, ad
 style: dynamic
 when: dbocjkssdqt
+agents: editor, sound
 ---
 
 # AI Tool Demo – Cinematic Voiceover Style

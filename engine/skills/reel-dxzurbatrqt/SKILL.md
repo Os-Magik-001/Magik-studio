@@ -4,6 +4,7 @@ description: Silent, minimalist motion-graphics openers and logo reveals: glowin
 formats: social_short, ad
 style: dynamic
 when: dxzurbatrqt
+agents: editor, sound
 ---
 
 # Minimal Glow Opener (logo-reveal / motion-template promo)

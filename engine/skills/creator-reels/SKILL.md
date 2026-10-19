@@ -3,6 +3,7 @@ name: creator-reels
 description: High-retention creator-style Instagram reels (talking head, multi-speaker, walk-and-talk, process proof), from six analysed top-performing reels
 formats: social_short, ad
 style: dynamic
+agents: editor, sound
 ---
 
 Use this when the brief or the editor's notes ask for a "creator reel", a "reel like [creator]", or name one of the recipes below. Also use it when the footage is a person talking to camera for organic social and the brief wants energy. It overrides the calmer defaults in edit-styles (use the Punchy profile) and the caption word counts in captions-and-text.

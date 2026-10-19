@@ -3,6 +3,7 @@ name: clean-comedy-edit
 description: Clean, effect-free comedy editing like Cluely and The Marketing Interns: performance, timing and cuts only
 formats: all
 style: clean
+agents: editor, sound
 ---
 
 This client uses the **clean** editing style. The edit is invisible: no motion graphics, no freeze frames, no stickers, no sound effects, no flashy transitions, no highlighted words. Everything rests on choosing the best performance and cutting it with the right timing, the way Cluely's and The Marketing Interns' skits are edited (measured: 0.26 cuts per second, median shot 3.1 s, speech 83% of the time, about 200 words per minute, 71% original audio only).

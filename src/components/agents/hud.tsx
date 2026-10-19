@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 // and animates it. Links that have carried data pulse; links into a working node
 // stream fast; anything that happened in the last minute fires a burst of packets.
 
-export type NodeId = "client" | "a1" | "apify" | "a2" | "a3" | "shoot" | "engine" | "video";
+export type NodeId = "client" | "a1" | "apify" | "a2" | "a3" | "a4" | "shoot" | "engine" | "video";
 export type NodeState = "idle" | "busy" | "done" | "failed";
 export type HudNode = { id: NodeId; kind: string; title: string; role: string; meta: string; state: NodeState; progress?: string | null };
 export type HudLink = { a: NodeId; b: NodeId; label: string; hot?: boolean; active: boolean };
@@ -19,6 +19,7 @@ const POS: Record<NodeId, { x: number; y: number; r: number }> = {
   apify: { x: 570, y: 70, r: 38 },
   a2: { x: 650, y: 290, r: 62 },
   a3: { x: 330, y: 420, r: 62 },
+  a4: { x: 880, y: 330, r: 56 },
   shoot: { x: 110, y: 560, r: 44 },
   engine: { x: 600, y: 560, r: 56 },
   video: { x: 880, y: 560, r: 44 },

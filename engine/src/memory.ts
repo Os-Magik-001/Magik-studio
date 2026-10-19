@@ -101,3 +101,30 @@ export async function clientMemory(clientId: string, except: string | null, dept
   });
   return formatMemory(videos, depth);
 }
+
+// What the client's other videos sounded like, for the sound designer: the track each used,
+// the trend it was posted with, and anything asked about the sound.
+export async function musicMemory(clientId: string, except: string | null): Promise<string | null> {
+  let query = db.from("videos").select("id, title, created_at").eq("client_id", clientId).order("created_at", { ascending: false }).limit(30);
+  if (except) query = query.neq("id", except);
+  const { data: videos } = await query;
+  if (!videos?.length) return null;
+  const ids = videos.map((v) => v.id);
+  const [{ data: versions }, { data: fixes }] = await Promise.all([
+    db.from("versions").select("video_id, number, sound, edit_plan").in("video_id", ids).order("number"),
+    db.from("edit_jobs").select("video_id, instructions").in("video_id", ids).in("source", ["editor_fix", "client_changes"]).not("instructions", "is", null),
+  ]);
+  const about = /music|song|track|sound|sfx|effect|audio|volume|loud|quiet|beat|whoosh|musique|son\b|chanson/i;
+  const lines = [...videos].reverse().flatMap((v) => {
+    const last = (versions ?? []).filter((x) => x.video_id === v.id).at(-1);
+    const sound = last?.sound as { track?: { title: string; library: string } | null; trend?: { title: string; artist: string } | null; concept?: string } | null;
+    const plan = last?.edit_plan as { music?: { track?: string | null } } | null;
+    const asked = (fixes ?? []).filter((f) => f.video_id === v.id).flatMap((f) => (f.instructions ?? "").split("\n").filter((l) => about.test(l)));
+    const what = sound?.track ? `"${sound.track.title}" (${sound.track.library})` : plan?.music?.track ? `track ${plan.music.track}` : null;
+    if (!what && !asked.length) return [];
+    return [
+      `- "${v.title}" (${v.created_at.slice(0, 10)}): ${what ?? "no music"}${sound?.concept ? `, ${clip(oneLine(sound.concept), 160)}` : ""}${sound?.trend ? `; posted with "${sound.trend.title}" by ${sound.trend.artist}` : ""}${asked.length ? `; asked: ${clip(oneLine(asked.join(" / ")), 300)}` : ""}`,
+    ];
+  });
+  return lines.length ? lines.join("\n") : null;
+}

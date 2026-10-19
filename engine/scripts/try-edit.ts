@@ -115,7 +115,7 @@ await watchClips(clips, dir, `${request.clientName}. ${request.title}. ${request
 const saved = values.plan ? (JSON.parse(await readFile(values.plan, "utf8")) as EditPlan) : null;
 // A saved plan is rendered as it is: no second planning pass.
 const cut = values.design ? output.replace(/\.mp4$/, "-cut.mp4") : output;
-const { plan, length } = await planAndRender({ ...request, selfReview: !saved, clean: values.clean ?? request.clean, bare: values.design }, clips, dir, cut, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined);
+const { plan, length } = await planAndRender({ ...request, selfReview: !saved, clean: values.clean ?? request.clean, bare: values.design }, clips, dir, cut, say, say, saved ? async () => ({ plan: saved, usage: "saved plan" }) : undefined, saved ? null : undefined);
 await writeFile(output.replace(/\.mp4$/, ".plan.json"), JSON.stringify(plan, null, 1));
 if (values.design) {
   // The design pass: the editor's text and motion ideas, the client's style references

@@ -1,0 +1,4292 @@
+[
+ {
+  "id": "3-am-west-end",
+  "title": "3 am West End",
+  "artist": "statusq",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 291,
+  "url": "https://archive.org/download/freepd/electronic/3%20am%20West%20End.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "a-good-bass-for-gambling",
+  "title": "A Good Bass for Gambling",
+  "artist": "Komiku",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 156,
+  "url": "https://archive.org/download/freepd/misc/A%20Good%20Bass%20for%20Gambling.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "a-very-brady-special",
+  "title": "A Very Brady Special",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 388,
+  "url": "https://archive.org/download/freepd/romantic/A%20Very%20Brady%20Special.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "a-waltz-for-naseem",
+  "title": "A Waltz For Naseem",
+  "artist": "dogsounds",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 217,
+  "url": "https://archive.org/download/freepd/misc/A%20Waltz%20For%20Naseem.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "abstract-anxiety",
+  "title": "Abstract Anxiety",
+  "artist": "Severed Personality",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 269,
+  "url": "https://archive.org/download/freepd/misc/Abstract%20Anxiety.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "action-strike",
+  "title": "Action Strike",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 134,
+  "url": "https://archive.org/download/freepd/scoring/Action%20Strike.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "adding-the-sun",
+  "title": "Adding the Sun",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 176,
+  "url": "https://archive.org/download/freepd/misc/Adding%20the%20Sun.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "adventure",
+  "title": "Adventure",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 85,
+  "url": "https://archive.org/download/freepd/epic/Adventure.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "adventures-of-flying-jack",
+  "title": "Adventures of Flying Jack",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 73,
+  "url": "https://archive.org/download/freepd/epic/Adventures%20of%20Flying%20Jack.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "advertime",
+  "title": "Advertime",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 134,
+  "url": "https://archive.org/download/freepd/upbeat/Advertime.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "after-the-end",
+  "title": "After the End",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 98,
+  "url": "https://archive.org/download/freepd/scoring/After%20the%20End.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "alien-invasion",
+  "title": "Alien Invasion",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 185,
+  "url": "https://archive.org/download/freepd/horror/Alien%20Invasion.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "alien-spaceship-atmosphere",
+  "title": "Alien Spaceship Atmosphere",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 124,
+  "url": "https://archive.org/download/freepd/horror/Alien%20Spaceship%20Atmosphere.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "alls-fair-in-love",
+  "title": "Alls Fair In Love",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 239,
+  "url": "https://archive.org/download/freepd/comedy/Alls%20Fair%20In%20Love.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "amazing-grace",
+  "title": "Amazing Grace",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 114,
+  "url": "https://archive.org/download/freepd/romantic/Amazing%20Grace.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ambient-bongos",
+  "title": "Ambient Bongos",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 88,
+  "url": "https://archive.org/download/freepd/world/Ambient%20Bongos.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ambush-in-rattlesnake-gulch",
+  "title": "Ambush in Rattlesnake Gulch",
+  "artist": "Brian Boyko",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 614,
+  "url": "https://archive.org/download/freepd/misc/Ambush%20in%20Rattlesnake%20Gulch.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ancient-rite",
+  "title": "Ancient Rite",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 113,
+  "url": "https://archive.org/download/freepd/epic/Ancient%20Rite.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ancient-winds",
+  "title": "Ancient Winds",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 3534,
+  "url": "https://archive.org/download/freepd/misc/Ancient%20Winds.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "and-just-like-that",
+  "title": "And Just Like That",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 114,
+  "url": "https://archive.org/download/freepd/upbeat/And%20Just%20Like%20That.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "apex",
+  "title": "Apex",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 317,
+  "url": "https://archive.org/download/freepd/misc/Apex.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "aquarium",
+  "title": "Aquarium",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 144,
+  "url": "https://archive.org/download/freepd/misc/Aquarium.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "aquatic-city-vanished",
+  "title": "Aquatic City Vanished",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 149,
+  "url": "https://archive.org/download/freepd/world/Aquatic%20City%20Vanished.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "arpent",
+  "title": "Arpent",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 162,
+  "url": "https://archive.org/download/freepd/electronic/Arpent.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "asking-questions",
+  "title": "Asking Questions",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 104,
+  "url": "https://archive.org/download/freepd/horror/Asking%20Questions.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "assassin",
+  "title": "Assassin",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 186,
+  "url": "https://archive.org/download/freepd/epic/Assassin.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "attic-secrets",
+  "title": "Attic Secrets",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 66,
+  "url": "https://archive.org/download/freepd/comedy/Attic%20Secrets.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "awkward-apocalyptic-pickup",
+  "title": "Awkward Apocalyptic Pickup",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 44,
+  "url": "https://archive.org/download/freepd/misc/Awkward%20Apocalyptic%20Pickup.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "backbeat",
+  "title": "Backbeat",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 46,
+  "url": "https://archive.org/download/freepd/electronic/Backbeat.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "baltic-levity",
+  "title": "Baltic Levity",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 48,
+  "url": "https://archive.org/download/freepd/comedy/Baltic%20Levity.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bar-brawl",
+  "title": "Bar Brawl",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 123,
+  "url": "https://archive.org/download/freepd/upbeat/Bar%20Brawl.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "barnville",
+  "title": "Barnville",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 102,
+  "url": "https://archive.org/download/freepd/comedy/Barnville.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "barroom-ballet",
+  "title": "Barroom Ballet",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 56,
+  "url": "https://archive.org/download/freepd/comedy/Barroom%20Ballet.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bass-meant-jazz",
+  "title": "Bass Meant Jazz",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "luxury-elegant",
+  "tags": [
+   "misc"
+  ],
+  "duration": 280,
+  "url": "https://archive.org/download/freepd/misc/Bass%20Meant%20Jazz.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "battle-ready",
+  "title": "Battle Ready",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 78,
+  "url": "https://archive.org/download/freepd/epic/Battle%20Ready.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bavarian-seascape",
+  "title": "Bavarian Seascape",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 231,
+  "url": "https://archive.org/download/freepd/world/Bavarian%20Seascape.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "be-chillin",
+  "title": "Be Chillin",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 203,
+  "url": "https://archive.org/download/freepd/upbeat/Be%20Chillin.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "be-jammin",
+  "title": "Be Jammin",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 167,
+  "url": "https://archive.org/download/freepd/world/Be%20Jammin.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "beat-one",
+  "title": "Beat One",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 180,
+  "url": "https://archive.org/download/freepd/electronic/Beat%20One.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bebop-for-joey",
+  "title": "BeBop for Joey",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 139,
+  "url": "https://archive.org/download/freepd/comedy/BeBop%20for%20Joey.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "beginning-of-conflict",
+  "title": "Beginning of Conflict",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 99,
+  "url": "https://archive.org/download/freepd/scoring/Beginning%20of%20Conflict.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "behind-enemy-lines",
+  "title": "Behind Enemy Lines",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 115,
+  "url": "https://archive.org/download/freepd/epic/Behind%20Enemy%20Lines.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "behind-the-sword",
+  "title": "Behind the Sword",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 179,
+  "url": "https://archive.org/download/freepd/misc/Behind%20the%20Sword.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "beyond-part-2",
+  "title": "Beyond - part 2",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 285,
+  "url": "https://archive.org/download/freepd/epic/Beyond%20-%20part%202.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "big-eyes",
+  "title": "Big Eyes",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 149,
+  "url": "https://archive.org/download/freepd/epic/Big%20Eyes.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bit-bit-loop",
+  "title": "Bit Bit Loop",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 77,
+  "url": "https://archive.org/download/freepd/electronic/Bit%20Bit%20Loop.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "black-knight",
+  "title": "Black Knight",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 142,
+  "url": "https://archive.org/download/freepd/epic/Black%20Knight.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "blacksmith",
+  "title": "Blacksmith",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 161,
+  "url": "https://archive.org/download/freepd/world/Blacksmith.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bleu",
+  "title": "Bleu",
+  "artist": "Komiku",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 211,
+  "url": "https://archive.org/download/freepd/misc/Bleu.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "blippy-trance",
+  "title": "Blippy Trance",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "misc"
+  ],
+  "duration": 120,
+  "url": "https://archive.org/download/freepd/misc/Blippy%20Trance.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "blood-eagle",
+  "title": "Blood Eagle",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 228,
+  "url": "https://archive.org/download/freepd/world/Blood%20Eagle.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bollywood-groove",
+  "title": "Bollywood Groove",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 150,
+  "url": "https://archive.org/download/freepd/world/Bollywood%20Groove.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bonfire",
+  "title": "Bonfire",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 99,
+  "url": "https://archive.org/download/freepd/world/Bonfire.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "bouchedag",
+  "title": "Bouchedag",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 77,
+  "url": "https://archive.org/download/freepd/misc/Bouchedag.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "brandenburg-concerto-iii-allegro-i",
+  "title": "Brandenburg Concerto III, Allegro I",
+  "artist": "dogsounds",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 300,
+  "url": "https://archive.org/download/freepd/misc/Brandenburg%20Concerto%20III%2C%20Allegro%20I.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "breaking-bollywood",
+  "title": "Breaking Bollywood",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 225,
+  "url": "https://archive.org/download/freepd/world/Breaking%20Bollywood.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "brewing-potions",
+  "title": "Brewing Potions",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 94,
+  "url": "https://archive.org/download/freepd/misc/Brewing%20Potions.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "brothers-unite",
+  "title": "Brothers Unite",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 184,
+  "url": "https://archive.org/download/freepd/romantic/Brothers%20Unite.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "burning-trapezoid-of-fire",
+  "title": "Burning Trapezoid of Fire",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "hip-hop",
+  "tags": [
+   "misc"
+  ],
+  "duration": 241,
+  "url": "https://archive.org/download/freepd/misc/Burning%20Trapezoid%20of%20Fire.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "burt-s-requiem",
+  "title": "Burt's Requiem",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 389,
+  "url": "https://archive.org/download/freepd/romantic/Burt's%20Requiem.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "busybody",
+  "title": "Busybody",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 86,
+  "url": "https://archive.org/download/freepd/comedy/Busybody.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "celebration",
+  "title": "Celebration",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 143,
+  "url": "https://archive.org/download/freepd/misc/Celebration.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "cha-cha-ender",
+  "title": "Cha-Cha Ender",
+  "artist": "Anonymous for Good Reasons",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 5,
+  "url": "https://archive.org/download/freepd/comedy/Cha-Cha%20Ender.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "champ-de-tournesol",
+  "title": "Champ de tournesol",
+  "artist": "Komiku",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 118,
+  "url": "https://archive.org/download/freepd/romantic/Champ%20de%20tournesol.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "chronos",
+  "title": "Chronos",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 129,
+  "url": "https://archive.org/download/freepd/electronic/Chronos.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "circuit",
+  "title": "Circuit",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 180,
+  "url": "https://archive.org/download/freepd/misc/Circuit.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "circus-of-freaks",
+  "title": "Circus of Freaks",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 57,
+  "url": "https://archive.org/download/freepd/comedy/Circus%20of%20Freaks.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "city-run",
+  "title": "City Run",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 37,
+  "url": "https://archive.org/download/freepd/scoring/City%20Run.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "city-sunshine",
+  "title": "City Sunshine",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 185,
+  "url": "https://archive.org/download/freepd/upbeat/City%20Sunshine.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "cockroaches",
+  "title": "Cockroaches",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 209,
+  "url": "https://archive.org/download/freepd/horror/Cockroaches.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "cold-journey",
+  "title": "Cold Journey",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 291,
+  "url": "https://archive.org/download/freepd/misc/Cold%20Journey.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "comic-game-loop-mischief",
+  "title": "Comic Game Loop - Mischief",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 43,
+  "url": "https://archive.org/download/freepd/comedy/Comic%20Game%20Loop%20-%20Mischief.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "compy-jazz",
+  "title": "Compy Jazz",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "luxury-elegant",
+  "tags": [
+   "misc"
+  ],
+  "duration": 247,
+  "url": "https://archive.org/download/freepd/misc/Compy%20Jazz.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "connecting-rainbows",
+  "title": "Connecting Rainbows",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 116,
+  "url": "https://archive.org/download/freepd/world/Connecting%20Rainbows.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "consecrated-ground",
+  "title": "Consecrated Ground",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 112,
+  "url": "https://archive.org/download/freepd/horror/Consecrated%20Ground.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "construction",
+  "title": "Construction",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 195,
+  "url": "https://archive.org/download/freepd/misc/Construction.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "cornfield-chase",
+  "title": "Cornfield Chase",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 138,
+  "url": "https://archive.org/download/freepd/epic/Cornfield%20Chase.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "coy-koi",
+  "title": "Coy Koi",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 48,
+  "url": "https://archive.org/download/freepd/world/Coy%20Koi.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "creepy-comedy",
+  "title": "Creepy Comedy",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 138,
+  "url": "https://archive.org/download/freepd/comedy/Creepy%20Comedy.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "creepy-hallow",
+  "title": "Creepy Hallow",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 120,
+  "url": "https://archive.org/download/freepd/horror/Creepy%20Hallow.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "cumbish",
+  "title": "Cumbish",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 192,
+  "url": "https://archive.org/download/freepd/world/Cumbish.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "cursed-intro",
+  "title": "Cursed Intro",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 76,
+  "url": "https://archive.org/download/freepd/horror/Cursed%20Intro.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "dance-of-the-tuba-plum-fairy",
+  "title": "Dance of the Tuba Plum Fairy",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 29,
+  "url": "https://archive.org/download/freepd/comedy/Dance%20of%20the%20Tuba%20Plum%20Fairy.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "dancing-at-the-inn",
+  "title": "Dancing at the Inn",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 158,
+  "url": "https://archive.org/download/freepd/misc/Dancing%20at%20the%20Inn.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "dark-hallway",
+  "title": "Dark Hallway",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "misc"
+  ],
+  "duration": 47,
+  "url": "https://archive.org/download/freepd/misc/Dark%20Hallway.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "dawn-of-the-apocalypse",
+  "title": "Dawn of the Apocalypse",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 144,
+  "url": "https://archive.org/download/freepd/horror/Dawn%20of%20the%20Apocalypse.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "deck-the-halls",
+  "title": "Deck the Halls",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 107,
+  "url": "https://archive.org/download/freepd/misc/Deck%20the%20Halls.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "del-rio-bravo",
+  "title": "Del Rio Bravo",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 204,
+  "url": "https://archive.org/download/freepd/world/Del%20Rio%20Bravo.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "desert-conflict",
+  "title": "Desert Conflict",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 160,
+  "url": "https://archive.org/download/freepd/world/Desert%20Conflict.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "desert-fox",
+  "title": "Desert Fox",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 133,
+  "url": "https://archive.org/download/freepd/scoring/Desert%20Fox.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "desert-fox-underscore",
+  "title": "Desert Fox Underscore",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 133,
+  "url": "https://archive.org/download/freepd/scoring/Desert%20Fox%20Underscore.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "downtown-boogie",
+  "title": "Downtown Boogie",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 147,
+  "url": "https://archive.org/download/freepd/misc/Downtown%20Boogie.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "dreams-of-vain",
+  "title": "Dreams of Vain",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 97,
+  "url": "https://archive.org/download/freepd/scoring/Dreams%20of%20Vain.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "driving-concern",
+  "title": "Driving Concern",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 200,
+  "url": "https://archive.org/download/freepd/scoring/Driving%20Concern.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "drop-point",
+  "title": "Drop Point",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 184,
+  "url": "https://archive.org/download/freepd/misc/Drop%20Point.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "drunken-party",
+  "title": "Drunken Party",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 121,
+  "url": "https://archive.org/download/freepd/comedy/Drunken%20Party.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ebbs-and-flows",
+  "title": "Ebbs and Flows",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 3534,
+  "url": "https://archive.org/download/freepd/misc/Ebbs%20and%20Flows.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "elf-meditation",
+  "title": "Elf Meditation",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "ambient-minimal",
+  "tags": [
+   "misc"
+  ],
+  "duration": 3534,
+  "url": "https://archive.org/download/freepd/misc/Elf%20Meditation.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "emotional-blockbuster-2",
+  "title": "Emotional Blockbuster 2",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 132,
+  "url": "https://archive.org/download/freepd/epic/Emotional%20Blockbuster%202.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "energizing",
+  "title": "Energizing",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 133,
+  "url": "https://archive.org/download/freepd/misc/Energizing.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "epic-blockbuster-2",
+  "title": "Epic Blockbuster 2",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 159,
+  "url": "https://archive.org/download/freepd/epic/Epic%20Blockbuster%202.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "epic-boss-battle",
+  "title": "Epic Boss Battle",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 170,
+  "url": "https://archive.org/download/freepd/epic/Epic%20Boss%20Battle.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "evil-incoming",
+  "title": "Evil Incoming",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 175,
+  "url": "https://archive.org/download/freepd/epic/Evil%20Incoming.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "experimental-test-subject",
+  "title": "Experimental Test Subject",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 164,
+  "url": "https://archive.org/download/freepd/world/Experimental%20Test%20Subject.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "eye-of-forgiveness",
+  "title": "Eye of Forgiveness",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 99,
+  "url": "https://archive.org/download/freepd/world/Eye%20of%20Forgiveness.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "fake-it-til-you-fake-it",
+  "title": "Fake It Til You Fake It",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 174,
+  "url": "https://archive.org/download/freepd/misc/Fake%20It%20Til%20You%20Fake%20It.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "fancy-family",
+  "title": "Fancy Family",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 67,
+  "url": "https://archive.org/download/freepd/comedy/Fancy%20Family.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "fanfare-x",
+  "title": "Fanfare X",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 40,
+  "url": "https://archive.org/download/freepd/epic/Fanfare%20X.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "favorite",
+  "title": "Favorite",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 175,
+  "url": "https://archive.org/download/freepd/electronic/Favorite.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "fenster-s-explanation",
+  "title": "Fenster's Explanation",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 169,
+  "url": "https://archive.org/download/freepd/comedy/Fenster's%20Explanation.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "final-step",
+  "title": "Final Step",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 95,
+  "url": "https://archive.org/download/freepd/scoring/Final%20Step.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "finally-see-the-light",
+  "title": "Finally See The Light",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 201,
+  "url": "https://archive.org/download/freepd/misc/Finally%20See%20The%20Light.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "find-them",
+  "title": "Find Them",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 142,
+  "url": "https://archive.org/download/freepd/scoring/Find%20Them.mp3",
+  "page": "https://web.archive.org/web/20210802191825/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "fireworks",
+  "title": "Fireworks",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 191,
+  "url": "https://archive.org/download/freepd/electronic/Fireworks.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "flutey-jazz",
+  "title": "Flutey Jazz",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "luxury-elegant",
+  "tags": [
+   "misc"
+  ],
+  "duration": 247,
+  "url": "https://archive.org/download/freepd/misc/Flutey%20Jazz.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "foam-rubber",
+  "title": "Foam Rubber",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 153,
+  "url": "https://archive.org/download/freepd/comedy/Foam%20Rubber.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "footsteps-in-the-attic",
+  "title": "Footsteps in the Attic",
+  "artist": "Arthur Fordsworthy",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 55,
+  "url": "https://archive.org/download/freepd/horror/Footsteps%20in%20the%20Attic.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "forest-frolic-loop",
+  "title": "Forest Frolic Loop",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 37,
+  "url": "https://archive.org/download/freepd/world/Forest%20Frolic%20Loop.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "forest-night",
+  "title": "Forest Night",
+  "artist": "Phase Shift",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 141,
+  "url": "https://archive.org/download/freepd/misc/Forest%20Night.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "fright-night-twist",
+  "title": "Fright Night Twist",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 176,
+  "url": "https://archive.org/download/freepd/comedy/Fright%20Night%20Twist.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "frogs-legs-rag",
+  "title": "Frogs Legs Rag",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 170,
+  "url": "https://archive.org/download/freepd/comedy/Frogs%20Legs%20Rag.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "from-page-to-practice",
+  "title": "From Page to Practice",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 137,
+  "url": "https://archive.org/download/freepd/upbeat/From%20Page%20to%20Practice.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "funkeriffic",
+  "title": "Funkeriffic",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "misc"
+  ],
+  "duration": 210,
+  "url": "https://archive.org/download/freepd/misc/Funkeriffic.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "funky-energy-loop",
+  "title": "Funky Energy Loop",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 203,
+  "url": "https://archive.org/download/freepd/scoring/Funky%20Energy%20Loop.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "funshine",
+  "title": "Funshine",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 165,
+  "url": "https://archive.org/download/freepd/upbeat/Funshine.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ghost-town",
+  "title": "Ghost Town",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 139,
+  "url": "https://archive.org/download/freepd/comedy/Ghost%20Town.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "go-on-without-me",
+  "title": "Go On Without Me",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 195,
+  "url": "https://archive.org/download/freepd/epic/Go%20On%20Without%20Me.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "going-bananas",
+  "title": "Going Bananas",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 141,
+  "url": "https://archive.org/download/freepd/comedy/Going%20Bananas.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "goldcrest",
+  "title": "Goldcrest",
+  "artist": "James Anderson",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 142,
+  "url": "https://archive.org/download/freepd/misc/Goldcrest.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "goodnightmare",
+  "title": "Goodnightmare",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 240,
+  "url": "https://archive.org/download/freepd/electronic/Goodnightmare.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "gothamlicious",
+  "title": "Gothamlicious",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 48,
+  "url": "https://archive.org/download/freepd/epic/Gothamlicious.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "gotta-keep-on-movin",
+  "title": "Gotta Keep On Movin",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 144,
+  "url": "https://archive.org/download/freepd/misc/Gotta%20Keep%20On%20Movin.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "groovin",
+  "title": "Groovin",
+  "artist": "Brian Boyko",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "misc"
+  ],
+  "duration": 240,
+  "url": "https://archive.org/download/freepd/misc/Groovin.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "guerilla-tactics",
+  "title": "Guerilla Tactics",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 109,
+  "url": "https://archive.org/download/freepd/scoring/Guerilla%20Tactics.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "halloween-theme-1",
+  "title": "Halloween Theme 1",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 120,
+  "url": "https://archive.org/download/freepd/horror/Halloween%20Theme%201.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "happy-whistling-ukulele",
+  "title": "Happy Whistling Ukulele",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 123,
+  "url": "https://archive.org/download/freepd/upbeat/Happy%20Whistling%20Ukulele.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hear-what-they-say",
+  "title": "Hear What They Say",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 138,
+  "url": "https://archive.org/download/freepd/electronic/Hear%20What%20They%20Say.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hello-ma-baby",
+  "title": "Hello! Ma Baby",
+  "artist": "Anonymous for Good Reasons",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 50,
+  "url": "https://archive.org/download/freepd/comedy/Hello!%20Ma%20Baby.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "heroic-adventure",
+  "title": "Heroic Adventure",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 143,
+  "url": "https://archive.org/download/freepd/epic/Heroic%20Adventure.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hidden-truth",
+  "title": "Hidden Truth",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 99,
+  "url": "https://archive.org/download/freepd/horror/Hidden%20Truth.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hillbilly-swing",
+  "title": "Hillbilly Swing",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 167,
+  "url": "https://archive.org/download/freepd/world/Hillbilly%20Swing.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hippety-hop",
+  "title": "Hippety Hop",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 117,
+  "url": "https://archive.org/download/freepd/electronic/Hippety%20Hop.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hit-n-smash",
+  "title": "Hit n Smash",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 133,
+  "url": "https://archive.org/download/freepd/epic/Hit%20n%20Smash.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hold-on-a-sec",
+  "title": "Hold on a Sec",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 126,
+  "url": "https://archive.org/download/freepd/misc/Hold%20on%20a%20Sec.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "holiday-weasel",
+  "title": "Holiday Weasel",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 85,
+  "url": "https://archive.org/download/freepd/comedy/Holiday%20Weasel.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "honor-bound",
+  "title": "Honor Bound",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 171,
+  "url": "https://archive.org/download/freepd/epic/Honor%20Bound.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hopeful",
+  "title": "Hopeful",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 114,
+  "url": "https://archive.org/download/freepd/comedy/Hopeful.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "hor-hor",
+  "title": "Hor Hor",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 332,
+  "url": "https://archive.org/download/freepd/horror/Hor%20Hor.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "horizon-flare",
+  "title": "Horizon Flare",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 102,
+  "url": "https://archive.org/download/freepd/romantic/Horizon%20Flare.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "horns",
+  "title": "Horns",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 204,
+  "url": "https://archive.org/download/freepd/comedy/Horns.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "horror-mytery",
+  "title": "Horror Mytery",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 124,
+  "url": "https://archive.org/download/freepd/horror/Horror%20Mytery.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "horror-suspense",
+  "title": "Horror Suspense",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 140,
+  "url": "https://archive.org/download/freepd/horror/Horror%20Suspense.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "horroriffic",
+  "title": "Horroriffic",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 168,
+  "url": "https://archive.org/download/freepd/horror/Horroriffic.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "i-guess-what-i-m-trying-to-say",
+  "title": "I Guess What I'm Trying to Say",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 153,
+  "url": "https://archive.org/download/freepd/misc/I%20Guess%20What%20I'm%20Trying%20to%20Say.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ice-and-snow",
+  "title": "Ice and Snow",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 142,
+  "url": "https://archive.org/download/freepd/scoring/Ice%20and%20Snow.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "icicles-melting",
+  "title": "Icicles Melting",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 178,
+  "url": "https://archive.org/download/freepd/misc/Icicles%20Melting.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "improv-for-evil",
+  "title": "Improv for Evil",
+  "artist": "Brian Boyko",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 58,
+  "url": "https://archive.org/download/freepd/misc/Improv%20for%20Evil.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "improved-ice-cream-truck",
+  "title": "Improved Ice Cream Truck",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 51,
+  "url": "https://archive.org/download/freepd/misc/Improved%20Ice%20Cream%20Truck.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "infinite-peace",
+  "title": "Infinite Peace",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 76,
+  "url": "https://archive.org/download/freepd/misc/Infinite%20Peace.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "infinite-wonder",
+  "title": "Infinite Wonder",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 190,
+  "url": "https://archive.org/download/freepd/misc/Infinite%20Wonder.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "inspiration",
+  "title": "Inspiration",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 138,
+  "url": "https://archive.org/download/freepd/upbeat/Inspiration.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "inventing-flight",
+  "title": "Inventing Flight",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 142,
+  "url": "https://archive.org/download/freepd/upbeat/Inventing%20Flight.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "isolation-waltz",
+  "title": "Isolation Waltz",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 205,
+  "url": "https://archive.org/download/freepd/romantic/Isolation%20Waltz.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "jack-the-lumberer",
+  "title": "Jack The Lumberer",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 170,
+  "url": "https://archive.org/download/freepd/misc/Jack%20The%20Lumberer.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "jethro-on-the-run",
+  "title": "Jethro on the Run",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 232,
+  "url": "https://archive.org/download/freepd/misc/Jethro%20on%20the%20Run.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "joey-s-song",
+  "title": "Joey's Song",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 207,
+  "url": "https://archive.org/download/freepd/comedy/Joey's%20Song.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "jokull",
+  "title": "Jokull",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 245,
+  "url": "https://archive.org/download/freepd/misc/Jokull.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "journey-of-hope",
+  "title": "Journey of Hope",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 349,
+  "url": "https://archive.org/download/freepd/misc/Journey%20of%20Hope.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "jungle-mission",
+  "title": "Jungle Mission",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 186,
+  "url": "https://archive.org/download/freepd/comedy/Jungle%20Mission.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "kalimba-relaxation-music",
+  "title": "Kalimba Relaxation Music",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 428,
+  "url": "https://archive.org/download/freepd/misc/Kalimba%20Relaxation%20Music.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "kings-trailer",
+  "title": "Kings Trailer",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 163,
+  "url": "https://archive.org/download/freepd/epic/Kings%20Trailer.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "krampus-s-workshop",
+  "title": "Krampus's Workshop",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 91,
+  "url": "https://archive.org/download/freepd/comedy/Krampus's%20Workshop.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "la-citadelle",
+  "title": "La Citadelle",
+  "artist": "Komiku",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 162,
+  "url": "https://archive.org/download/freepd/romantic/La%20Citadelle.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "land-of-pirates",
+  "title": "Land of Pirates",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 114,
+  "url": "https://archive.org/download/freepd/misc/Land%20of%20Pirates.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "landra-s-dream",
+  "title": "Landra's Dream",
+  "artist": "Jason Shaw",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 89,
+  "url": "https://archive.org/download/freepd/romantic/Landra's%20Dream.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "le-baguette",
+  "title": "Le Baguette",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 54,
+  "url": "https://archive.org/download/freepd/world/Le%20Baguette.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "limit-70",
+  "title": "Limit 70",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 302,
+  "url": "https://archive.org/download/freepd/upbeat/Limit%2070.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "llama-in-pajama",
+  "title": "Llama in Pajama",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 97,
+  "url": "https://archive.org/download/freepd/comedy/Llama%20in%20Pajama.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "lonely-mountain",
+  "title": "Lonely Mountain",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 190,
+  "url": "https://archive.org/download/freepd/epic/Lonely%20Mountain.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "lovely-piano-song",
+  "title": "Lovely Piano Song",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 96,
+  "url": "https://archive.org/download/freepd/romantic/Lovely%20Piano%20Song.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "lucky-break",
+  "title": "Lucky Break",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 286,
+  "url": "https://archive.org/download/freepd/romantic/Lucky%20Break.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "lukewarm-banjo",
+  "title": "Lukewarm Banjo",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 32,
+  "url": "https://archive.org/download/freepd/misc/Lukewarm%20Banjo.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "lurking-sloth",
+  "title": "Lurking Sloth",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 158,
+  "url": "https://archive.org/download/freepd/comedy/Lurking%20Sloth.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "madness-of-linda",
+  "title": "Madness of Linda",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 138,
+  "url": "https://archive.org/download/freepd/comedy/Madness%20of%20Linda.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "magic-in-the-garden",
+  "title": "Magic in the Garden",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 140,
+  "url": "https://archive.org/download/freepd/scoring/Magic%20in%20the%20Garden.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "magical-transition",
+  "title": "Magical Transition",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 31,
+  "url": "https://archive.org/download/freepd/misc/Magical%20Transition.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "mana-two-part-1",
+  "title": "Mana Two - Part 1",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 234,
+  "url": "https://archive.org/download/freepd/misc/Mana%20Two%20-%20Part%201.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "mana-two-part-2",
+  "title": "Mana Two - Part 2",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 362,
+  "url": "https://archive.org/download/freepd/misc/Mana%20Two%20-%20Part%202.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "mana-two-part-3",
+  "title": "Mana Two - Part 3",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 192,
+  "url": "https://archive.org/download/freepd/misc/Mana%20Two%20-%20Part%203.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "managing-mischief",
+  "title": "Managing Mischief",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 164,
+  "url": "https://archive.org/download/freepd/comedy/Managing%20Mischief.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "maple-leaf-rag",
+  "title": "Maple Leaf Rag",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 179,
+  "url": "https://archive.org/download/freepd/comedy/Maple%20Leaf%20Rag.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "marked",
+  "title": "Marked",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 153,
+  "url": "https://archive.org/download/freepd/world/Marked.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "martini-sunset",
+  "title": "Martini Sunset",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 174,
+  "url": "https://archive.org/download/freepd/misc/Martini%20Sunset.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "meditating-beat",
+  "title": "Meditating Beat",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 157,
+  "url": "https://archive.org/download/freepd/electronic/Meditating%20Beat.mp3",
+  "page": "https://web.archive.org/web/20190331201531/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "midnight-in-the-green-house",
+  "title": "Midnight in the Green House",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 212,
+  "url": "https://archive.org/download/freepd/world/Midnight%20in%20the%20Green%20House.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "mind-chaos",
+  "title": "Mind Chaos",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 184,
+  "url": "https://archive.org/download/freepd/horror/Mind%20Chaos.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "monsters-in-hotel",
+  "title": "Monsters in Hotel",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 126,
+  "url": "https://archive.org/download/freepd/comedy/Monsters%20in%20Hotel.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "mothership",
+  "title": "Mothership",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 126,
+  "url": "https://archive.org/download/freepd/epic/Mothership.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "motions",
+  "title": "Motions",
+  "artist": "Orchestralis",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 117,
+  "url": "https://archive.org/download/freepd/upbeat/Motions.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "murder-on-the-bayou",
+  "title": "Murder On The Bayou",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 128,
+  "url": "https://archive.org/download/freepd/misc/Murder%20On%20The%20Bayou.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "my-giant-bunny-friend",
+  "title": "My Giant Bunny Friend",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 165,
+  "url": "https://archive.org/download/freepd/comedy/My%20Giant%20Bunny%20Friend.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "neptunian-princess",
+  "title": "Neptunian Princess",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 125,
+  "url": "https://archive.org/download/freepd/misc/Neptunian%20Princess.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "new-hero-in-town",
+  "title": "New Hero in Town",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 57,
+  "url": "https://archive.org/download/freepd/epic/New%20Hero%20in%20Town.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "night-attack",
+  "title": "Night Attack",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 153,
+  "url": "https://archive.org/download/freepd/epic/Night%20Attack.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "night-in-the-castle",
+  "title": "Night in the Castle",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 189,
+  "url": "https://archive.org/download/freepd/comedy/Night%20in%20the%20Castle.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "night-in-venice",
+  "title": "Night in Venice",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 218,
+  "url": "https://archive.org/download/freepd/romantic/Night%20in%20Venice.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "night-vigil",
+  "title": "Night Vigil",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 288,
+  "url": "https://archive.org/download/freepd/epic/Night%20Vigil.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "nightmare",
+  "title": "Nightmare",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 55,
+  "url": "https://archive.org/download/freepd/horror/Nightmare.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "nomadic-sunset",
+  "title": "Nomadic Sunset",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 191,
+  "url": "https://archive.org/download/freepd/world/Nomadic%20Sunset.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "nomadic-sunset-mmxix",
+  "title": "Nomadic Sunset MMXIX",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 201,
+  "url": "https://archive.org/download/freepd/misc/Nomadic%20Sunset%20MMXIX.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "nordic-wist",
+  "title": "Nordic Wist",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 149,
+  "url": "https://archive.org/download/freepd/misc/Nordic%20Wist.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "northur",
+  "title": "Northur",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 224,
+  "url": "https://archive.org/download/freepd/world/Northur.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "nostalgic-piano",
+  "title": "Nostalgic Piano",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 196,
+  "url": "https://archive.org/download/freepd/romantic/Nostalgic%20Piano.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "novus-initium",
+  "title": "Novus Initium",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 163,
+  "url": "https://archive.org/download/freepd/scoring/Novus%20Initium.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "one-destination-two-journeys",
+  "title": "One Destination - Two Journeys",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 257,
+  "url": "https://archive.org/download/freepd/misc/One%20Destination%20-%20Two%20Journeys.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "one-step-closer",
+  "title": "One Step Closer",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 93,
+  "url": "https://archive.org/download/freepd/misc/One%20Step%20Closer.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "organ-filler",
+  "title": "Organ Filler",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 90,
+  "url": "https://archive.org/download/freepd/comedy/Organ%20Filler.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "overture",
+  "title": "Overture",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 99,
+  "url": "https://archive.org/download/freepd/epic/Overture.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "painful-disorientation",
+  "title": "Painful Disorientation",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 91,
+  "url": "https://archive.org/download/freepd/misc/Painful%20Disorientation.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "painting-room",
+  "title": "Painting Room",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 106,
+  "url": "https://archive.org/download/freepd/misc/Painting%20Room.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "pantscrapper",
+  "title": "Pantscrapper",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 129,
+  "url": "https://archive.org/download/freepd/horror/Pantscrapper.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "parhelion",
+  "title": "Parhelion",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 162,
+  "url": "https://archive.org/download/freepd/romantic/Parhelion.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "patience-party",
+  "title": "Patience Party",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 243,
+  "url": "https://archive.org/download/freepd/romantic/Patience%20Party.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "patron-saint-of-heists",
+  "title": "Patron Saint of Heists",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 187,
+  "url": "https://archive.org/download/freepd/scoring/Patron%20Saint%20of%20Heists.mp3",
+  "page": "https://web.archive.org/web/20210802191825/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "piano-magic-motive",
+  "title": "Piano Magic Motive",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 78,
+  "url": "https://archive.org/download/freepd/romantic/Piano%20Magic%20Motive.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "pickled-pink",
+  "title": "Pickled Pink",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 175,
+  "url": "https://archive.org/download/freepd/upbeat/Pickled%20Pink.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "pina-colada",
+  "title": "Pina Colada",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 164,
+  "url": "https://archive.org/download/freepd/romantic/Pina%20Colada.mp3",
+  "page": "https://web.archive.org/web/20210116141522/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "planeteer-reaction",
+  "title": "Planeteer Reaction",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "misc"
+  ],
+  "duration": 248,
+  "url": "https://archive.org/download/freepd/misc/Planeteer%20Reaction.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "pond",
+  "title": "Pond",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 152,
+  "url": "https://archive.org/download/freepd/romantic/Pond.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "putin-s-lullaby",
+  "title": "Putin's Lullaby",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 127,
+  "url": "https://archive.org/download/freepd/epic/Putin's%20Lullaby.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "quick-metal-riff-1",
+  "title": "Quick Metal Riff 1",
+  "artist": "Brett VanDonsel",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 7,
+  "url": "https://archive.org/download/freepd/misc/Quick%20Metal%20Riff%201.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "relaxing-ballad",
+  "title": "Relaxing Ballad",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 209,
+  "url": "https://archive.org/download/freepd/upbeat/Relaxing%20Ballad.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "release-the-hybrids",
+  "title": "Release the Hybrids",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 124,
+  "url": "https://archive.org/download/freepd/epic/Release%20the%20Hybrids.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "river-meditation",
+  "title": "River Meditation",
+  "artist": "Jason Shaw",
+  "library": "freepd",
+  "mood": "ambient-minimal",
+  "tags": [
+   "misc"
+  ],
+  "duration": 167,
+  "url": "https://archive.org/download/freepd/misc/River%20Meditation.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "romantic-inspiration",
+  "title": "Romantic Inspiration",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 150,
+  "url": "https://archive.org/download/freepd/romantic/Romantic%20Inspiration.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "royal-coupling",
+  "title": "Royal Coupling",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 134,
+  "url": "https://archive.org/download/freepd/misc/Royal%20Coupling.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "rulers-of-our-lands",
+  "title": "Rulers of Our Lands",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 139,
+  "url": "https://archive.org/download/freepd/epic/Rulers%20of%20Our%20Lands.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "rush",
+  "title": "Rush",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 134,
+  "url": "https://archive.org/download/freepd/comedy/Rush.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "sad-drunken-party",
+  "title": "Sad Drunken Party",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 283,
+  "url": "https://archive.org/download/freepd/comedy/Sad%20Drunken%20Party.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "satin-danger",
+  "title": "Satin Danger",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 164,
+  "url": "https://archive.org/download/freepd/horror/Satin%20Danger.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "sciencenet-theme",
+  "title": "Sciencenet Theme",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 44,
+  "url": "https://archive.org/download/freepd/misc/Sciencenet%20Theme.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "screen-saver",
+  "title": "Screen Saver",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 182,
+  "url": "https://archive.org/download/freepd/upbeat/Screen%20Saver.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "shenzhen-nightlife",
+  "title": "Shenzhen Nightlife",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 263,
+  "url": "https://archive.org/download/freepd/world/Shenzhen%20Nightlife.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "shining-stars",
+  "title": "Shining Stars",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 140,
+  "url": "https://archive.org/download/freepd/romantic/Shining%20Stars.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "silent-night-unholy-night",
+  "title": "Silent Night (Unholy Night)",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 165,
+  "url": "https://archive.org/download/freepd/misc/Silent%20Night%20(Unholy%20Night).mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "silly-boy",
+  "title": "Silly Boy",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 96,
+  "url": "https://archive.org/download/freepd/comedy/Silly%20Boy.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "silly-intro",
+  "title": "Silly Intro",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 25,
+  "url": "https://archive.org/download/freepd/comedy/Silly%20Intro.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "slice-of-life",
+  "title": "Slice of Life",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 141,
+  "url": "https://archive.org/download/freepd/scoring/Slice%20of%20Life.mp3",
+  "page": "https://web.archive.org/web/20210802191825/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "soundtrack-from-the-starcourt-mall",
+  "title": "Soundtrack From the Starcourt Mall",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "misc"
+  ],
+  "duration": 217,
+  "url": "https://archive.org/download/freepd/misc/Soundtrack%20From%20the%20Starcourt%20Mall.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "space-ambience",
+  "title": "Space Ambience",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "electronic-tech",
+  "tags": [
+   "electronic"
+  ],
+  "duration": 276,
+  "url": "https://archive.org/download/freepd/electronic/Space%20Ambience.mp3",
+  "page": "https://web.archive.org/web/20210116141503/https://freepd.com/electronic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "spec-ops",
+  "title": "Spec Ops",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 136,
+  "url": "https://archive.org/download/freepd/misc/Spec%20Ops.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "spring-chicken",
+  "title": "Spring Chicken",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 167,
+  "url": "https://archive.org/download/freepd/comedy/Spring%20Chicken.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "stereotype-news",
+  "title": "Stereotype News",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 66,
+  "url": "https://archive.org/download/freepd/upbeat/Stereotype%20News.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "still-pickin",
+  "title": "Still Pickin",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 298,
+  "url": "https://archive.org/download/freepd/upbeat/Still%20Pickin.mp3",
+  "page": "https://web.archive.org/web/20210924182906/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "strength-of-the-titans",
+  "title": "Strength of the Titans",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 62,
+  "url": "https://archive.org/download/freepd/epic/Strength%20of%20the%20Titans.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "stunted-adventure",
+  "title": "Stunted Adventure",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 70,
+  "url": "https://archive.org/download/freepd/scoring/Stunted%20Adventure.mp3",
+  "page": "https://web.archive.org/web/20210802191825/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "sun-up-gunned-down",
+  "title": "Sun Up Gunned Down",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 87,
+  "url": "https://archive.org/download/freepd/misc/Sun%20Up%20Gunned%20Down.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "sunday-dub",
+  "title": "Sunday Dub",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 209,
+  "url": "https://archive.org/download/freepd/misc/Sunday%20Dub.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "sunny-rasta",
+  "title": "Sunny Rasta",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 140,
+  "url": "https://archive.org/download/freepd/world/Sunny%20Rasta.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "take-the-ride",
+  "title": "Take the Ride",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 262,
+  "url": "https://archive.org/download/freepd/comedy/Take%20the%20Ride.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-abyss",
+  "title": "The Abyss",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 171,
+  "url": "https://archive.org/download/freepd/horror/The%20Abyss.mp3",
+  "page": "https://web.archive.org/web/20201113122001/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-britons",
+  "title": "The Britons",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 307,
+  "url": "https://archive.org/download/freepd/misc/The%20Britons.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-celebrated-minuet-for-piano",
+  "title": "The Celebrated Minuet for Piano",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "misc"
+  ],
+  "duration": 216,
+  "url": "https://archive.org/download/freepd/misc/The%20Celebrated%20Minuet%20for%20Piano.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-crown",
+  "title": "The Crown",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 233,
+  "url": "https://archive.org/download/freepd/misc/The%20Crown.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-desert",
+  "title": "The Desert",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 130,
+  "url": "https://archive.org/download/freepd/world/The%20Desert.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-drama",
+  "title": "The Drama",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 97,
+  "url": "https://archive.org/download/freepd/scoring/The%20Drama.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-enemy",
+  "title": "The Enemy",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 103,
+  "url": "https://archive.org/download/freepd/epic/The%20Enemy.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-entertainer",
+  "title": "The Entertainer",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 193,
+  "url": "https://archive.org/download/freepd/comedy/The%20Entertainer.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-ice-giants",
+  "title": "The Ice Giants",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 44,
+  "url": "https://archive.org/download/freepd/epic/The%20Ice%20Giants.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-lagoon",
+  "title": "The Lagoon",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 154,
+  "url": "https://archive.org/download/freepd/scoring/The%20Lagoon.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-land-of-the-dead",
+  "title": "The Land of the Dead",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "dramatic-suspense",
+  "tags": [
+   "horror",
+   "dark"
+  ],
+  "duration": 107,
+  "url": "https://archive.org/download/freepd/horror/The%20Land%20of%20the%20Dead.mp3",
+  "page": "https://web.archive.org/web/20190331204503/https://freepd.com/horror.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-range",
+  "title": "The Range",
+  "artist": "Rafael Krux",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 85,
+  "url": "https://archive.org/download/freepd/epic/The%20Range.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-story",
+  "title": "The Story",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 147,
+  "url": "https://archive.org/download/freepd/world/The%20Story.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "the-vikings",
+  "title": "The Vikings",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 160,
+  "url": "https://archive.org/download/freepd/misc/The%20Vikings.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "think-about-it",
+  "title": "Think About It",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 120,
+  "url": "https://archive.org/download/freepd/epic/Think%20About%20It.mp3",
+  "page": "https://web.archive.org/web/20210924180300/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "travelers-notebook",
+  "title": "Travelers Notebook",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "film score",
+   "underscore",
+   "cinematic"
+  ],
+  "duration": 123,
+  "url": "https://archive.org/download/freepd/scoring/Travelers%20Notebook.mp3",
+  "page": "https://web.archive.org/web/20190331191102/https://freepd.com/scoring.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "trip-up-north",
+  "title": "Trip Up North",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 168,
+  "url": "https://archive.org/download/freepd/misc/Trip%20Up%20North.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "uberpunch",
+  "title": "Uberpunch",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 94,
+  "url": "https://archive.org/download/freepd/misc/Uberpunch.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ukulele-song",
+  "title": "Ukulele Song",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "upbeat-pop",
+  "tags": [
+   "upbeat",
+   "positive"
+  ],
+  "duration": 139,
+  "url": "https://archive.org/download/freepd/upbeat/Ukulele%20Song.mp3",
+  "page": "https://web.archive.org/web/20190105022014/https://freepd.com/upbeat.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "ussr",
+  "title": "USSR",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 106,
+  "url": "https://archive.org/download/freepd/comedy/USSR.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "video-game-blockbuster",
+  "title": "Video Game Blockbuster",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "cinematic-epic",
+  "tags": [
+   "epic",
+   "dramatic"
+  ],
+  "duration": 143,
+  "url": "https://archive.org/download/freepd/epic/Video%20Game%20Blockbuster.mp3",
+  "page": "https://web.archive.org/web/20190208001228/https://freepd.com/epic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "village-tarantella",
+  "title": "Village Tarantella",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 53,
+  "url": "https://archive.org/download/freepd/world/Village%20Tarantella.mp3",
+  "page": "https://web.archive.org/web/20190331194852/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "vintage-party",
+  "title": "Vintage Party",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 75,
+  "url": "https://archive.org/download/freepd/comedy/Vintage%20Party.mp3",
+  "page": "https://web.archive.org/web/20190401000303/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "wakka-wakka",
+  "title": "Wakka Wakka",
+  "artist": "Bryan Teoh",
+  "library": "freepd",
+  "mood": "funky-groovy",
+  "tags": [
+   "comedy",
+   "quirky",
+   "playful"
+  ],
+  "duration": 122,
+  "url": "https://archive.org/download/freepd/comedy/Wakka%20Wakka.mp3",
+  "page": "https://web.archive.org/web/20210802185030/https://freepd.com/comedy.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "we-wish-you-a-merry-christmas",
+  "title": "We Wish You a Merry Christmas",
+  "artist": "FreePD",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 87,
+  "url": "https://archive.org/download/freepd/misc/We%20Wish%20You%20a%20Merry%20Christmas.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "wind-of-the-rainforest",
+  "title": "Wind of the Rainforest",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 3534,
+  "url": "https://archive.org/download/freepd/misc/Wind%20of%20the%20Rainforest.mp3",
+  "page": "https://web.archive.org/web/20210802184636/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "windy-old-weather",
+  "title": "Windy Old Weather",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": "warm-acoustic",
+  "tags": [
+   "world"
+  ],
+  "duration": 91,
+  "url": "https://archive.org/download/freepd/world/Windy%20Old%20Weather.mp3",
+  "page": "https://web.archive.org/web/20210615135218/https://freepd.com/world.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "winter",
+  "title": "Winter",
+  "artist": "Alexander Nakarada",
+  "library": "freepd",
+  "mood": "emotional-piano",
+  "tags": [
+   "romantic",
+   "sentimental"
+  ],
+  "duration": 313,
+  "url": "https://archive.org/download/freepd/romantic/Winter.mp3",
+  "page": "https://web.archive.org/web/20190331120443/https://freepd.com/romantic.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "wisdom-in-the-sun",
+  "title": "Wisdom in the Sun",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 155,
+  "url": "https://archive.org/download/freepd/misc/Wisdom%20in%20the%20Sun.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ },
+ {
+  "id": "witch-waltz",
+  "title": "Witch Waltz",
+  "artist": "Kevin MacLeod",
+  "library": "freepd",
+  "mood": null,
+  "tags": [
+   "misc"
+  ],
+  "duration": 186,
+  "url": "https://archive.org/download/freepd/misc/Witch%20Waltz.mp3",
+  "page": "https://web.archive.org/web/20190401044841/https://freepd.com/misc.php",
+  "license": "CC0 1.0"
+ }
+]

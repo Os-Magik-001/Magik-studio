@@ -2,6 +2,7 @@
 name: podcast-clip
 description: Cutting talking-head and podcast moments into a short clip
 formats: podcast_clip
+agents: editor, sound
 ---
 
 Choose the moment with highlight-selection, cut the speech with picking-takes, and frame the speakers with talking-head. This skill adds what's specific to podcasts.

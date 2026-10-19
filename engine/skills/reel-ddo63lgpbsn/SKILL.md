@@ -4,6 +4,7 @@ description: Wordless motion-design brand reels (~15s): dark 3D-style product or
 formats: social_short, ad
 style: dynamic
 when: ddo63lgpbsn
+agents: editor, sound
 ---
 
 # Kinetic Type Brand Sting (motion-design showreel)

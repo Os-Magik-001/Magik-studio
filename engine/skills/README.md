@@ -16,6 +16,7 @@ The technique, written the way you would brief a human editor.
 - **`description`** is one line saying what the skill covers. It's required.
 - **`formats`** says which videos the skill applies to: `all` (the default), or a comma-separated list of `social_short`, `ad` and `podcast_clip`.
 - **`enabled`** can be set to `false` to switch a skill off without deleting it.
+- **`agents`** says who reads the skill: `editor` (the default, the agent that plans the cut), `sound` (the sound designer, who scores the cut afterwards), or both (`editor, sound`). sound-design is the sound designer's own skill.
 
 Skills are read fresh for every job, so a new or edited skill applies to the next edit with no restart. The Mac background service runs from its own copy of the engine, so after changing skills here, run `engine/scripts/mac-service.sh update`. Alternatively, point `ENGINE_SKILLS_DIR` at a folder of your choice.
 
@@ -32,7 +33,7 @@ A skill with broken front matter is skipped, and the engine log says why. The lo
   - **Graphics:** comment bubbles, follow buttons, progress bars, counters, emojis, drawn circles.
   - **Overlays:** B-roll cutaways over the voice, floating clip or screenshot cards.
   - **Motion (3D):** freeze frames with character intros, cast lineups, kinetic 3D titles, 3D stat cards and 3D name plates (see motion-graphics).
-  - **Sound:** a music bed from the library that dips under speech, synthesized sound effects.
+  - **Sound:** the sound designer picks music from the studio's picks, FreePD, Mixkit, Incompetech and the studio's Google Drive libraries, lines a drop or the ending up with the cut, ducks it under speech (light, normal or deep), and adds built-in or recorded sound effects. It recommends the trending sound to add when posting, from the researcher's findings.
   - **Ending:** a branded end card.
   - **Not possible yet:** fully animated scenes such as 3D product renders or app mock-ups.
 - **Use concrete numbers.** "Hold the product 1.5s after it lands" works; "let it breathe" doesn't.

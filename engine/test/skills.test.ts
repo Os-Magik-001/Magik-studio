@@ -50,3 +50,13 @@ test("broken and disabled skills are skipped, not fatal", async () => {
   assert.deepEqual((await loadSkills("ad", dir, () => {}, "dynamic", "Cut it like @omgadrian")).map((s) => s.name), ["a-good", "e-opt-in"]);
   await rm(dir, { recursive: true, force: true });
 });
+
+test("a skill says which agents read it; the editor by default", async () => {
+  assert.deepEqual(parseSkill("---\ndescription: d\n---\nBody", "f").agents, ["editor"]);
+  assert.deepEqual(parseSkill("---\ndescription: d\nagents: Editor, sound\n---\nBody", "f").agents, ["editor", "sound"]);
+  const sound = await loadSkills("social_short", undefined, () => {}, "dynamic", "", "sound");
+  const editor = await loadSkills("social_short", undefined, () => {}, "dynamic", "");
+  assert.ok(sound.some((s) => s.name === "sound-design") && sound.some((s) => s.name === "graphics-and-sound"));
+  assert.ok(!sound.some((s) => s.name === "picking-takes"));
+  assert.ok(!editor.some((s) => s.name === "sound-design") && editor.some((s) => s.name === "graphics-and-sound"));
+});

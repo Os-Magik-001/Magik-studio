@@ -13,6 +13,7 @@ RUN pnpm install --prod --frozen-lockfile --ignore-workspace
 COPY src ./src
 COPY skills ./skills
 COPY music ./music
+COPY sfx ./sfx
 COPY assets ./assets
 COPY motion ./motion
 

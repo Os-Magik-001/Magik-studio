@@ -181,11 +181,18 @@ const Music = z.object({
     .array(z.object({ start: z.number(), end: z.number(), volume: z.enum(["low", "medium", "high"]) }))
     .default([])
     .describe("Where on the finished timeline the music plays, each with its own level (it fades in and out over 0.2 s at each edge). Empty = the whole video at `volume`. Example: under the cold open until the first line, then again under the end lineup."),
+  // Set by the sound designer after the cut; the editor leaves them out.
+  at: z.number().optional().describe("Leave out (the sound designer sets it): where on the timeline the track starts"),
+  duck: z.enum(["light", "normal", "deep"]).optional().describe("Leave out (the sound designer sets it): how far the music dips under speech"),
+  align: z.enum(["start", "hit", "end"]).optional().describe("Leave out (the sound designer sets it): how the track was lined up with the cut"),
 });
 
 const Sfx = z.object({
   kind: z.enum(SFX).describe("whoosh = transitions and fast moves; pop = text or graphics appearing; hit = a big reveal or punchline; riser = builds into a drop (put it 1.5 to 2 s before); click = UI and typing; ding = a positive result"),
   at: z.number().describe("Seconds on the finished timeline"),
+  // Set by the sound designer after the cut; the editor leaves them out.
+  id: z.string().optional().describe("Leave out (the sound designer sets it): a recorded effect from the libraries, played instead of the built-in kind"),
+  gain: z.enum(["soft", "normal", "loud"]).optional().describe("Leave out (the sound designer sets it)"),
 });
 
 export const EditPlan = z.object({
@@ -341,7 +348,7 @@ Your tools, beyond choosing shots:
 - Graphics: comment call-to-action bubbles, follow buttons, progress bars, counters, emojis, hand-drawn circles.
 - Overlays: B-roll that covers the picture while the voice continues (cutaway), and floating cards of other clips or stills.
 - Motion: 3D motion graphics templates (freeze-frame character intros over a held frame, 3D cast cards, kinetic 3D titles, 3D stat cards, 3D name plates). They make the edit feel dynamic and premium.
-- Sound: a music bed from the library that dips under speech, either under the whole video or only in sections you choose (for example under the cold open, out on the first line, back for the ending), and sound effects on key moments.
+- Sound: a music bed from the library that dips under speech, either under the whole video or only in sections you choose (for example under the cold open, out on the first line, back for the ending), and sound effects on key moments. A sound designer finishes the music and effects on your locked cut, starting from your choices.
 A hard cut with no moves is the default; every move, graphic and sound should have a reason you could tell the editor.
 
 Transcripts mark fillers like [filler "euh" 12.4–12.6], stutters like [repeat "en" 3.1–3.2] and pauses like [pause 0.8s] with their times: cut around them by splitting shots. For every shot with speech, copy the exact words you keep into "say": the engine finds them in the transcript and sets the in and out points from their measured timing, so your start and end only need to be close. Choose words, not seconds. The editing skills below are the studio's house techniques: apply them unless the script, the brand kit or the editor's notes say otherwise.
@@ -553,29 +560,31 @@ const planSchema = (() => {
 
 // The SDK retries a request that fails to start, but not a stream that drops halfway
 // (a reset connection after minutes of thinking), so those are retried here.
-async function streamPlan(client: Anthropic, system: string, messages: Anthropic.Beta.BetaMessageParam[]) {
+export async function streamMessage(client: Anthropic, params: Parameters<Anthropic["beta"]["messages"]["stream"]>[0]) {
   for (let attempt = 1; ; attempt++) {
     try {
-      return await client.beta.messages
-        .stream({
-          model: config.model,
-          max_tokens: 64000,
-          betas: ["server-side-fallback-2026-07-01"],
-          fallbacks: "default",
-          thinking: { type: "adaptive" },
-          output_config: { effort: "high" },
-          system,
-          tools: [{ name: SUBMIT, description: "Submit the finished edit plan. Call it exactly once, with the complete plan.", input_schema: planSchema, eager_input_streaming: true }],
-          tool_choice: { type: "auto" },
-          messages,
-        })
-        .finalMessage();
+      return await client.beta.messages.stream(params).finalMessage();
     } catch (err) {
       const dropped = err instanceof Anthropic.APIConnectionError || (err instanceof Anthropic.AnthropicError && !(err instanceof Anthropic.APIError) && /terminated|ECONNRESET|socket/i.test(`${err.message} ${(err as { cause?: unknown }).cause ?? ""}`));
       if (!dropped || attempt >= 3) throw err;
       console.warn(`Claude's stream dropped (${err.message}); retrying (${attempt + 1}/3)`);
     }
   }
+}
+
+function streamPlan(client: Anthropic, system: string, messages: Anthropic.Beta.BetaMessageParam[]) {
+  return streamMessage(client, {
+    model: config.model,
+    max_tokens: 64000,
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    thinking: { type: "adaptive" },
+    output_config: { effort: "high" },
+    system,
+    tools: [{ name: SUBMIT, description: "Submit the finished edit plan. Call it exactly once, with the complete plan.", input_schema: planSchema, eager_input_streaming: true }],
+    tool_choice: { type: "auto" },
+    messages,
+  });
 }
 
 async function requestPlan(client: Anthropic, system: string, content: Anthropic.Beta.BetaContentBlockParam[]) {
@@ -802,10 +811,12 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
     const from = prev ? Math.max(start, prev.end) : start;
     if (end - from >= 0.5) sections.push({ start: from, end, volume: sec.volume });
   }
+  // Where the track enters and how it ducks are the sound designer's, set after the cut.
+  const { at: _at, duck: _duck, align: _align, ...editorMusic } = plan.music;
   const music = {
+    ...editorMusic,
     track: plan.music.track && tracks.includes(plan.music.track) ? plan.music.track : null,
     start: round(Math.max(0, plan.music.start || 0)),
-    volume: plan.music.volume,
     sections,
   };
   if (plan.music.track && !music.track) problems.push(`Dropped unknown music track ${plan.music.track}.`);

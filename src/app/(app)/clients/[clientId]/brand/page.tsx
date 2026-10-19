@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
-import { asCharte, asFindings, asPillars, asReels } from "@/lib/agent-types";
+import { asCharte, asFindings, asPillars, asReels, asTrendAudio } from "@/lib/agent-types";
 import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { LocalDate } from "@/components/local-date";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -34,7 +34,7 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
     supabase.from("brand_strategies").select("*").eq("client_id", clientId).maybeSingle(),
     supabase
       .from("trend_reports")
-      .select("id, status, hashtags, accounts, progress, error, created_at, finished_at, findings, reels")
+      .select("id, status, hashtags, accounts, progress, error, created_at, finished_at, findings, reels, audio")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -54,7 +54,7 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
           </>
         }
         title="Brand & strategy"
-        description="The questionnaire feeds the brand strategist (agent 1); its niche feeds the trend researcher (agent 2); both feed the scriptwriter (agent 3) on every video."
+        description="The questionnaire feeds the brand strategist (agent 1); its niche feeds the trend researcher (agent 2); both feed the scriptwriter (agent 3) on every video, and the trending sounds feed the sound designer (agent 4)."
         actions={<LinkButton href={`/agents?client=${client.id}`}>Open mission control</LinkButton>}
       />
       {open && <AutoRefresh seconds={8} />}
@@ -136,7 +136,7 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
                 ))}
               </ul>
             )}
-            {findings && latest && <FindingsView findings={findings} reels={asReels(latest.reels)} />}
+            {findings && latest && <FindingsView findings={findings} reels={asReels(latest.reels)} audio={asTrendAudio(latest.audio)} />}
           </div>
         </Card>
       </div>

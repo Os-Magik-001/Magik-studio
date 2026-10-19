@@ -1,4 +1,4 @@
-// Shapes the three agents store, shared by the server code and the pages that show them.
+// Shapes the agents store, shared by the server code and the pages that show them.
 
 export type Charte = {
   palette: { name: string; hex: string; role: string }[];
@@ -24,6 +24,8 @@ export type TrendReel = {
   duration: number | null;
   caption: string;
   cutsPerSecond: number | null;
+  // "Song · Artist", when Instagram reported it.
+  audio?: string | null;
   why: string;
   hook: string;
   techniques: string[];
@@ -58,8 +60,38 @@ export type ShootPlan = {
   props_wardrobe: string[];
 };
 
+// A sound the top reels in the niche use (the researcher counts them; engine/src/research.ts).
+export type TrendAudio = {
+  title: string;
+  artist: string;
+  original: boolean;
+  audioId: string | null;
+  link: string | null;
+  reels: number;
+  creators: number;
+  plays: number;
+  example: string | null;
+  bpm: number | null;
+};
+
+// What the sound designer chose for a version (engine/src/sound.ts).
+export type SoundReport = {
+  concept: string;
+  notes: string;
+  track: { id: string; title: string; artist: string; library: string; license: string; credit: string | null; page: string; bpm: number | null } | null;
+  start: number;
+  at: number;
+  align: "start" | "hit" | "end";
+  sfx: { id: string; title: string; library: string; at: number }[];
+  trend: { title: string; artist: string; link: string | null; use: string } | null;
+  credits: string[];
+  limits: string[];
+};
+
 export const asCharte = (v: unknown) => (v && typeof v === "object" && "palette" in v ? (v as Charte) : null);
 export const asPillars = (v: unknown) => (Array.isArray(v) ? (v as Pillar[]) : []);
 export const asFindings = (v: unknown) => (v && typeof v === "object" && "hooks" in v ? (v as TrendFindings) : null);
 export const asReels = (v: unknown) => (Array.isArray(v) ? (v as TrendReel[]) : []);
+export const asTrendAudio = (v: unknown) => (Array.isArray(v) ? (v as TrendAudio[]) : []);
+export const asSoundReport = (v: unknown) => (v && typeof v === "object" && "concept" in v ? (v as SoundReport) : null);
 export const asShootPlan = (v: unknown) => (v && typeof v === "object" && "scenes" in v ? (v as ShootPlan) : null);

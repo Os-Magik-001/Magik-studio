@@ -11,6 +11,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/pipeline", label: "Pipeline", icon: "pipeline" },
     { href: "/clients", label: "Clients", icon: "clients" },
     { href: "/agents", label: "Agents", icon: "agents" },
+    { href: "/sounds", label: "Sound", icon: "sound" },
     { href: "/shoots", label: "Shoots", icon: "shoots" },
     { href: "/team", label: "Team", icon: "team" },
   ],
@@ -18,6 +19,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/pipeline", label: "Pipeline", icon: "pipeline" },
     { href: "/clients", label: "Clients", icon: "clients" },
     { href: "/agents", label: "Agents", icon: "agents" },
+    { href: "/sounds", label: "Sound", icon: "sound" },
   ],
   videographer: [{ href: "/shoots", label: "Shoots", icon: "shoots" }],
   client: [

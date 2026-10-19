@@ -1,17 +1,20 @@
 // Agent 2, the trend researcher: finds viral reels in a client's niche through Apify,
 // downloads the top ones, watches them (contact sheets, transcript, cut rate) and has
-// Claude write the key points the scriptwriter and the editor work from.
+// Claude write the key points the scriptwriter and the editor work from. It also counts the
+// sounds the reels use, for the sound designer.
 
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
+import { analyzeTrack } from "./analysis.ts";
 import { config, db } from "./config.ts";
 import { run } from "./exec.ts";
 import { log } from "./job.ts";
 import { contactSheets, probe } from "./media.ts";
 import { clientMemory } from "./memory.ts";
+import type { TrendAudio } from "./sound.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
 type Report = { id: string; client_id: string; hashtags: string[]; accounts: string[]; attempts: number };
@@ -88,6 +91,51 @@ function score(i: Item) {
   return p * (1 + Math.min(0.5, ((i.likesCount ?? 0) + 3 * (i.commentsCount ?? 0)) / Math.max(1, p)));
 }
 
+const audioKey = (m: NonNullable<Item["musicInfo"]>) => m.audio_id || `${(m.song_name ?? "").toLowerCase()}|${(m.artist_name ?? "").toLowerCase()}`;
+
+// The sounds the found reels use, counted across everything the search returned: licensed
+// songs, and creators' original sounds when more than one account reuses them.
+export function trendingAudio(items: Item[], limit = 12): TrendAudio[] {
+  const by = new Map<string, TrendAudio & { owners: Set<string>; best: number }>();
+  for (const i of items) {
+    const m = i.musicInfo;
+    if (!m || (!m.song_name && !m.audio_id)) continue;
+    const key = audioKey(m);
+    let a = by.get(key);
+    if (!a) {
+      a = {
+        title: m.song_name || "Original audio",
+        artist: m.artist_name || i.ownerUsername || "",
+        original: m.uses_original_audio === true,
+        audioId: m.audio_id ?? null,
+        link: m.audio_id ? `https://www.instagram.com/reels/audio/${m.audio_id}/` : null,
+        reels: 0,
+        creators: 0,
+        plays: 0,
+        example: null,
+        bpm: null,
+        owners: new Set(),
+        best: -1,
+      };
+      by.set(key, a);
+    }
+    a.reels++;
+    if (i.ownerUsername) a.owners.add(i.ownerUsername);
+    const p = plays(i) ?? 0;
+    a.plays += p;
+    if (p > a.best) {
+      a.best = p;
+      a.example = i.url ?? null;
+    }
+  }
+  return [...by.values()]
+    .map(({ owners, best: _, ...a }) => ({ ...a, creators: owners.size }))
+    // A creator's original audio used once is their own voice-over, not a trend.
+    .filter((a) => !a.original || a.creators > 1)
+    .sort((a, b) => b.reels - a.reels || b.plays - a.plays)
+    .slice(0, limit);
+}
+
 export function pickReels(items: Item[], count = WATCH) {
   const seen = new Set<string>();
   const perOwner = new Map<string, number>();
@@ -118,7 +166,7 @@ const Findings = z.object({
   structures: z.array(z.object({ name: z.string(), beats: z.array(z.string()), length: z.string() })).describe("2 to 5 video structures that work."),
   editing: z.array(z.string()).describe("Editing techniques with numbers: cut rate, shot length, punch-ins, transitions, text style, motion graphics, color."),
   on_screen_text: z.array(z.string()).describe("How text and captions are used."),
-  audio: z.array(z.string()).describe("Music, voice, sound effects, trending audio."),
+  audio: z.array(z.string()).describe("Music, voice, sound effects and trending audio: which sounds the top reels use and how (a voice-over on the chorus, cuts on the beat, the drop on the reveal)."),
   scripting: z.array(z.string()).describe("Key points for writing scripts for this client from these videos."),
   ideas: z.array(z.object({ title: z.string(), hook: z.string(), outline: z.string() })).describe("5 video ideas adapted to this client."),
   avoid: z.array(z.string()).describe("What doesn't work or would not fit this client."),
@@ -148,6 +196,8 @@ export type Watched = {
   cuts: number | null;
   // Measured pacing: shot lengths between detected cuts, speaking rate, and pauses.
   stats: { shots: number; medianShot: number | null; wordsPerMinute: number | null; speechShare: number | null; longestPause: number | null };
+  // The tempo of its song, when it plays a licensed song.
+  bpm: number | null;
 };
 
 // Downloads and measures each reel: a contact sheet, the transcript, cuts and pacing.
@@ -169,6 +219,8 @@ export async function watchReels(items: Item[], workDir: string, onProgress: (st
       const shots = bounds ? bounds.slice(1).map((t, i) => t - bounds[i]).filter((d) => d > 0.05).sort((a, b) => a - b) : [];
       const spoken = words.reduce((a, w) => a + Math.max(0, w.end - w.start), 0);
       const pauses = words.slice(1).map((w, i) => w.start - words[i].end);
+      const song = p.hasAudio && item.musicInfo && item.musicInfo.uses_original_audio === false;
+      const bpm = song ? await analyzeTrack(file).then((a) => a.bpm, () => null) : null;
       watched.push({
         item,
         duration: p.duration,
@@ -182,6 +234,7 @@ export async function watchReels(items: Item[], workDir: string, onProgress: (st
           speechShare: words.length ? Math.round((spoken / p.duration) * 100) / 100 : null,
           longestPause: pauses.length ? Math.round(Math.max(...pauses) * 10) / 10 : null,
         },
+        bpm,
       });
     } catch (e) {
       log(null, `research: skipped a reel (${e instanceof Error ? e.message : e})`);
@@ -208,6 +261,10 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
 
   const watched = await watchReels(picks, workDir, onProgress);
   if (!watched.length) throw new Error("None of the reels could be downloaded.");
+  const audio = trendingAudio(found).map((a) => ({
+    ...a,
+    bpm: watched.find((w) => w.bpm && w.item.musicInfo && audioKey(w.item.musicInfo) === (a.audioId || `${a.title.toLowerCase()}|${a.artist.toLowerCase()}`))?.bpm ?? null,
+  }));
 
   await onProgress("Claude is studying the reels");
   const content: Anthropic.Beta.BetaContentBlockParam[] = [
@@ -218,6 +275,8 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
         context.niche && `Niche: ${context.niche}\nBusiness: ${context.business ?? ""}\nAudience: ${context.audience ?? ""}\nNeeds: ${(context.needs ?? []).join("; ")}`,
         context.earlier && `Videos the studio already made for this client (your ideas must be new, not repeats of these):\n${context.earlier}`,
         `Searched: ${hashtags.map((h) => `#${h}`).join(" ")} ${accounts.map((a) => `@${a}`).join(" ")}`,
+        audio.length &&
+          `The sounds the ${found.length} reels found use most:\n${audio.map((a) => `- "${a.title}" by ${a.artist} (${a.original ? "original audio" : "licensed song"}): ${a.reels} reels by ${a.creators} accounts`).join("\n")}`,
         `The ${watched.length} top reels, by reach:`,
       ]
         .filter(Boolean)
@@ -228,7 +287,7 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
     const i = w.item;
     content.push({
       type: "text",
-      text: `Reel ${k + 1}: @${i.ownerUsername} · ${plays(i) ?? "?"} plays · ${i.likesCount ?? "?"} likes · ${i.commentsCount ?? "?"} comments · ${w.duration.toFixed(1)}s · ${w.cuts ?? "?"} cuts per second\nCaption: ${(i.caption ?? "").slice(0, 400)}\nTranscript: ${w.transcript.slice(0, 1500) || "(no speech)"}`,
+      text: `Reel ${k + 1}: @${i.ownerUsername} · ${plays(i) ?? "?"} plays · ${i.likesCount ?? "?"} likes · ${i.commentsCount ?? "?"} comments · ${w.duration.toFixed(1)}s · ${w.cuts ?? "?"} cuts per second\nAudio: ${i.musicInfo?.song_name ? `"${i.musicInfo.song_name}" by ${i.musicInfo.artist_name ?? "?"} (${i.musicInfo.uses_original_audio ? "original audio" : "licensed song"})${w.bpm ? `, about ${Math.round(w.bpm)} BPM` : ""}` : "not reported"}\nCaption: ${(i.caption ?? "").slice(0, 400)}\nTranscript: ${w.transcript.slice(0, 1500) || "(no speech)"}`,
     });
     if (w.sheet) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: (await readFile(w.sheet)).toString("base64") } });
   }
@@ -259,13 +318,14 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
       duration: Math.round(w.duration * 10) / 10,
       caption: (w.item.caption ?? "").slice(0, 300),
       cutsPerSecond: w.cuts,
+      audio: w.item.musicInfo?.song_name ? `${w.item.musicInfo.song_name} · ${w.item.musicInfo.artist_name ?? ""}`.trim() : null,
       why: note?.why ?? "",
       hook: note?.hook ?? "",
       techniques: note?.techniques ?? [],
     };
   });
   const { reels: _, ...rest } = findings;
-  return { reels, findings: rest };
+  return { reels, findings: rest, audio };
 }
 
 export async function runResearch(report: Report) {
@@ -274,10 +334,10 @@ export async function runResearch(report: Report) {
     const { data: strategy } = await db.from("brand_strategies").select("niche, business, audience, needs").eq("client_id", report.client_id).maybeSingle();
     const { data: client } = await db.from("clients").select("name").eq("id", report.client_id).single();
     const earlier = await clientMemory(report.client_id, null, "brief").catch(() => null);
-    const { reels, findings } = await study(report.hashtags, report.accounts, { client: client?.name ?? "", ...strategy, earlier }, dir, (progress) =>
+    const { reels, findings, audio } = await study(report.hashtags, report.accounts, { client: client?.name ?? "", ...strategy, earlier }, dir, (progress) =>
       db.from("trend_reports").update({ progress }).eq("id", report.id),
     );
-    await db.from("trend_reports").update({ status: "done", reels, findings, progress: null, finished_at: new Date().toISOString() }).eq("id", report.id);
+    await db.from("trend_reports").update({ status: "done", reels, findings, audio, progress: null, finished_at: new Date().toISOString() }).eq("id", report.id);
     log(report.id, `research done: ${reels.length} reels studied`);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

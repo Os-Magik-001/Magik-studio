@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Bell, BrainCircuit, CalendarDays, Clapperboard, FolderOpen, KanbanSquare, Palette, Users } from "lucide-react";
+import { Bell, BrainCircuit, CalendarDays, Clapperboard, FolderOpen, KanbanSquare, Music, Palette, Users } from "lucide-react";
 import { cx } from "@/components/ui";
 
 const ICONS = {
@@ -15,6 +15,7 @@ const ICONS = {
   bell: Bell,
   brand: Palette,
   agents: BrainCircuit,
+  sound: Music,
 };
 
 export type NavItem = {

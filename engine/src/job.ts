@@ -6,11 +6,14 @@ import path from "node:path";
 import { config, db } from "./config.ts";
 import { contactSheets, download, probe } from "./media.ts";
 import { driveWorkingCopy, pruneCache } from "./drive.ts";
-import { clientMemory } from "./memory.ts";
-import { describeLibrary, loadLibrary, trackFile } from "./music.ts";
+import { driveLibraries } from "./libraries.ts";
+import { clientMemory, musicMemory } from "./memory.ts";
+import { describeLibrary, loadCatalog, loadLibrary, pruneMusic, trackFile, type Track } from "./music.ts";
 import { parseStoredPlan, planEdit, timelineOf, timelineWords, validatePlan, type BrandKit, type Clip, type EditPlan, type PlanInput } from "./plan.ts";
 import { render, type Brand } from "./render.ts";
 import { reviewRender } from "./review.ts";
+import { loadSfxCatalog, type SfxEntry } from "./sfx.ts";
+import { scoreSound, type SoundReport, type SoundRequest, type TrendAudio } from "./sound.ts";
 import { loadSkills } from "./skills.ts";
 import { anchorMotion, tighten } from "./tighten.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
@@ -150,16 +153,34 @@ export async function watchClips(clips: Clip[], dir: string, hint: string, step:
   }
 }
 
-export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & { formatKey: string; brand: Brand; selfReview?: boolean; clean?: boolean; bare?: boolean };
+export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & {
+  formatKey: string;
+  brand: Brand;
+  selfReview?: boolean;
+  clean?: boolean;
+  bare?: boolean;
+  // For the sound designer: the researcher's trending sounds, the music of the client's other
+  // videos, and on a revision the sound of the version being revised.
+  trend?: SoundRequest["trend"];
+  soundMemory?: string | null;
+  previousSound?: SoundReport | null;
+};
+
+// Every library the sound designer searches: the built-in ones and the studio's Drive folders.
+async function soundCatalogs(note: Note): Promise<{ music: Track[]; sfx: SfxEntry[] }> {
+  const drive = await driveLibraries().catch((err) => (note(`Drive sound libraries unavailable: ${err.message}`), { music: [], sfx: [] }));
+  const [music, sfx] = await Promise.all([loadCatalog(drive.music), loadSfxCatalog(drive.sfx)]);
+  return { music, sfx };
+}
 
 // The cut with no graphics at all, for the design pass to design over: the plan's
 // captions, titles and motion stay in the plan as the editor's suggestions.
 export const bareOf = (plan: EditPlan): EditPlan => ({ ...plan, captions: { ...plan.captions, mode: "off" }, on_screen_text: [], graphics: [], motion: [], end_card: { ...plan.end_card, include: false } });
 
-// Claude plans the cut, the plan is checked against the real footage, and the edit
-// renders to `output`.
-export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit) {
-  const { formatKey, brand, clean, bare, ...rest } = req;
+// Claude plans the cut, the plan is checked against the real footage, the sound designer
+// scores it, and the edit renders to `output`. `sounder: null` keeps the editor's music.
+export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit, sounder: typeof scoreSound | null = scoreSound) {
+  const { formatKey, brand, clean, bare, trend, soundMemory, previousSound, ...rest } = req;
   const shown = (plan: EditPlan) => (bare ? bareOf(plan) : plan);
   const skills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic", [rest.brief, rest.instructions, rest.title].filter(Boolean).join(" "));
   // The clean style is stated up front, so the plan is built for it rather than stripped after.
@@ -167,11 +188,15 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
   note(`skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
   await step("Claude is planning the cut");
   const library = await loadLibrary().catch(() => []);
+  // The editor picks from the studio's picks; a revision may keep a track the sound designer
+  // chose from any library.
+  const catalogs = await soundCatalogs(note);
+  const known = catalogs.music.map((t) => t.id);
   const { plan: raw, usage } = await planner({ ...input, skills, clips, music: library.length ? describeLibrary(library) : undefined });
   note(usage);
   let checked;
   try {
-    checked = validatePlan(raw, clips, library.map((t) => t.id), { clean });
+    checked = validatePlan(raw, clips, known, { clean });
   } catch (err) {
     // Keep what Claude sent, so a rejected plan can be looked at afterwards.
     const keep = path.join(config.workDir, "rejected", `${path.basename(dir)}.json`);
@@ -182,15 +207,61 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
   }
   const first = finish(checked, clips, note);
 
-  const track = (plan: EditPlan) => library.find((t) => t.id === plan.music.track);
+  const track = (plan: EditPlan) => catalogs.music.find((t) => t.id === plan.music.track);
   // A music download that fails shouldn't sink the edit: it goes out without music.
   const music = async (plan: EditPlan) => {
     const t = track(plan);
     return t ? await trackFile(t).catch((err) => (note(`music unavailable: ${err.message}`), null)) : null;
   };
+  const sound = { sfxCatalog: catalogs.sfx, warn: note };
+
+  // The sound designer scores the locked cut. If it can't, the editor's music stays.
+  const score = async (cut: ReturnType<typeof finish>): Promise<ReturnType<typeof finish> & { sound: SoundReport | null }> => {
+    if (!sounder) return { ...cut, sound: null };
+    try {
+      await step("The sound designer is scoring the cut");
+      const soundSkills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic", [rest.brief, rest.instructions, rest.title].filter(Boolean).join(" "), "sound");
+      const scored = await sounder(
+        {
+          clientName: rest.clientName,
+          title: rest.title,
+          format: rest.format,
+          aspect: rest.aspect,
+          brief: rest.brief,
+          instructions: rest.instructions,
+          source: rest.source,
+          clean: !!clean,
+          musicMood: rest.brandKit?.musicMood ?? null,
+          styleRules: rest.brandKit?.styleRules ?? null,
+          trend: trend ?? null,
+          memory: soundMemory ?? null,
+          previous: previousSound ?? null,
+          skills: soundSkills,
+          catalog: catalogs.music,
+          sfx: catalogs.sfx,
+        },
+        cut.plan,
+        timelineWords(cut.plan, clips),
+      );
+      note(`${scored.usage}; sound skills: ${soundSkills.map((s) => s.name).join(", ") || "none"}`);
+      scored.problems.forEach((p) => note(`sound: ${p}`));
+      const r = scored.report;
+      note(`sound: ${r.track ? `"${r.track.title}" (${r.track.library}) ${r.align}-aligned` : "no music"}, ${r.sfx.length} effects${r.trend ? `, post with "${r.trend.title}"` : ""}`);
+      return { ...cut, plan: scored.plan, sound: r };
+    } catch (err) {
+      note(`sound designer skipped: ${err instanceof Error ? err.message : err}`);
+      return { ...cut, sound: null };
+    }
+  };
+
+  if (req.selfReview === false) {
+    const scored = await score(first);
+    await step(`Rendering ${scored.length.toFixed(1)}s`);
+    await render({ plan: shown(scored.plan), clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(scored.plan, clips), musicFile: await music(scored.plan), ...sound });
+    return scored;
+  }
   await step(`Rendering ${first.length.toFixed(1)}s`);
-  await render({ plan: shown(first.plan), clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(first.plan, clips), musicFile: await music(first.plan) });
-  if (req.selfReview === false) return first;
+  await render({ plan: shown(first.plan), clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(first.plan, clips), musicFile: await music(first.plan), ...sound });
 
   // Self-review: watch the render back, then revise it like a senior editor would.
   // Anything going wrong here leaves the first cut in place rather than failing the edit.
@@ -211,15 +282,17 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
       renderSheets: review.sheets,
     });
     note(`${usage2} (self-review)`);
-    revised = finish(validatePlan(raw2, clips, library.map((t) => t.id), { clean }), clips, note);
+    revised = finish(validatePlan(raw2, clips, known, { clean }), clips, note);
   } catch (err) {
     // The first cut stands if the review can't be planned.
     note(`self-review skipped: ${err instanceof Error ? err.message : err}`);
-    return first;
   }
-  await step(`Rendering the reviewed cut, ${revised.length.toFixed(1)}s`);
-  await render({ plan: shown(revised.plan), clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output, words: timelineWords(revised.plan, clips), musicFile: await music(revised.plan) });
-  return revised;
+  const final = await score(revised ?? first);
+  // Without a review or a new sound, the first render is already the final one.
+  if (!revised && !final.sound) return final;
+  await step(`Rendering the ${revised ? "reviewed" : "scored"} cut, ${final.length.toFixed(1)}s`);
+  await render({ plan: shown(final.plan), clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output, words: timelineWords(final.plan, clips), musicFile: await music(final.plan), ...sound });
+  return final;
 }
 
 const CLEAN = `EDITING STYLE: CLEAN (like Cluely's skits). Cuts, framing and subtitles only. Do not use motion templates, freeze frames (hold), titles, labels, stickers, graphics, cards, sound effects, transitions other than cut, pushes or highlight words: they will be removed. Music only as a section under the series intro clip, never under dialogue. All the quality comes from choosing the best takes and cutting them with perfect comic timing.`;
@@ -245,8 +318,20 @@ function finish(checked: ReturnType<typeof validatePlan>, clips: Clip[], note: N
 
 // ---------------------------------------------------------------- one job
 
-// `planner` is injectable so tests can run the whole pipeline without calling Claude.
-export async function processJob(job: Job, planner: typeof planEdit = planEdit) {
+// The sound in one line for the version notes (the studio sees them, clients don't).
+export function soundLine(s: SoundReport) {
+  return [
+    s.track ? `Music: "${s.track.title}" by ${s.track.artist} (${s.track.library})` : "No music",
+    s.trend && `post with the trending sound "${s.trend.title}" by ${s.trend.artist}: ${s.trend.use}`,
+    s.credits.length && `credit in the caption: ${s.credits.join(" ")}`,
+  ]
+    .filter(Boolean)
+    .join("; ");
+}
+
+// `planner` and `sounder` are injectable so tests can run the whole pipeline without
+// calling Claude (`sounder: null` skips the sound designer).
+export async function processJob(job: Job, planner: typeof planEdit = planEdit, sounder: typeof scoreSound | null = scoreSound) {
   const dir = path.join(config.workDir, job.id);
   await mkdir(dir, { recursive: true });
   const cachedFiles = new Set<string>();
@@ -256,14 +341,17 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     await step("Gathering the script, brand kit and footage");
     const { data: video } = await db.from("videos").select("*").eq("id", job.video_id).single();
     if (!video) throw new Error("The video no longer exists.");
-    const [{ data: client }, { data: kit }, { data: script }, { data: footage }, memory] = await Promise.all([
+    const [{ data: client }, { data: kit }, { data: script }, { data: footage }, memory, soundMemory, { data: research }] = await Promise.all([
       db.from("clients").select("name").eq("id", video.client_id).single(),
       db.from("brand_kits").select("*").eq("client_id", video.client_id).maybeSingle(),
       db.from("scripts").select("body, shot_list, status").eq("video_id", video.id).maybeSingle(),
       db.from("footage").select("storage_path, file_name, source, drive_file_id").eq("video_id", video.id).order("created_at"),
-      // The edit goes ahead without it if it can't be read.
+      // The edit goes ahead without the memories if they can't be read.
       clientMemory(video.client_id, video.id, "edit").catch(() => null),
+      musicMemory(video.client_id, video.id).catch(() => null),
+      db.from("trend_reports").select("audio, findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
+    const trend = research ? { audio: Array.isArray(research.audio) ? (research.audio as unknown as TrendAudio[]) : [], notes: (research.findings as { audio?: string[] } | null)?.audio ?? [] } : null;
     // For now Claude can edit before the script is approved, or with no script (brief and footage only).
     if (!footage?.length) throw new Error("There's no footage on this video.");
 
@@ -278,8 +366,10 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
 
     // Revisions start from the previous cut and its open comments.
     let previous = null;
+    let previousSound: SoundReport | null = null;
     if (job.base_version_id) {
-      const { data: base } = await db.from("versions").select("number, edit_plan").eq("id", job.base_version_id).single();
+      const { data: base } = await db.from("versions").select("number, edit_plan, sound").eq("id", job.base_version_id).single();
+      previousSound = (base?.sound as SoundReport | null) ?? null;
       const plan = parseStoredPlan(base?.edit_plan);
       if (base && plan) {
         const { data: comments } = await db
@@ -310,7 +400,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       : [];
 
     const out = path.join(dir, "cut.mp4");
-    const { plan } = await planAndRender(
+    const { plan, sound } = await planAndRender(
       {
         formatKey: video.format,
         clean: kit?.edit_style === "clean",
@@ -327,6 +417,9 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
         instructions: job.instructions,
         source: job.source,
         previous,
+        trend,
+        soundMemory,
+        previousSound,
       },
       clips,
       dir,
@@ -334,6 +427,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
       step,
       note,
       planner,
+      sounder,
     );
     const rendered = await probe(out);
 
@@ -356,6 +450,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     const notes = [
       plan.summary,
       plan.open_questions.length ? `Check: ${plan.open_questions.join(" ")}` : null,
+      sound && soundLine(sound),
     ]
       .filter(Boolean)
       .join("\n");
@@ -369,6 +464,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
         made_by: "claude",
         notes,
         edit_plan: plan,
+        sound,
       })
       .select("id")
       .single();
@@ -398,5 +494,6 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
   } finally {
     await rm(dir, { recursive: true, force: true });
     await pruneCache(cachedFiles).catch((err) => log(job.id, `cache cleanup failed: ${err.message}`));
+    await pruneMusic().catch((err) => log(job.id, `music cache cleanup failed: ${err.message}`));
   }
 }

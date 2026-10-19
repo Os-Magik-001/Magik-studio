@@ -3,6 +3,7 @@ name: office-comedy-reels
 description: Workplace and startup comedy skits: mockumentary office episodes with confessionals, POV hooks and cast intros (Cluely / Marketing Interns style). This is the house style for The Boyz, the French four-founder mockumentary.
 formats: social_short, ad
 style: dynamic
+agents: editor, sound
 ---
 
 # Startup Mockumentary Skit (The Boyz house style)
