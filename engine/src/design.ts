@@ -19,7 +19,9 @@ const DESIGN_DIR = fileURLToPath(new URL("../design", import.meta.url));
 const FONTS_DIR = fileURLToPath(new URL("../assets/fonts", import.meta.url));
 // three.js, for compositions that need real 3D (import "three" and "three/addons/..." in the page).
 const THREE_DIR = fileURLToPath(new URL("../node_modules/three", import.meta.url));
-const SUB = 4;
+// Motion blur: SUB renders per frame across half a frame of shutter. ENGINE_DESIGN_SUBFRAMES raises
+// SUB for smoother blur on fast 3D moves, at the cost of render time.
+const SUB = Math.max(1, Math.min(16, Number(process.env.ENGINE_DESIGN_SUBFRAMES) || 4));
 const SHUTTER = 0.5;
 const BATCH = 30;
 
