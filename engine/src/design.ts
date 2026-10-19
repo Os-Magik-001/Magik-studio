@@ -70,13 +70,25 @@ const jsonSchema = (schema: z.ZodType) => {
   const { $schema: _, ...rest } = z.toJSONSchema(schema) as Record<string, unknown>;
   return JSON.parse(JSON.stringify(rest, (k, v) => (k === "default" ? undefined : v?.type === "object" ? { ...v, additionalProperties: false } : v)));
 };
+// The most Claude writes in one answer (Opus 5.5). A composition of eleven 3D scenes, with its
+// thinking, ran past 64K and was lost.
+const MAX_TOKENS = 128_000;
+
 async function ask<T>(schema: z.ZodType<T>, system: string, messages: Anthropic.Beta.BetaMessageParam[]): Promise<T> {
+  // A composition that still runs out is asked again once with less thinking, leaving the room to the code.
+  let effort: "high" | "medium" = "high";
   for (let attempt = 1; ; attempt++) {
     try {
       const message = await anthropic.beta.messages
-        .stream({ model: config.model, max_tokens: 64000, thinking: { type: "adaptive" }, output_config: { effort: "high", format: { type: "json_schema", schema: jsonSchema(schema) } }, system, messages })
+        .stream({ model: config.model, max_tokens: MAX_TOKENS, thinking: { type: "adaptive" }, output_config: { effort, format: { type: "json_schema", schema: jsonSchema(schema) } }, system, messages })
         .finalMessage();
-      if (message.stop_reason === "max_tokens") throw new Error("Claude's composition came back incomplete.");
+      if (message.stop_reason === "max_tokens") {
+        if (effort === "high") {
+          effort = "medium";
+          continue;
+        }
+        throw new Error(`Claude's composition came back incomplete (${message.usage.output_tokens} tokens).`);
+      }
       return schema.parse(JSON.parse(message.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("")));
     } catch (err) {
       const retry = err instanceof Anthropic.APIConnectionError || err instanceof z.ZodError || err instanceof SyntaxError || (err instanceof Anthropic.AnthropicError && !(err instanceof Anthropic.APIError) && /terminated|ECONNRESET|socket/i.test(err.message));

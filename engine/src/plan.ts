@@ -594,7 +594,8 @@ export async function streamMessage(client: Anthropic, params: Parameters<Anthro
 function streamPlan(client: Anthropic, system: string, messages: Anthropic.Beta.BetaMessageParam[]) {
   return streamMessage(client, {
     model: config.model,
-    max_tokens: 64000,
+    // Opus 5.5's most: a 22-clip shoot took 36K of the old 64K with its thinking.
+    max_tokens: 128_000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     thinking: { type: "adaptive" },
