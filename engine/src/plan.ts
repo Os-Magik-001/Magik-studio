@@ -325,7 +325,12 @@ export type PlanInput = {
   music?: string;
   // Self-review: contact sheets of the cut being revised, one frame per second.
   renderSheets?: { files: string[]; interval: number };
+  // Reference videos the studio chose (see references.ts): the breakdown, and a contact sheet of
+  // the ones the engine watched.
+  references?: PlanReference[];
 };
+
+export type PlanReference = { text: string; sheet: string | null };
 
 const SYSTEM = `You are the editor at Magik Studio, a video studio that makes short videos for brands. You cut raw footage into a finished video that a human editor will check before the client sees it.
 
@@ -478,7 +483,21 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
     .filter(Boolean)
     .join("\n\n");
 
-  const blocks: Anthropic.Beta.BetaContentBlockParam[] = [{ type: "text", text: brief }, { type: "text", text: "Footage:" }];
+  const blocks: Anthropic.Beta.BetaContentBlockParam[] = [{ type: "text", text: brief }];
+  if (input.references?.length) {
+    blocks.push({
+      type: "text",
+      text: `Reference videos the studio chose ("make it like this"). Take from each what the studio asked for, adapted to this footage and this brand: the script, the footage and the brand kit come first, and a reference is never copied shot for shot.`,
+    });
+    for (const r of input.references) {
+      blocks.push({ type: "text", text: r.text });
+      if (r.sheet) {
+        blocks.push({ type: "text", text: "Frames from it, left to right, top to bottom:" });
+        blocks.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: (await readFile(r.sheet)).toString("base64") } });
+      }
+    }
+  }
+  blocks.push({ type: "text", text: "Footage:" });
 
   const [W, H] = frameSize(input.aspect);
   const takes = markTakes(input.clips, input.script);

@@ -247,3 +247,20 @@ input::-webkit-calendar-picker-indicator {
 .hud-edge { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; fill: #54d6ff; letter-spacing: 0.04em; }
 .hud-edge.hot { fill: var(--accent); }
 .hud-edge.off { fill: #3a5a6b; }
+.hud-edge.lit { fill: #c8f4ff; }
+.hud-edge.hot.lit { fill: #ffe680; }
+.hud-stage { font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; fill: #6f9bb3; }
+.hud-status { font-family: var(--font-geist-mono), monospace; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; }
+.hud-dim { opacity: 0.3; }
+.hud-node, .hud-edge, .hud-frame svg g { transition: opacity 0.3s ease; }
+.hud-node:hover .hud-rim { stroke-width: 2.8; }
+/* Motion runs on the compositor: rings spin, orbits turn, tracks flow, busy nodes pulse. */
+.hud-spin { transform-box: fill-box; transform-origin: center; animation: hud-spin var(--hud-spin, 40s) linear infinite; }
+.hud-orbit { transform-box: view-box; animation: hud-spin var(--hud-spin, 60s) linear infinite; }
+.hud-orbit.reverse { animation-direction: reverse; }
+@keyframes hud-spin { to { transform: rotate(360deg); } }
+.hud-flow { animation: hud-flow 1.6s linear infinite; }
+@keyframes hud-flow { to { stroke-dashoffset: -20; } }
+.hud-pulse { transform-box: fill-box; transform-origin: center; animation: hud-pulse 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+@keyframes hud-pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.55); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hud-packet { display: none; } }

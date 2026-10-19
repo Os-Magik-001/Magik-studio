@@ -56,6 +56,8 @@ export type Item = {
   shortCode?: string;
   caption?: string;
   videoUrl?: string;
+  // Instagram serves the picture and the sound separately: videoUrl has no audio track.
+  audioUrl?: string;
   videoPlayCount?: number;
   igPlayCount?: number;
   videoViewCount?: number;
@@ -67,7 +69,7 @@ export type Item = {
   musicInfo?: { artist_name?: string; song_name?: string; uses_original_audio?: boolean; audio_id?: string };
 };
 
-export async function apify(actor: string, input: Record<string, unknown>): Promise<Item[]> {
+export async function apify<T = Item>(actor: string, input: Record<string, unknown>): Promise<T[]> {
   const token = process.env.APIFY_TOKEN;
   if (!token) throw new Error("The trend researcher needs APIFY_TOKEN in the engine's environment.");
   const res = await fetch(`https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?timeout=280`, {
@@ -179,7 +181,25 @@ const SYSTEM = `You are the trend researcher at Magik Studio, a short-form video
 
 Each reel comes with its numbers, caption, transcript, cut rate and a contact sheet (a grid of frames sampled across the reel, read left to right, top to bottom). Look closely at the frames: framing, text on screen, captions style, motion graphics, people, setting, pacing. Be concrete and quantitative. Write in English.`;
 
-async function cutTimes(file: string) {
+// A reel's picture with its sound put back: Instagram's video file is silent, its audio a
+// separate file. Without the sound there is no transcript and no tempo. Any failure keeps the
+// silent picture.
+export async function withSound(video: string, audioUrl: string | undefined, out: string) {
+  if (!audioUrl) return video;
+  try {
+    const res = await fetch(audioUrl, { signal: AbortSignal.timeout(120_000) });
+    if (!res.ok) return video;
+    const audio = `${out}.audio`;
+    await writeFile(audio, Buffer.from(await res.arrayBuffer()));
+    await run(config.ffmpeg, ["-v", "error", "-y", "-i", video, "-i", audio, "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-shortest", out]);
+    await rm(audio, { force: true });
+    return out;
+  } catch {
+    return video;
+  }
+}
+
+export async function cutTimes(file: string) {
   try {
     const { stderr } = await run(config.ffmpeg, ["-hide_banner", "-i", file, "-vf", "scale=320:-2,select='gt(scene,0.3)',showinfo", "-an", "-f", "null", "-"]);
     return [...stderr.matchAll(/pts_time:([\d.]+)/g)].map((m) => Number(m[1]));
@@ -206,10 +226,11 @@ export async function watchReels(items: Item[], workDir: string, onProgress: (st
   for (const [k, item] of items.entries()) {
     await onProgress(`Watching reel ${k + 1} of ${items.length}`);
     try {
-      const file = path.join(workDir, `reel-${k}.mp4`);
+      const silent = path.join(workDir, `reel-${k}-picture.mp4`);
       const res = await fetch(item.videoUrl!, { signal: AbortSignal.timeout(120_000) });
       if (!res.ok) continue;
-      await writeFile(file, Buffer.from(await res.arrayBuffer()));
+      await writeFile(silent, Buffer.from(await res.arrayBuffer()));
+      const file = await withSound(silent, item.audioUrl, path.join(workDir, `reel-${k}.mp4`));
       const p = await probe(file);
       const sheets = await contactSheets(file, path.join(workDir, `sheets-${k}`), Math.max(0.5, Math.ceil((p.duration / 9) * 2) / 2));
       const lines = p.hasAudio && (await transcriptionAvailable()) ? ((await transcribe(file, workDir)) ?? []) : [];

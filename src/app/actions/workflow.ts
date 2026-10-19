@@ -12,6 +12,7 @@ import { DESIGN_TEMPLATES, templateById } from "@/lib/design-templates";
 import { asFindings, asShootPlan } from "@/lib/agent-types";
 import { clientMemory } from "@/lib/memory";
 import { motionLibrary } from "@/lib/motion-prompts";
+import { describeReferences, loadReferences } from "@/lib/references";
 import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -140,7 +141,7 @@ export async function directMotion(_: ActionResult, formData: FormData): Promise
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, memory, motion] = await Promise.all([
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, memory, motion, references] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
     supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -148,6 +149,7 @@ export async function directMotion(_: ActionResult, formData: FormData): Promise
     admin.from("trend_reports").select("findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
     clientMemory(video.client_id, { except: videoId }),
     motionLibrary([video.title, video.brief].filter(Boolean).join(" ")),
+    loadReferences(video.client_id, videoId),
   ]);
   if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return fail("Write the script first: the motion director designs from it.");
 
@@ -168,6 +170,7 @@ export async function directMotion(_: ActionResult, formData: FormData): Promise
       styleRules: kit?.style_rules ?? null,
       memory: memory.text,
       motion: motion.text,
+      references: describeReferences(references, "motion"),
     });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "The motion director couldn't finish.");
@@ -244,7 +247,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion] = await Promise.all([
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion, references] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", video.client_id).maybeSingle(),
     supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -260,6 +263,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
     admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
     clientMemory(video.client_id, { except: videoId }),
     motionLibrary([video.title, video.brief, text(formData, "notes")].filter(Boolean).join(" ")),
+    loadReferences(video.client_id, videoId),
   ]);
   if (script?.status === "approved") return fail("This script is already approved.");
 
@@ -276,6 +280,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       notes: [notes, script?.client_note && `The client asked for: ${script.client_note}`].filter(Boolean).join("\n"),
       thread: describeThread(thread ?? []),
       designs: describeDesigns(chosen),
+      references: describeReferences(references, "script"),
       strategy,
       findings: asFindings(report?.findings),
       styleRules: kit?.style_rules ?? null,
@@ -314,6 +319,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       styleRules: kit?.style_rules ?? null,
       memory: memory.text,
       motion: motion.text,
+      references: describeReferences(references, "motion"),
     }).then(
       (b) => ` The motion director designed ${b.scenes.length} scenes.`,
       (e) => ` The motion director couldn't design it (${e instanceof Error ? e.message : "error"}): press Design the motion.`,
@@ -339,7 +345,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion] = await Promise.all([
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion, references] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", video.client_id).maybeSingle(),
     supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -348,6 +354,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
     admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
     clientMemory(video.client_id, { except: videoId }),
     motionLibrary([video.title, video.brief, text(formData, "request")].filter(Boolean).join(" ")),
+    loadReferences(video.client_id, videoId),
   ]);
   if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return fail("There's no script yet. Write one first.");
   const asked = text(formData, "request");
@@ -366,6 +373,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
       current: { script: script.body, shots: parseShotList(script.shot_list).map((s) => s.text), plan: asShootPlan(script.shoot_plan), editPrompt: script.edit_prompt },
       thread: describeThread(thread ?? []),
       request,
+      references: describeReferences(references, "script"),
       strategy,
       findings: asFindings(report?.findings),
       styleRules: kit?.style_rules ?? null,
@@ -400,6 +408,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
       styleRules: kit?.style_rules ?? null,
       memory: memory.text,
       motion: motion.text,
+      references: describeReferences(references, "motion"),
     }).then(
       () => " The motion director updated the design.",
       () => " The design couldn't follow: press Design the motion.",
@@ -473,6 +482,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
   let editPrompt = optionalText(formData, "editPrompt") ?? current?.edit_prompt ?? null;
   let shots = current?.shot_list ?? [];
   const chosen = await designChoices(current?.design_templates);
+  const references = writePrompt ? await loadReferences(video.client_id, videoId) : [];
   const brandInput = {
     clientName: client?.name ?? "Client",
     strategy,
@@ -491,6 +501,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
         script: body,
         notes: optionalText(formData, "editPrompt") ?? undefined,
         designs: describeDesigns(chosen),
+        references: describeReferences(references, "script"),
         ...brandInput,
       });
       editPrompt = adapted.edit_prompt;
@@ -525,6 +536,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
       shots: parseShotList(shots).map((s) => s.text),
       editPrompt,
       chosen,
+      references: describeReferences(references, "motion"),
     }).catch(() => null);
   }
   await record(videoId, "pasted", viewer.id, {

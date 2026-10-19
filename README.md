@@ -34,6 +34,12 @@ Each client has a **Brand & strategy** page (`/clients/<id>/brand`); clients fil
 
 Every agent remembers the client's other videos: their scripts, edit prompts, what was asked to change, and the music they used (`src/lib/memory.ts`, `engine/src/memory.ts`).
 
+**References** ("make it like this"): studio managers and editors paste links to reels or videos, on a video (step 1, for that video or all the client's) or on the client page (for every video), with what to take from each (hook, pacing, captions, graphics, music…) and a note. The engine (`engine/src/references.ts`) fetches each one (Apify for Instagram and TikTok, the service account for a Google Drive file, or a direct video link), watches it like the researcher does (contact sheets, transcript, cut rate, tempo) and has Claude break it down. The scriptwriter and the motion director read the breakdowns (`src/lib/references.ts`); the editor, the sound designer and the motion designer read them in the edit, with the contact sheets. YouTube and Vimeo don't allow downloads, so for those the agents get the title and the note. A reference costs about a cent of Apify credit and a few cents of Claude.
+
+## The pipeline
+
+The **Pipeline** page shows every video in four phases (Plan, Shoot, Edit, Review, then Delivered), each with its next step and who it waits on: the studio, the client, the videographer, or Claude. The counts at the top filter the board; there is a list view, a client filter and "My videos". A video's page follows the same seven steps (brief & references, script, motion design, shoot & footage, edit, sound, review & delivery), with the next step at the top (`src/lib/pipeline.ts`).
+
 When the videographer presses **All footage is in: start the edit** on their shoot page, the engine starts editing with that edit prompt; the editor can still change the prompt on the video page before then.
 
 ## Stack

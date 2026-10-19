@@ -44,6 +44,8 @@ export type DesignInput = {
   review?: boolean;
   // On a revision of `from`: what was asked, applied in the first review round.
   changes?: string | null;
+  // Contact sheets of the reference videos the studio chose: the look to learn from.
+  references?: { label: string; sheet: string }[];
 };
 
 const Code = {
@@ -191,6 +193,8 @@ export function buildDesignBrief(input: {
   music: { title: string; bpm: number | null; bars: number[] } | null;
   brand: { colors: string[]; fonts: string[]; styleRules: string | null };
   assets: { name: string; kind: string; description: string }[];
+  // The studio's reference videos, as the motion designer reads them (references.ts).
+  references?: string | null;
 }) {
   const d = input.direction;
   const templates = d?.directions.length ? d.directions : input.templates;
@@ -205,6 +209,7 @@ export function buildDesignBrief(input: {
         .map((s, i) => `${i + 1}. ${s.moment} (template: ${s.template}): ${s.prompt}${s.needs ? ` [needs: ${s.needs}]` : ""}`)
         .join("\n")}\nCaptions: ${d.captions}\nEnd card: ${d.end_card}`,
     templates.length && `Design templates the video follows (the studio's directions; adapt them, don't copy):\n${templates.map((t) => `<template id="${t.id}" title="${t.title.replace(/"/g, "'")}">\n${t.direction}\n</template>`).join("\n\n")}`,
+    input.references && `Reference videos the studio chose (learn their type, graphics and look where the studio asked for it, in this brand's colours; never copy them):\n${input.references}`,
     `The editor's summary of the cut:\n${input.summary}`,
     `The editor's graphics suggestions (ideas only; you design them):\n${JSON.stringify(input.suggestions)}`,
     input.kept.length &&
@@ -237,6 +242,13 @@ async function prepare(input: DesignInput) {
   return { p, W: p.width, H: p.height, fps, assetsDir, data };
 }
 
+// The reference videos' frames, after the cut's, so the designer sees the look the studio wants.
+async function referenceFrames(refs: { label: string; sheet: string }[]) {
+  const blocks: Anthropic.Beta.BetaContentBlockParam[] = [];
+  for (const r of refs) blocks.push({ type: "text", text: `${r.label}: frames from it (the look to learn from, not to copy):` }, await image(r.sheet));
+  return blocks;
+}
+
 const readComp = async (file: string) => Composition.parse(JSON.parse(await readFile(file, "utf8")));
 
 // Frames of the composition in `input.from` over the picture at the given times, to look at.
@@ -260,6 +272,7 @@ export async function designPass(input: DesignInput) {
       content: [
         { type: "text", text: `${input.brief}\n\nThe cut is ${p.duration.toFixed(1)} s. Sixteen frames across it, left to right, top to bottom:` },
         await image(sheet),
+        ...(await referenceFrames(input.references ?? [])),
         {
           type: "text",
           text: `DATA (also available as window.DATA in the page):\n${JSON.stringify(data)}${data.subtitles.length ? "\n\nDATA.subtitles holds the English subtitle lines with their times: caption with those (not DATA.words, which are in the spoken language)." : ""}\n\nDesign the graphics for this video: decide the concept and the system, then write the composition.`,

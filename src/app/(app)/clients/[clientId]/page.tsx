@@ -7,6 +7,9 @@ import { signedUrls } from "@/lib/storage";
 import { FORMAT_LABEL } from "@/lib/workflow";
 import { Avatar, Card, CardHeader, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { VideoStatusBadge } from "@/components/status";
+import { AutoRefresh } from "@/components/auto-refresh";
+import { ReferenceList } from "@/components/references/list";
+import { AddReferenceForm } from "@/components/references/add-form";
 import {
   BrandKitForm,
   ClientSettingsForm,
@@ -30,7 +33,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
     .maybeSingle();
   if (!client) notFound();
 
-  const [{ data: videos }, { data: kit }, { data: people }, { data: team }] = await Promise.all([
+  const [{ data: videos }, { data: kit }, { data: people }, { data: team }, { data: references }] = await Promise.all([
     supabase
       .from("videos")
       .select("id, title, status, format, due_on, editor:profiles!videos_editor_id_fkey(full_name, email)")
@@ -39,6 +42,13 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
     supabase.from("brand_kits").select("*").eq("client_id", clientId).maybeSingle(),
     supabase.from("profiles").select("id, full_name, email, role, client_id").order("full_name"),
     supabase.from("client_team").select("user_id").eq("client_id", clientId),
+    // References for every video of the client (each video's own are on its page).
+    supabase
+      .from("reference_videos")
+      .select("id, video_id, url, platform, focus, note, status, progress, error, watched, title, owner, duration, stats, analysis, sheets")
+      .eq("client_id", clientId)
+      .is("video_id", null)
+      .order("created_at", { ascending: false }),
   ]);
 
   const editors = (people ?? []).filter((p) => p.role === "editor");
@@ -46,6 +56,8 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
   const clientUsers = (people ?? []).filter((p) => p.role === "client" && p.client_id === clientId);
   const assigned = new Set((team ?? []).map((t) => t.user_id));
   const logoUrl = kit?.logo_path ? (await signedUrls("brand", [kit.logo_path])).get(kit.logo_path) : undefined;
+  const sheetUrls = await signedUrls("references", (references ?? []).flatMap((r) => r.sheets.slice(0, 1)));
+  const watching = (references ?? []).some((r) => r.status === "queued" || r.status === "running");
 
   return (
     <>
@@ -106,6 +118,23 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
               </div>
             </Card>
           )}
+
+          <Card>
+            <CardHeader
+              title="References for every video"
+              description="Reels and videos that show the style this client wants. The engine watches each one; the scriptwriter, the motion director, the editor and the sound designer use them on all of this client's videos."
+            />
+            <div className="flex flex-col gap-4 p-5">
+              {watching && <AutoRefresh seconds={8} />}
+              <ReferenceList items={references ?? []} sheetUrls={sheetUrls} />
+              <details className="rounded-xl border border-line p-4" open={!references?.length}>
+                <summary className="cursor-pointer text-[13px] font-medium text-accent">Add a reference</summary>
+                <div className="mt-4">
+                  <AddReferenceForm clientId={client.id} clientName={client.name} />
+                </div>
+              </details>
+            </div>
+          </Card>
 
           <Card>
             <CardHeader

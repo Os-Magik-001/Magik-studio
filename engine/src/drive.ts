@@ -63,15 +63,16 @@ async function accessToken() {
 
 type DriveMeta = { id: string; name: string; size?: string; md5Checksum?: string; modifiedTime?: string };
 
-async function driveMeta(id: string): Promise<DriveMeta> {
+// `what` names the file in errors: footage, a reference video.
+export async function driveMeta(id: string, what = "footage file"): Promise<DriveMeta> {
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files/${id}?supportsAllDrives=true&fields=id,name,size,md5Checksum,modifiedTime`,
     { headers: { authorization: `Bearer ${await accessToken()}` } },
   );
   if (res.status === 404 || res.status === 403) {
-    throw new Error(`The engine can't open a footage file in Google Drive any more. Check it's still shared with ${serviceAccount()?.client_email}.`);
+    throw new Error(`The engine can't open a ${what} in Google Drive. Check it's shared with ${serviceAccount()?.client_email}.`);
   }
-  if (!res.ok) throw new Error(`Google Drive returned an error (${res.status}) for a footage file.`);
+  if (!res.ok) throw new Error(`Google Drive returned an error (${res.status}) for a ${what}.`);
   return res.json() as Promise<DriveMeta>;
 }
 

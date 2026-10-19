@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const TWO_HOURS = 60 * 60 * 2;
 
 // Callers must have already confirmed (through RLS) that the viewer can see these rows.
-export async function signedUrls(bucket: "footage" | "versions" | "brand", paths: string[]) {
+export async function signedUrls(bucket: "footage" | "versions" | "brand" | "references", paths: string[]) {
   if (paths.length === 0) return new Map<string, string>();
   const admin = createAdminClient();
   const { data } = await admin.storage.from(bucket).createSignedUrls(paths, TWO_HOURS);

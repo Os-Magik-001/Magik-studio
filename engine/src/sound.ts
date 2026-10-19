@@ -47,6 +47,8 @@ export type SoundRequest = {
   memory: string | null;
   // On a revision: the sound of the version being revised.
   previous: SoundReport | null;
+  // What the studio's reference videos sound like (references.ts), when it wants their sound.
+  references?: string | null;
   skills: Skill[];
   catalog: Track[];
   sfx: SfxEntry[];
@@ -186,6 +188,7 @@ function describeRequest(req: SoundRequest, cut: string) {
       : "Trending sounds: no research for this client yet, so set trend to null.",
     req.trend?.notes.length && `The researcher's notes on audio:\n${req.trend.notes.map((n) => `- ${n}`).join("\n")}`,
     req.memory && `The music of the client's other videos (keep a series consistent):\n${req.memory}`,
+    req.references && `Reference videos the studio chose (match their energy, tempo and the way their cuts follow the music where the studio asked for it; the track still comes from search_music):\n${req.references}`,
     prev &&
       `The sound of the version being revised: ${prev.track ? `"${prev.track.title}" (${prev.track.id}, ${prev.track.library}), ${prev.align === "start" ? `from ${f(prev.start)} into it` : `${prev.align}-aligned`}` : "no music"}; effects: ${prev.sfx.map((x) => `${x.id} at ${f(x.at)}`).join(", ") || "none"}${prev.trend ? `; trend to post with: "${prev.trend.title}"` : ""}. Change what was asked about the sound and keep the rest.`,
     "Design the sound, then submit it with submit_sound_plan.",

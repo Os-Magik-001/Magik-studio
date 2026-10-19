@@ -152,6 +152,7 @@ test("the sound designer searches and measures with its tools, then submits", as
   const req: SoundRequest = {
     clientName: "QA", title: "Launch", format: "social short", aspect: "9:16", brief: null, instructions: null, source: "launch", clean: false,
     musicMood: "funky", styleRules: null, trend: { audio: trend, notes: [] }, memory: null, previous: null, skills: [], catalog, sfx,
+    references: "Reference 1: instagram · @slateacademy_\nSound: dark trap at 140 BPM, every cut on a beat.",
   };
   const out = await designSound(req, "the cut", async () => analysis, client);
   assert.equal(out.plan.music.track, "funk-one");
@@ -161,4 +162,5 @@ test("the sound designer searches and measures with its tools, then submits", as
   assert.match(text(2), /Tempo 120 BPM, first beat 0\.1s, bars start at 0\.1s and every 2\.00s/);
   assert.match(text(3), /These ids don't exist: track ghost/);
   assert.match(JSON.stringify(seen[0][0]), /Espresso/);
+  assert.match(JSON.stringify(seen[0][0]), /Reference videos the studio chose[^"]*\\nReference 1: instagram · @slateacademy_\\nSound: dark trap at 140 BPM/);
 });

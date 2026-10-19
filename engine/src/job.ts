@@ -12,6 +12,7 @@ import { driveLibraries } from "./libraries.ts";
 import { clientMemory, musicMemory } from "./memory.ts";
 import { describeLibrary, loadCatalog, loadLibrary, pruneMusic, trackFile, type Track } from "./music.ts";
 import { parseStoredPlan, planEdit, timelineOf, timelineWords, validatePlan, type BrandKit, type Clip, type EditPlan, type PlanInput } from "./plan.ts";
+import { editReferences, settleReferences, type EditReference } from "./references.ts";
 import { render, type Brand } from "./render.ts";
 import { reviewRender } from "./review.ts";
 import { loadSfxCatalog, type SfxEntry } from "./sfx.ts";
@@ -155,8 +156,11 @@ export async function watchClips(clips: Clip[], dir: string, hint: string, step:
   }
 }
 
-export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & {
+export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music" | "references"> & {
   formatKey: string;
+  // The studio's reference videos: the editor reads all of each, the sound designer its sound,
+  // the motion designer its look.
+  references?: EditReference[];
   brand: Brand;
   selfReview?: boolean;
   clean?: boolean;
@@ -265,6 +269,7 @@ export async function planAndRender(
           trend: trend ?? null,
           memory: soundMemory ?? null,
           previous: previousSound ?? null,
+          references: rest.references?.flatMap((r) => (r.sound ? [r.sound] : [])).join("\n\n") || null,
           skills: soundSkills,
           catalog: catalogs.music,
           sfx: catalogs.sfx,
@@ -317,6 +322,7 @@ export async function planAndRender(
         music: t && cut.sound?.track ? { title: t.title, bpm: cut.sound.track.bpm, bars: cut.sound.bars ?? [] } : null,
         brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [], styleRules: rest.brandKit?.styleRules ?? null },
         assets,
+        references: rest.references?.flatMap((r) => (r.design ? [r.design] : [])).join("\n\n") || null,
       });
       const subtitles = plan.captions.mode === "translate" ? plan.on_screen_text.filter((x) => x.style === "caption").map((x) => ({ text: x.text, start: x.start, end: x.end })) : undefined;
       const designed = await designer({
@@ -332,6 +338,7 @@ export async function planAndRender(
         onStep: step,
         from: design.from ?? undefined,
         changes: design.changes,
+        references: rest.references?.flatMap((r) => (r.design && r.sheet ? [{ label: r.label, sheet: r.sheet }] : [])),
       });
       designed.log.forEach((l) => note(`design ${l}`));
       return { ...cut, design: { ...designed.comp, log: designed.log } };
@@ -454,6 +461,11 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
     );
     await watchClips(clips, dir, `${client?.name ?? ""}. ${video.title}. ${script?.body ?? ""}`, step);
 
+    // The studio's reference videos: any the engine hasn't watched yet are watched first.
+    await settleReferences(video.client_id, video.id, step).catch((err) => note(`references: ${err instanceof Error ? err.message : err}`));
+    const references = await editReferences(video.client_id, video.id, dir).catch((err) => (note(`references unavailable: ${err instanceof Error ? err.message : err}`), [] as EditReference[]));
+    if (references.length) note(`references: ${references.map((r) => r.label).join("; ")}`);
+
     // Revisions start from the previous cut and its open comments.
     let previous = null;
     let previousSound: SoundReport | null = null;
@@ -534,6 +546,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
         soundMemory,
         previousSound,
         design,
+        references,
       },
       clips,
       dir,

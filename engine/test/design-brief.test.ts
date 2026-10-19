@@ -58,3 +58,14 @@ test("a bare cut keeps only the engine's cut-out intros", () => {
   assert.equal(bare.end_card.include, false);
   assert.equal(bare.captions.mode, "off");
 });
+
+test("the motion designer reads the references the studio wants its look from", () => {
+  const brief = (references: string | null) =>
+    buildDesignBrief({
+      clientName: "Magik", title: "Launch", format: "social short", aspect: "9:16", brief: null, script: "", instructions: null,
+      direction: null, templates: [], summary: "A cut", suggestions: {}, kept: [], music: null,
+      brand: { colors: ["#000000"], fonts: [], styleRules: null }, assets: [], references,
+    });
+  assert.match(brief("Reference 1: instagram · @slateacademy_\nGraphics: a 3D phone, cards lifting off."), /Reference videos the studio chose \(learn their type, graphics and look[^\n]*\nReference 1: instagram · @slateacademy_\nGraphics: a 3D phone/);
+  assert.doesNotMatch(brief(null), /Reference videos/);
+});

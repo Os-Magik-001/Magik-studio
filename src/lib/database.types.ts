@@ -526,6 +526,103 @@ export type Database = {
           },
         ]
       }
+      reference_videos: {
+        Row: {
+          analysis: Json | null
+          attempts: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          duration: number | null
+          error: string | null
+          finished_at: string | null
+          focus: string[]
+          id: string
+          note: string | null
+          owner: string | null
+          platform: string
+          progress: string | null
+          sheets: string[]
+          started_at: string | null
+          stats: Json | null
+          status: Database["public"]["Enums"]["agent_status"]
+          title: string | null
+          url: string
+          video_id: string | null
+          watched: boolean
+        }
+        Insert: {
+          analysis?: Json | null
+          attempts?: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          duration?: number | null
+          error?: string | null
+          finished_at?: string | null
+          focus?: string[]
+          id?: string
+          note?: string | null
+          owner?: string | null
+          platform: string
+          progress?: string | null
+          sheets?: string[]
+          started_at?: string | null
+          stats?: Json | null
+          status?: Database["public"]["Enums"]["agent_status"]
+          title?: string | null
+          url: string
+          video_id?: string | null
+          watched?: boolean
+        }
+        Update: {
+          analysis?: Json | null
+          attempts?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          duration?: number | null
+          error?: string | null
+          finished_at?: string | null
+          focus?: string[]
+          id?: string
+          note?: string | null
+          owner?: string | null
+          platform?: string
+          progress?: string | null
+          sheets?: string[]
+          started_at?: string | null
+          stats?: Json | null
+          status?: Database["public"]["Enums"]["agent_status"]
+          title?: string | null
+          url?: string
+          video_id?: string | null
+          watched?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_videos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_videos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_videos_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       script_revisions: {
         Row: {
           body: string | null

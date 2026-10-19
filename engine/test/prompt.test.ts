@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { test } from "node:test";
+import { run } from "../src/exec.ts";
 import { annotate, buildContent, buildSystem, parseStoredPlan, type EditPlan, type PlanInput } from "../src/plan.ts";
 import { CUT, EXTRAS, shot, txt } from "./fixtures.ts";
 
@@ -158,4 +162,28 @@ test("validatePlan sets a speech shot's cut from its quoted words", async () => 
   // Claude's 4.9-7.9 was a second off; the words put the cut at 5.58-7.2.
   assert.ok(Math.abs(out.segments[0].start - 5.58) < 0.035, `start ${out.segments[0].start}`);
   assert.ok(Math.abs(out.segments[0].end - 7.2) < 0.035, `end ${out.segments[0].end}`);
+});
+
+test("the editor sees the studio's references, with their frames, before the footage", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "magik-prompt-"));
+  try {
+    const sheet = path.join(dir, "sheet.jpg");
+    await run("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=navy:s=64x64", "-frames:v", "1", sheet]);
+    const blocks = await buildContent({
+      ...input,
+      references: [
+        { text: "Reference 1: instagram · @slateacademy_ (for this video)\nThe studio wants from it: the hook.", sheet },
+        { text: "Reference 2: youtube (for all the client's videos)\nYouTube doesn't allow downloads. Work from the note.", sheet: null },
+      ],
+    });
+    const kinds = blocks.map((b) => (b.type === "text" ? b.text.split("\n")[0].slice(0, 40) : b.type));
+    const at = kinds.findIndex((k) => k.startsWith("Reference videos the studio chose"));
+    assert.ok(at > 0, kinds.join(" | "));
+    assert.deepEqual(kinds.slice(at + 1, at + 5), ["Reference 1: instagram · @slateacademy_ ", "Frames from it, left to right, top to bo", "image", "Reference 2: youtube (for all the client"]);
+    assert.ok(kinds.indexOf("Footage:") > at + 4);
+    const without = await buildContent(input);
+    assert.ok(!without.some((b) => b.type === "text" && b.text.startsWith("Reference videos")));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

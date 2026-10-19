@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
-import { asCharte, asDesignBrief, asFindings, asPillars, asReels, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
+import { asCharte, asDesignBrief, asFindings, asPillars, asReels, asReferenceBreakdown, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
+import { PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
 import { parseShotList } from "@/lib/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { EmptyState, LinkButton, PageHeader, cx } from "@/components/ui";
@@ -14,9 +15,11 @@ import { DesignBriefView, FindingsView, ShootPlanView, SoundView, StrategyView }
 export const metadata: Metadata = { title: "Agents" };
 
 const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n));
+// Something that happened in the last two minutes fires a burst on its link.
+const isFresh = (iso: string) => Date.now() - Date.parse(iso) < 120_000;
 
-// Mission control: the three agents, the videographer and the edit engine for one
-// client (and one of their videos), read live from the database.
+// Mission control: the five agents, the references, the videographer and the edit engine for
+// one client (and one of their videos), read live from the database.
 export default async function AgentsPage({ searchParams }: { searchParams: Promise<{ client?: string; video?: string }> }) {
   await requireRole("admin", "editor");
   const { client: clientParam, video: videoParam } = await searchParams;
@@ -32,7 +35,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   }
   const client = clients.find((c) => c.id === clientParam) ?? clients[0];
 
-  const [{ data: form }, { data: strategy }, { data: reports }, { data: videos }, { data: kit }] = await Promise.all([
+  const [{ data: form }, { data: strategy }, { data: reports }, { data: videos }, { data: kit }, { data: allRefs }] = await Promise.all([
     supabase.from("brand_questionnaires").select("answers, updated_at").eq("client_id", client.id).maybeSingle(),
     supabase.from("brand_strategies").select("*").eq("client_id", client.id).maybeSingle(),
     supabase
@@ -43,8 +46,17 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       .limit(5),
     supabase.from("videos").select("id, title, status, footage_complete_at, created_at").eq("client_id", client.id).order("created_at", { ascending: false }),
     supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", client.id).maybeSingle(),
+    supabase
+      .from("reference_videos")
+      .select("id, video_id, url, platform, focus, note, status, progress, error, watched, title, owner, analysis, created_at, finished_at")
+      .eq("client_id", client.id)
+      .order("created_at"),
   ]);
   const video = (videos ?? []).find((v) => v.id === videoParam) ?? videos?.[0] ?? null;
+  // The references this video's agents work from: its own and the client's.
+  const refs = (allRefs ?? []).filter((r) => !r.video_id || r.video_id === video?.id);
+  const refsDone = refs.filter((r) => r.status === "done");
+  const refsPending = refs.filter((r) => r.status === "queued" || r.status === "running");
   const [{ data: script }, { data: footage }, { data: jobs }, { data: versions }, { data: asks }] = video
     ? await Promise.all([
         supabase.from("scripts").select("body, shot_list, shoot_plan, edit_prompt, updated_at, design_brief, design_templates").eq("video_id", video.id).maybeSingle(),
@@ -80,6 +92,15 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const st = (busy: boolean, done: boolean, failed = false): NodeState => (busy ? "busy" : failed ? "failed" : done ? "done" : "idle");
   const nodes: HudNode[] = [
     { id: "client", kind: "INPUT", title: "CLIENT", role: "Brand questionnaire", meta: `${answered}/${QUESTIONS.length} answers`, state: st(false, answered >= 4) },
+    {
+      id: "refs",
+      kind: "INPUT",
+      title: "REFERENCES",
+      role: "Reels and videos the studio picked",
+      meta: refs.length ? `${refs.length} reference${refs.length > 1 ? "s" : ""} · ${refsDone.filter((r) => r.watched).length} watched` : "none yet",
+      state: st(refsPending.length > 0, refsDone.length > 0, refs.length > 0 && refs.every((r) => r.status === "failed")),
+      progress: refsPending.find((r) => r.status === "running")?.progress ?? (refsPending.length ? "Queued on the engine" : null),
+    },
     { id: "a1", kind: "AGENT 01", title: "STRATEGIST", role: "Niche, charte graphique, business & needs", meta: strategy ? `${strategy.keywords.length} hashtags · ${charte?.palette.length ?? 0} colors` : "waiting", state: st(false, !!strategy) },
     { id: "apify", kind: "SOURCE", title: "APIFY", role: "Instagram search", meta: latestReport ? [...latestReport.hashtags.map((h) => `#${h}`)].slice(0, 2).join(" ") || "accounts" : "idle", state: st(!!researching && latestReport?.progress?.startsWith("Searching") === true, !!doneReport) },
     { id: "a2", kind: "AGENT 02", title: "RESEARCHER", role: "Watches the top reels, writes what works", meta: doneReport ? `${reels.length} reels · ${compact(plays)} plays` : "waiting", state: st(!!researching, !!doneReport, latestReport?.status === "failed"), progress: researching ? latestReport?.progress ?? "Queued on the engine" : null },
@@ -91,44 +112,56 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     { id: "video", kind: "OUTPUT", title: "VIDEO", role: video?.title ?? "No video yet", meta: versions?.length ? `v${versions.at(-1)!.number} · ${versions.at(-1)!.status.replace("_", " ")}` : "—", state: st(false, !!versions?.length) },
   ];
   const links: HudLink[] = [
-    { a: "client", b: "a1", label: "questionnaire", active: answered > 0 },
-    { a: "a1", b: "apify", label: strategy ? strategy.keywords.slice(0, 3).map((k) => `#${k}`).join(" ") : "hashtags", active: !!latestReport },
-    { a: "apify", b: "a2", label: doneReport ? `${reels.length} top reels` : "reels", active: !!doneReport || !!researching },
-    { a: "a1", b: "a2", label: "niche + audience", active: !!strategy && !!latestReport },
-    { a: "a1", b: "a3", label: "charte + pillars", active: !!strategy && !!script },
-    { a: "a2", b: "a3", label: findings ? `${findings.hooks.length} hooks · ${findings.structures.length} structures` : "key points", hot: true, active: !!findings && !!script },
-    { a: "a3", b: "shoot", label: "shoot plan", active: !!plan },
-    { a: "a3", b: "engine", label: "edit prompt", hot: true, active: !!script?.edit_prompt },
-    { a: "shoot", b: "engine", label: "footage", active: !!footage?.length },
-    { a: "engine", b: "video", label: "render", active: !!versions?.length },
-    { a: "a2", b: "a4", label: trendAudio.length ? `${trendAudio.length} trending sounds` : "trending sounds", hot: true, active: !!trendAudio.length },
-    { a: "a4", b: "engine", label: "music + effects", hot: true, active: !!sound },
-    { a: "a3", b: "a5", label: "script", active: !!designBrief },
-    { a: "a5", b: "engine", label: designBrief ? `${designBrief.scenes.length} design prompts` : "design prompts", hot: true, active: !!designBrief },
+    { id: "client-a1", label: "questionnaire", active: answered > 0 },
+    { id: "a1-apify", label: strategy ? strategy.keywords.slice(0, 2).map((k) => `#${k}`).join(" ") : "hashtags", active: !!latestReport },
+    { id: "apify-a2", label: doneReport ? `${reels.length} top reels` : "reels", active: !!doneReport || !!researching },
+    { id: "a1-a2", label: "niche + audience", active: !!strategy && !!latestReport },
+    { id: "a1-a3", label: "charte + pillars", active: !!strategy && !!script },
+    { id: "a2-a3", label: findings ? `${findings.hooks.length} hooks` : "key points", hot: true, active: !!findings && !!script },
+    { id: "refs-a3", label: refsDone.length ? `${refsDone.length} breakdown${refsDone.length > 1 ? "s" : ""}` : "references", hot: true, active: refsDone.length > 0 && !!script },
+    { id: "refs-a5", label: "look to match", active: refsDone.length > 0 && !!designBrief },
+    { id: "refs-engine", label: "frames + breakdowns", active: refsDone.length > 0 && (!!versions?.length || !!openJob) },
+    { id: "a3-shoot", label: "shoot plan", active: !!plan },
+    { id: "a3-engine", label: "edit prompt", hot: true, active: !!script?.edit_prompt },
+    { id: "shoot-engine", label: "footage", active: !!footage?.length },
+    { id: "engine-video", label: "render", active: !!versions?.length },
+    { id: "a2-a4", label: trendAudio.length ? `${trendAudio.length} trending sounds` : "trending sounds", hot: true, active: !!trendAudio.length },
+    { id: "a4-engine", label: "music + effects", hot: true, active: !!sound },
+    { id: "a3-a5", label: "script", active: !!designBrief },
+    { id: "a5-engine", label: designBrief ? `${designBrief.scenes.length} design prompts` : "design prompts", hot: true, active: !!designBrief },
   ];
 
   // ------------------------------------------------------------ the comm log, from timestamps
   const events: HudEvent[] = [];
-  if (form) events.push({ at: form.updated_at, who: "CLIENT → STRATEGIST", msg: `${answered} questionnaire answers`, link: 0 });
+  if (form) events.push({ at: form.updated_at, who: "CLIENT → STRATEGIST", msg: `${answered} questionnaire answers`, link: "client-a1" });
   if (strategy) {
-    events.push({ at: strategy.updated_at, who: "STRATEGIST → RESEARCHER", msg: `Niche: ${strategy.niche}`, link: 3 });
-    events.push({ at: strategy.updated_at, who: "STRATEGIST → SCRIPTWRITER", msg: `Charte graphique + ${asPillars(strategy.pillars).length} content pillars`, link: 4 });
+    events.push({ at: strategy.updated_at, who: "STRATEGIST → RESEARCHER", msg: `Niche: ${strategy.niche}`, link: "a1-a2" });
+    events.push({ at: strategy.updated_at, who: "STRATEGIST → SCRIPTWRITER", msg: `Charte graphique + ${asPillars(strategy.pillars).length} content pillars`, link: "a1-a3" });
   }
   for (const r of [...(reports ?? [])].reverse()) {
     const q = [...r.hashtags.map((h) => `#${h}`), ...r.accounts.map((a) => `@${a}`)].join(" ");
     events.push({ at: r.created_at, who: "STUDIO → RESEARCHER", msg: `Research requested: ${q}` });
-    if (r.started_at) events.push({ at: r.started_at, who: "RESEARCHER → APIFY", msg: `Search ${q}`, link: 1 });
+    if (r.started_at) events.push({ at: r.started_at, who: "RESEARCHER → APIFY", msg: `Search ${q}`, link: "a1-apify" });
     if (r.status === "done" && r.finished_at) {
       const f = asFindings(r.findings);
-      events.push({ at: r.finished_at, who: "APIFY → RESEARCHER", msg: `${asReels(r.reels).length} top reels watched`, link: 2 });
-      if (f) events.push({ at: r.finished_at, who: "RESEARCHER → SCRIPTWRITER", msg: `${f.hooks.length} hooks, ${f.structures.length} structures, ${f.ideas.length} ideas`, link: 5 });
+      events.push({ at: r.finished_at, who: "APIFY → RESEARCHER", msg: `${asReels(r.reels).length} top reels watched`, link: "apify-a2" });
+      if (f) events.push({ at: r.finished_at, who: "RESEARCHER → SCRIPTWRITER", msg: `${f.hooks.length} hooks, ${f.structures.length} structures, ${f.ideas.length} ideas`, link: "a2-a3" });
     }
     if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "RESEARCHER", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
   }
-  if (designBrief) events.push({ at: designBrief.written_at, who: "MOTION DIRECTOR → ENGINE", msg: `${designBrief.scenes.length} design prompts: ${designBrief.concept}`, link: 13 });
+  for (const r of refs) {
+    const name = [PLATFORM_LABEL[r.platform as ReferencePlatform] ?? r.platform, r.owner].filter(Boolean).join(" ");
+    events.push({ at: r.created_at, who: "STUDIO → REFERENCES", msg: `${name}${r.note ? `: ${r.note.length > 90 ? `${r.note.slice(0, 89)}…` : r.note}` : ""}` });
+    if (r.status === "done" && r.finished_at) {
+      const b = asReferenceBreakdown(r.analysis);
+      events.push({ at: r.finished_at, who: "REFERENCES → SCRIPTWRITER", msg: b ? `${name} broken down: ${b.summary.length > 120 ? `${b.summary.slice(0, 119)}…` : b.summary}` : `${name}: ${r.error ?? "link only"}`, link: "refs-a3" });
+    }
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "REFERENCES", msg: `Couldn't watch ${name}: ${r.error ?? "unknown error"}`, tone: "bad" });
+  }
+  if (designBrief) events.push({ at: designBrief.written_at, who: "MOTION DIRECTOR → ENGINE", msg: `${designBrief.scenes.length} design prompts: ${designBrief.concept}`, link: "a5-engine" });
   if (script?.edit_prompt) {
-    events.push({ at: script.updated_at, who: "SCRIPTWRITER → VIDEOGRAPHER", msg: plan ? `${plan.scenes.length} scenes, ${shots.length} shots` : `${shots.length} shots`, link: 6 });
-    events.push({ at: script.updated_at, who: "SCRIPTWRITER → ENGINE", msg: `Edit prompt (${script.edit_prompt.split(/\s+/).length} words)`, link: 7 });
+    events.push({ at: script.updated_at, who: "SCRIPTWRITER → VIDEOGRAPHER", msg: plan ? `${plan.scenes.length} scenes, ${shots.length} shots` : `${shots.length} shots`, link: "a3-shoot" });
+    events.push({ at: script.updated_at, who: "SCRIPTWRITER → ENGINE", msg: `Edit prompt (${script.edit_prompt.split(/\s+/).length} words)`, link: "a3-engine" });
   }
   const short = (t: string | null) => ((t ?? "").length > 160 ? `${t!.slice(0, 159)}…` : t ?? "");
   for (const a of asks ?? []) {
@@ -138,8 +171,8 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       if (a.reply) events.push({ at: a.created_at, who: "SCRIPTWRITER", msg: short(a.reply) });
     }
   }
-  if (footage?.length) events.push({ at: footage[0].created_at, who: "VIDEOGRAPHER → ENGINE", msg: `Footage: ${footage.length} file${footage.length > 1 ? "s" : ""} (first: ${footage[0].file_name})`, link: 8 });
-  if (video?.footage_complete_at) events.push({ at: video.footage_complete_at, who: "VIDEOGRAPHER → ENGINE", msg: "All footage is in: start the edit", link: 8 });
+  if (footage?.length) events.push({ at: footage[0].created_at, who: "VIDEOGRAPHER → ENGINE", msg: `Footage: ${footage.length} file${footage.length > 1 ? "s" : ""} (first: ${footage[0].file_name})`, link: "shoot-engine" });
+  if (video?.footage_complete_at) events.push({ at: video.footage_complete_at, who: "VIDEOGRAPHER → ENGINE", msg: "All footage is in: start the edit", link: "shoot-engine" });
   for (const j of jobs ?? []) {
     events.push({ at: j.created_at, who: "ENGINE", msg: `${j.source === "launch" ? "Edit" : j.source === "editor_fix" ? "Editor fixes" : "Client changes"} queued` });
     if (j.started_at) events.push({ at: j.started_at, who: "ENGINE", msg: "Claude is editing" });
@@ -147,10 +180,11 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   }
   for (const v of versions ?? []) {
     const s = asSoundReport(v.sound);
-    if (s) events.push({ at: v.created_at, who: "SOUND DESIGNER → ENGINE", msg: `${s.track ? `"${s.track.title}" (${s.track.library})` : "No music"}, ${s.sfx.length} effects${s.trend ? `, post with "${s.trend.title}"` : ""}`, link: 11 });
-    events.push({ at: v.created_at, who: "ENGINE → VIDEO", msg: `v${v.number} ready (${v.made_by === "claude" ? "Claude" : "editor"})`, link: 9 });
+    if (s) events.push({ at: v.created_at, who: "SOUND DESIGNER → ENGINE", msg: `${s.track ? `"${s.track.title}" (${s.track.library})` : "No music"}, ${s.sfx.length} effects${s.trend ? `, post with "${s.trend.title}"` : ""}`, link: "a4-engine" });
+    events.push({ at: v.created_at, who: "ENGINE → VIDEO", msg: `v${v.number} ready (${v.made_by === "claude" ? "Claude" : "editor"})`, link: "engine-video" });
   }
   events.sort((a, b) => a.at.localeCompare(b.at));
+  for (const e of events) e.fresh = isFresh(e.at);
 
   // ------------------------------------------------------------ panels
   const brandLink = `/clients/${client.id}/brand`;
@@ -160,6 +194,34 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     </EmptyState>
   );
   const panels: Partial<Record<NodeId, ReactNode>> = {
+    refs: refs.length ? (
+      <div className="flex flex-col gap-3 text-sm">
+        <ul className="flex flex-col gap-3">
+          {refs.map((r) => {
+            const b = asReferenceBreakdown(r.analysis);
+            return (
+              <li key={r.id} className="rounded-xl border border-line p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-ink">{[PLATFORM_LABEL[r.platform as ReferencePlatform] ?? r.platform, r.owner].filter(Boolean).join(" · ")}</span>
+                  <span className="text-xs text-muted">{r.video_id ? "this video" : "all videos"}</span>
+                  <a href={r.url} target="_blank" rel="noreferrer" className="ml-auto text-xs text-accent hover:underline">
+                    Open
+                  </a>
+                </div>
+                {r.note && <p className="mt-1 text-xs text-ink-2">{r.note}</p>}
+                <p className={cx("mt-1 text-xs", r.status === "failed" ? "text-danger" : r.status === "done" ? "text-muted" : "text-accent")}>
+                  {r.status === "queued" ? "Waiting for the engine" : r.status === "running" ? `${r.progress ?? "Watching it"}…` : r.status === "failed" ? r.error : b ? b.summary : r.error ?? "Link only"}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-xs text-muted">The scriptwriter and the motion director read each breakdown; the editor and the sound designer also look at its frames.</p>
+        {video && <LinkButton href={`/videos/${video.id}#brief`} size="sm">Add a reference</LinkButton>}
+      </div>
+    ) : (
+      empty("No references yet", "Add reels or videos the studio wants this one to feel like: on the video page (step 1), or for every video on the client page.", video ? `/videos/${video.id}#brief` : `/clients/${client.id}`, "Add one")
+    ),
     client: answered ? (
       <dl className="flex flex-col gap-2 text-sm">
         {QUESTIONS.filter((q) => answers[q.key]).map((q) => (
@@ -282,19 +344,19 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const meters = [
     { label: "Questionnaire", value: `${answered}/${QUESTIONS.length}`, fill: answered / QUESTIONS.length },
     { label: "Reels studied", value: String(reels.length), fill: reels.length / 10 },
-    { label: "Plays studied", value: compact(plays), fill: plays ? 1 : 0 },
+    { label: "References", value: String(refsDone.length), fill: Math.min(1, refsDone.length / 3) },
     { label: "Hooks found", value: String(findings?.hooks.length ?? 0), fill: (findings?.hooks.length ?? 0) / 8 },
     { label: "Scenes planned", value: String(plan?.scenes.length ?? 0), fill: (plan?.scenes.length ?? 0) / 8 },
     { label: "Versions", value: String(versions?.length ?? 0), fill: Math.min(1, (versions?.length ?? 0) / 3) },
   ];
-  const live = !!researching || !!openJob;
+  const live = !!researching || !!openJob || refsPending.length > 0;
 
   return (
     <>
       <PageHeader
         eyebrow="Mission control"
         title="Agents"
-        description="How the three agents, the videographer and the edit engine pass work to each other for one client. Click a node to read what it produced."
+        description="How the five agents, the references, the videographer and the edit engine pass work to each other for one client, from the brief to the video. Click a node to read what it produced."
         actions={<LinkButton href={brandLink}>Brand & strategy</LinkButton>}
       />
       {live && <AutoRefresh seconds={5} />}

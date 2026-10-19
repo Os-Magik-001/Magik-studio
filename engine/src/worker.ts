@@ -9,6 +9,7 @@ import os from "node:os";
 import { config, db } from "./config.ts";
 import { claim, log, processJob, recoverStale } from "./job.ts";
 import { claimLibrarySync, recoverStaleLibraries, registerBuiltins, syncLibrary } from "./libraries.ts";
+import { claimReference, recoverStaleReferences, runReference } from "./references.ts";
 import { claimResearch, recoverStaleResearch, runResearch } from "./research.ts";
 import { transcriptionAvailable } from "./transcribe.ts";
 
@@ -17,6 +18,7 @@ const worker = `${os.hostname()}:${process.pid}`;
 let stopping = false;
 let current: string | null = null;
 let currentResearch: string | null = null;
+let currentReference: string | null = null;
 let currentLibrary: string | null = null;
 
 // ---------------------------------------------------------------- loop
@@ -34,6 +36,10 @@ async function shutdown() {
     await db.from("trend_reports").update({ status: "queued", progress: null }).eq("id", currentResearch).eq("status", "running");
     log(currentResearch, "research requeued: the engine is stopping");
   }
+  if (currentReference) {
+    await db.from("reference_videos").update({ status: "queued", progress: null }).eq("id", currentReference).eq("status", "running");
+    log(currentReference, "reference requeued: the engine is stopping");
+  }
   if (currentLibrary) {
     await db.from("sound_libraries").update({ status: "queued", progress: null }).eq("id", currentLibrary).eq("status", "running");
     log(currentLibrary, "library sync requeued: the engine is stopping");
@@ -48,6 +54,7 @@ log(null, `edit engine ${worker} started (model ${config.model}, transcription $
 await mkdir(config.workDir, { recursive: true });
 await recoverStale();
 await recoverStaleResearch();
+await recoverStaleReferences();
 await recoverStaleLibraries().catch((err) => log(null, `library recovery failed: ${err.message}`));
 // The app's Sound page lists the libraries this engine ships with.
 await registerBuiltins().catch((err) => log(null, `couldn't list the built-in sound libraries: ${err.message}`));
@@ -57,6 +64,7 @@ while (!stopping) {
   if (Date.now() - lastRecovery > 10 * 60_000) {
     await recoverStale();
     await recoverStaleResearch();
+    await recoverStaleReferences();
     lastRecovery = Date.now();
   }
   const job = await claim();
@@ -68,7 +76,16 @@ while (!stopping) {
     if (once) break;
     continue;
   }
-  // Edits come first; research runs when no edit is waiting.
+  // Edits come first; then the references the studio added (a minute or two each), then research.
+  const reference = await claimReference().catch(() => null);
+  if (reference) {
+    log(reference.id, `claimed a ${reference.platform} reference for client ${reference.client_id.slice(0, 8)}`);
+    currentReference = reference.id;
+    await runReference(reference);
+    currentReference = null;
+    if (once) break;
+    continue;
+  }
   const research = await claimResearch();
   if (research) {
     log(research.id, `claimed trend research for client ${research.client_id.slice(0, 8)}`);

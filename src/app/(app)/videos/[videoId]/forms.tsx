@@ -149,8 +149,8 @@ export function ScriptEditor({
         <p className="mt-2 text-xs text-muted">
           Agent 3 writes the script, the videographer&apos;s shoot plan and the edit prompt
           {hasStrategy
-            ? ", from the brand strategy, the latest viral research, the client's other videos and the studio's motion prompts."
-            : ". Run the brand strategist on the client's Brand & strategy page for sharper scripts."}
+            ? ", from the brand strategy, the latest viral research, the references, the client's other videos and the studio's motion prompts."
+            : ", from the brief and the references. Run the brand strategist on the client's Brand & strategy page for sharper scripts."}
         </p>
         {!hasBrief && <p className="mt-2 text-xs text-muted">Add the client brief in Details first.</p>}
         {!claudeReady && (
