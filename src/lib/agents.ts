@@ -4,13 +4,17 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { QUESTIONS, type Answers } from "@/lib/questionnaire";
 import type { Charte, Pillar, ShootPlan, TrendFindings } from "@/lib/agent-types";
+import type { RevisionKind } from "@/lib/workflow";
 
 // Agents 1 and 3 run here, in the app. Agent 2 (trend research) downloads and watches
 // videos, so it runs on the edit engine (engine/src/research.ts).
 
 const MODEL = "claude-opus-5-5";
 
-async function ask<T extends z.ZodType>(schema: T, system: string, prompt: string, effort: "medium" | "high") {
+// `context` is what stays the same from one call to the next for a client (strategy, research,
+// the memory of their videos): it goes first and is cached, so a round of changes doesn't pay
+// for it again.
+async function ask<T extends z.ZodType>(schema: T, system: string, prompt: string, effort: "medium" | "high", context?: string) {
   const client = new Anthropic();
   const response = await client.beta.messages.parse({
     model: MODEL,
@@ -19,7 +23,12 @@ async function ask<T extends z.ZodType>(schema: T, system: string, prompt: strin
     fallbacks: "default",
     system,
     output_config: { effort, format: betaZodOutputFormat(schema) },
-    messages: [{ role: "user", content: prompt }],
+    messages: [
+      {
+        role: "user",
+        content: context ? [{ type: "text", text: context, cache_control: { type: "ephemeral" } }, { type: "text", text: prompt }] : prompt,
+      },
+    ],
   });
   if (response.stop_reason === "refusal") throw new Error("Claude declined this request.");
   if (response.stop_reason === "max_tokens" || !response.parsed_output) throw new Error("Claude's answer came back incomplete. Try again.");
@@ -67,13 +76,16 @@ export type Strategy = { niche: string; keywords: string[]; reference_accounts: 
 
 const STRATEGIST = `You are the brand strategist at Magik Studio, a studio that makes short-form videos (Instagram Reels, TikTok, Shorts) for businesses. From a client's questionnaire you define their niche, their charte graphique (visual identity for video) and a clear description of the business and its needs.
 
-Be specific and practical: everything you write is used directly by a researcher who searches viral videos in the niche, a scriptwriter, and an automatic video editor. Keep the client's own words, colors and constraints when they give them; fill gaps with confident, niche-appropriate choices. Write in English, even when the answers are in French.`;
+Be specific and practical: everything you write is used directly by a researcher who searches viral videos in the niche, a scriptwriter, and an automatic video editor. Keep the client's own words, colors and constraints when they give them; fill gaps with confident, niche-appropriate choices. When the studio has already made videos for the client, build the content pillars and ideas on them: what comes next, never a repeat. Write in English, even when the answers are in French.`;
 
-export async function runStrategist(input: { clientName: string; answers: Answers }): Promise<Strategy> {
+export async function runStrategist(input: { clientName: string; answers: Answers; memory: string | null }): Promise<Strategy> {
   const answers = QUESTIONS.filter((q) => input.answers[q.key])
     .map((q) => `${q.label}: ${input.answers[q.key]}`)
     .join("\n");
-  return ask(Strategy, STRATEGIST, `Client: ${input.clientName}\n\nQuestionnaire:\n${answers}`, "high");
+  const prompt = [`Client: ${input.clientName}`, `Questionnaire:\n${answers}`, input.memory && `Videos the studio already made for this client:\n${input.memory}`]
+    .filter(Boolean)
+    .join("\n\n");
+  return ask(Strategy, STRATEGIST, prompt, "high");
 }
 
 // ---------------------------------------------------------------- Agent 3: scriptwriter
@@ -110,6 +122,32 @@ const Script = z.object({
 
 export type ScriptDraft = z.infer<typeof Script>;
 
+// What the scriptwriter knows about a client before any one video. It is the same for every
+// call about the client, so it goes in the cached context.
+type BrandInput = {
+  clientName: string;
+  strategy: { niche: string | null; business: string | null; audience: string | null; needs: string[]; pillars: unknown; charte: unknown } | null;
+  findings: TrendFindings | null;
+  styleRules: string | null;
+  // The client's other videos (see @/lib/memory).
+  memory: string | null;
+};
+
+function brandContext(input: BrandInput) {
+  const s = input.strategy;
+  return [
+    `Client: ${input.clientName}`,
+    s && `Brand strategy:\nNiche: ${s.niche}\nBusiness: ${s.business}\nAudience: ${s.audience}\nNeeds: ${s.needs.join("; ")}\nContent pillars: ${JSON.stringify(s.pillars)}\nCharte graphique: ${JSON.stringify(s.charte)}`,
+    input.styleRules && `Editing style rules for this client:\n${input.styleRules}`,
+    input.findings && `What works in viral videos in this niche (from the trend research):\n${JSON.stringify(input.findings)}`,
+    input.memory && `The client's other videos, which the studio made before (your memory):\n${input.memory}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+const MEMORY = `You remember the client's other videos: keep what recurs consistent with them (characters, series formats, intros, running jokes, the brand's voice), build on what the client liked, never reuse a hook, idea or joke they already have unless asked, and don't bring back anything the client asked to change before.`;
+
 const SCRIPTWRITER = `You are the head scriptwriter at Magik Studio. You write short-form videos (Reels, TikTok, Shorts) that perform: a hook in the first 2 seconds, constant visual change, a payoff and a call to action.
 
 You receive the client's brand strategy (niche, charte graphique, business and needs), the key points from viral videos in their niche, and the brief for this video. You deliver three things:
@@ -117,33 +155,31 @@ You receive the client's brand strategy (niche, charte graphique, business and n
 2. a detailed shoot plan the videographer follows on set, scene by scene, so nothing is missed,
 3. an edit prompt for the studio's automatic editor (it cuts the footage, writes captions, adds 3D motion graphics, music and sound effects from these notes).
 
-Use what works in the viral videos (hooks, structures, pacing) but make it fit this client: never copy a video. Spoken lines are in the language of the videos; everything else is in English. Respect the charte graphique and the don'ts.`;
+Use what works in the viral videos (hooks, structures, pacing) but make it fit this client: never copy a video. Spoken lines are in the language of the videos; everything else is in English. Respect the charte graphique and the don'ts.
 
-export async function runScriptwriter(input: {
-  clientName: string;
-  title: string;
-  format: string;
-  aspect: string;
-  brief: string;
-  notes?: string;
-  strategy: { niche: string | null; business: string | null; audience: string | null; needs: string[]; pillars: unknown; charte: unknown } | null;
-  findings: TrendFindings | null;
-  styleRules: string | null;
-}): Promise<ScriptDraft & { plan: ShootPlan }> {
-  const s = input.strategy;
+${MEMORY}`;
+
+export async function runScriptwriter(
+  input: BrandInput & {
+    title: string;
+    format: string;
+    aspect: string;
+    brief: string;
+    notes?: string;
+    // What was asked on earlier versions of this video (see describeThread).
+    thread: string | null;
+  },
+): Promise<ScriptDraft & { plan: ShootPlan }> {
   const prompt = [
-    `Client: ${input.clientName}`,
     `Video: ${input.title}`,
     `Format: ${input.format}, aspect ratio ${input.aspect}`,
     `Brief:\n${input.brief}`,
     input.notes && `Notes from the studio:\n${input.notes}`,
-    s && `Brand strategy:\nNiche: ${s.niche}\nBusiness: ${s.business}\nAudience: ${s.audience}\nNeeds: ${s.needs.join("; ")}\nContent pillars: ${JSON.stringify(s.pillars)}\nCharte graphique: ${JSON.stringify(s.charte)}`,
-    input.styleRules && `Editing style rules for this client:\n${input.styleRules}`,
-    input.findings && `What works in viral videos in this niche (from the trend research):\n${JSON.stringify(input.findings)}`,
+    input.thread && `Earlier versions of this video and what was asked on them (it still applies unless the brief or the notes now say otherwise):\n${input.thread}`,
   ]
     .filter(Boolean)
     .join("\n\n");
-  const draft = await ask(Script, SCRIPTWRITER, prompt, "high");
+  const draft = await ask(Script, SCRIPTWRITER, prompt, "high", brandContext(input));
   return {
     ...draft,
     plan: { concept: draft.concept, length_seconds: draft.length_seconds, scenes: draft.scenes, broll: draft.broll, props_wardrobe: draft.props_wardrobe },
@@ -161,33 +197,97 @@ const Adapted = z.object({
 
 const ADAPTER = `You are the head scriptwriter at Magik Studio. The studio already has a final script for this video and the footage is shot or being shot. Do not rewrite the script, its story or its lines: they are final.
 
-Your job is to brief the studio's automatic video editor so the edit gets the most out of this script: structure with timings that follow the script's beats, the hook, pacing, captions (preset, language, highlight words), which motion templates to use where (character_intro, cast_lineup, title_3d, stat_card, lower_third_3d), transitions, music and sound effects, ending and call to action. Use the brand strategy and the viral research when they are given.`;
+Your job is to brief the studio's automatic video editor so the edit gets the most out of this script: structure with timings that follow the script's beats, the hook, pacing, captions (preset, language, highlight words), which motion templates to use where (character_intro, cast_lineup, title_3d, stat_card, lower_third_3d), transitions, music and sound effects, ending and call to action. Use the brand strategy and the viral research when they are given.
 
-export async function adaptScript(input: {
-  clientName: string;
-  title: string;
-  format: string;
-  aspect: string;
-  brief: string | null;
-  script: string;
-  notes?: string;
-  strategy: { niche: string | null; business: string | null; audience: string | null; needs: string[]; pillars: unknown; charte: unknown } | null;
-  findings: TrendFindings | null;
-  styleRules: string | null;
-}) {
-  const s = input.strategy;
+${MEMORY}`;
+
+export async function adaptScript(input: BrandInput & { title: string; format: string; aspect: string; brief: string | null; script: string; notes?: string }) {
   const prompt = [
-    `Client: ${input.clientName}`,
     `Video: ${input.title}`,
     `Format: ${input.format}, aspect ratio ${input.aspect}`,
     input.brief && `Brief:\n${input.brief}`,
     `The final script (keep it exactly):\n${input.script}`,
     input.notes && `Notes from the studio:\n${input.notes}`,
-    s && `Brand strategy:\nNiche: ${s.niche}\nBusiness: ${s.business}\nAudience: ${s.audience}\nNeeds: ${s.needs.join("; ")}\nCharte graphique: ${JSON.stringify(s.charte)}`,
-    input.styleRules && `Editing style rules for this client:\n${input.styleRules}`,
-    input.findings && `What works in viral videos in this niche:\n${JSON.stringify(input.findings)}`,
   ]
     .filter(Boolean)
     .join("\n\n");
-  return ask(Adapted, ADAPTER, prompt, "medium");
+  return ask(Adapted, ADAPTER, prompt, "medium", brandContext(input));
+}
+
+// ---------------------------------------------------------------- Agent 3, changes on request
+
+const Revision = Script.extend({
+  reply: z
+    .string()
+    .describe("Your answer to the studio, in the language of their request: 1 to 4 short sentences on what you changed, and anything you did differently from what they asked and why."),
+});
+
+const REVISER = `You are the head scriptwriter at Magik Studio. You delivered this video's script, shoot plan and edit prompt, and the studio is asking you for changes, the way a director gives notes in a writers' room.
+
+- Do what is asked, plus what has to follow so everything stays consistent: a new or moved scene changes its shoot plan entry, its shots, the timings and the edit prompt; a new length changes the timings.
+- Keep everything else exactly as it is, word for word. What nobody asked to change already works.
+- Earlier requests in this video's thread still hold unless the new one overrides them. Hand edits by the studio are deliberate: keep them.
+- If a request would hurt the video, do it the best way you can and say so in your reply. If it can be read two ways, take the one that makes the better video and say which.
+- Spoken lines stay in the language of the video; everything else stays in English. Respect the charte graphique and the don'ts.
+- Return the complete script, shot list, shoot plan and edit prompt, not only what changed.
+
+${MEMORY}`;
+
+export async function reviseScript(
+  input: BrandInput & {
+    title: string;
+    format: string;
+    aspect: string;
+    brief: string | null;
+    current: { script: string; shots: string[]; plan: ShootPlan | null; editPrompt: string | null };
+    thread: string | null;
+    request: string;
+  },
+): Promise<ScriptDraft & { reply: string; plan: ShootPlan | null }> {
+  const c = input.current;
+  const prompt = [
+    `Video: ${input.title}`,
+    `Format: ${input.format}, aspect ratio ${input.aspect}`,
+    input.brief && `Brief:\n${input.brief}`,
+    `The script now:\n${c.script || "(empty)"}`,
+    `The shot list now:\n${c.shots.map((s, i) => `${i + 1}. ${s}`).join("\n") || "(empty)"}`,
+    c.plan
+      ? `The shoot plan now (JSON):\n${JSON.stringify(c.plan)}`
+      : "This video has no shoot plan (its footage is shot or being shot): return empty scenes, broll and props_wardrobe unless the request asks for a shoot plan.",
+    `The edit prompt now:\n${c.editPrompt || "(empty)"}`,
+    input.thread && `This video's thread so far:\n${input.thread}`,
+    `The studio's request:\n${input.request}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const draft = await ask(Revision, REVISER, prompt, "medium", brandContext(input));
+  return {
+    ...draft,
+    plan: draft.scenes.length
+      ? { concept: draft.concept, length_seconds: draft.length_seconds, scenes: draft.scenes, broll: draft.broll, props_wardrobe: draft.props_wardrobe }
+      : null,
+  };
+}
+
+// A video's thread, told to the scriptwriter: what was asked and answered, version by version.
+export function describeThread(rows: { kind: RevisionKind; request: string | null; reply: string | null }[]) {
+  const lines = rows.map((r) => {
+    switch (r.kind) {
+      case "written":
+        return `- You wrote a version${r.request ? `, with these notes: ${r.request}` : ""}.`;
+      case "revised":
+        return `- The studio asked: ${r.request}\n  You answered: ${r.reply ?? "done"}`;
+      case "edited":
+        return "- The studio edited it by hand.";
+      case "pasted":
+        return `- The studio pasted its own script${r.request ? `, with these notes: ${r.request}` : ""}.`;
+      case "restored":
+        return "- The studio went back to an earlier version.";
+      case "client":
+        return `- The client asked for changes: ${r.request}`;
+    }
+  });
+  // Several saves in a row read as one.
+  const kept = lines.filter((line, i) => line !== lines[i - 1]);
+  return kept.length ? kept.join("\n") : null;
 }

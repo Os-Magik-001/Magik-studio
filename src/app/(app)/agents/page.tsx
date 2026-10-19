@@ -45,14 +45,15 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     supabase.from("brand_kits").select("style_rules").eq("client_id", client.id).maybeSingle(),
   ]);
   const video = (videos ?? []).find((v) => v.id === videoParam) ?? videos?.[0] ?? null;
-  const [{ data: script }, { data: footage }, { data: jobs }, { data: versions }] = video
+  const [{ data: script }, { data: footage }, { data: jobs }, { data: versions }, { data: asks }] = video
     ? await Promise.all([
         supabase.from("scripts").select("body, shot_list, shoot_plan, edit_prompt, updated_at").eq("video_id", video.id).maybeSingle(),
         supabase.from("footage").select("file_name, created_at").eq("video_id", video.id).order("created_at"),
         supabase.from("edit_jobs").select("id, source, status, progress, error, created_at, started_at, finished_at").eq("video_id", video.id).order("created_at"),
         supabase.from("versions").select("number, status, made_by, created_at").eq("video_id", video.id).order("number"),
+        supabase.from("script_revisions").select("kind, request, reply, created_at").eq("video_id", video.id).in("kind", ["revised", "client"]).order("created_at"),
       ])
-    : [{ data: null }, { data: null }, { data: null }, { data: null }];
+    : [{ data: null }, { data: null }, { data: null }, { data: null }, { data: null }];
 
   // ------------------------------------------------------------ state of each node
   const answers = readAnswers(form?.answers);
@@ -114,6 +115,14 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   if (script?.edit_prompt) {
     events.push({ at: script.updated_at, who: "SCRIPTWRITER → VIDEOGRAPHER", msg: plan ? `${plan.scenes.length} scenes, ${shots.length} shots` : `${shots.length} shots`, link: 6 });
     events.push({ at: script.updated_at, who: "SCRIPTWRITER → ENGINE", msg: `Edit prompt (${script.edit_prompt.split(/\s+/).length} words)`, link: 7 });
+  }
+  const short = (t: string | null) => ((t ?? "").length > 160 ? `${t!.slice(0, 159)}…` : t ?? "");
+  for (const a of asks ?? []) {
+    if (a.kind === "client") events.push({ at: a.created_at, who: "CLIENT → SCRIPTWRITER", msg: `Changes asked: ${short(a.request)}` });
+    else {
+      events.push({ at: a.created_at, who: "STUDIO → SCRIPTWRITER", msg: `Change request: ${short(a.request)}` });
+      if (a.reply) events.push({ at: a.created_at, who: "SCRIPTWRITER", msg: short(a.reply) });
+    }
   }
   if (footage?.length) events.push({ at: footage[0].created_at, who: "VIDEOGRAPHER → ENGINE", msg: `Footage: ${footage.length} file${footage.length > 1 ? "s" : ""} (first: ${footage[0].file_name})`, link: 8 });
   if (video?.footage_complete_at) events.push({ at: video.footage_complete_at, who: "VIDEOGRAPHER → ENGINE", msg: "All footage is in: start the edit", link: 8 });

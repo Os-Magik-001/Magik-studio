@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Download, ExternalLink, Trash2 } from "lucide-react";
@@ -8,10 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { driveServiceEmail } from "@/lib/drive";
 import { claudeConfigured } from "@/lib/claude";
-import { FORMAT_LABEL, formatBytes, parseShotList } from "@/lib/workflow";
-import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClass } from "@/components/ui";
+import { FORMAT_LABEL, formatBytes, parseShotList, type RevisionKind } from "@/lib/workflow";
+import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClass, cx } from "@/components/ui";
 import { ScriptStatusBadge, StatusStepper, VersionStatusBadge, VideoStatusBadge } from "@/components/status";
-import { deleteFootage, cancelEditJob, retryEditJob } from "@/app/actions/workflow";
+import { deleteFootage, cancelEditJob, restoreScriptRevision, retryEditJob } from "@/app/actions/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ShootPlanView } from "@/components/agents/views";
 import { asShootPlan } from "@/lib/agent-types";
@@ -23,6 +24,7 @@ import {
   FootageDrop,
   FastTrackForm,
   LaunchEditForm,
+  ReviseScriptForm,
   ScheduleShootForm,
   ScriptEditor,
   VideoDetailsForm,
@@ -46,8 +48,18 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
   if (!video) notFound();
 
   const supabase = await createClient();
-  const [{ data: client }, { data: script }, { data: shoots }, { data: footage }, { data: jobs }, { data: versions }, { data: staff }, { data: strategy }] =
-    await Promise.all([
+  const [
+    { data: client },
+    { data: script },
+    { data: shoots },
+    { data: footage },
+    { data: jobs },
+    { data: versions },
+    { data: staff },
+    { data: strategy },
+    { data: thread },
+    { count: otherVideos },
+  ] = await Promise.all([
       supabase.from("clients").select("id, name, revision_limit").eq("id", video.client_id).single(),
       supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
       supabase.from("shoots").select("*").eq("video_id", videoId).order("starts_at"),
@@ -60,6 +72,12 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         .order("number", { ascending: false }),
       supabase.from("profiles").select("id, full_name, email, role").in("role", ["editor", "videographer"]),
       supabase.from("brand_strategies").select("client_id").eq("client_id", video.client_id).maybeSingle(),
+      supabase
+        .from("script_revisions")
+        .select("id, kind, request, reply, created_at, created_by, restored_from")
+        .eq("video_id", videoId)
+        .order("created_at"),
+      supabase.from("videos").select("id", { count: "exact", head: true }).eq("client_id", video.client_id).neq("id", videoId),
     ]);
 
   const footageUrls = await signedUrls("footage", (footage ?? []).flatMap((f) => (f.storage_path ? [f.storage_path] : [])));
@@ -70,6 +88,20 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
     (staff ?? []).filter((p) => p.role === role).map((p) => ({ id: p.id, name: displayName(p) }));
   const scriptStatus = script?.status ?? "draft";
   const shootPlan = asShootPlan(script?.shoot_plan);
+
+  const entries = thread ?? [];
+  const peopleIds = [...new Set([...entries.map((e) => e.created_by), script?.approved_by].filter((id): id is string => !!id))];
+  const { data: authors } = peopleIds.length
+    ? await supabase.from("profiles").select("id, full_name, email, role").in("id", peopleIds)
+    : { data: [] };
+  const names = new Map((authors ?? []).map((p) => [p.id, displayName(p)]));
+  const approvedByClient = script?.status === "approved" && authors?.find((p) => p.id === script.approved_by)?.role === "client";
+  // The forms below hold the script in their fields: each starts over when the script changed
+  // somewhere else (the scriptwriter, a restore, another form), never after its own save.
+  const changedElsewhere = (own: RevisionKind) => {
+    const last = entries.filter((e) => e.kind !== "client" && e.kind !== own).at(-1);
+    return last ? `${last.id}:${last.created_at}` : "";
+  };
 
   return (
     <>
@@ -109,7 +141,13 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 description="Already have the script and the footage? Skip the agents: paste the script (or keep the one below) and the engine edits from it."
               />
               <div className="p-5">
-                <FastTrackForm videoId={video.id} script={script?.body ?? ""} footageCount={footage?.length ?? 0} hasStrategy={!!strategy} />
+                <FastTrackForm
+                  key={changedElsewhere("pasted")}
+                  videoId={video.id}
+                  script={script?.body ?? ""}
+                  footageCount={footage?.length ?? 0}
+                  hasStrategy={!!strategy}
+                />
               </div>
             </Card>
           )}
@@ -156,6 +194,17 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                   draftedByClaude={!!script?.drafted_by_claude}
                   editPrompt={script?.edit_prompt ?? ""}
                   hasStrategy={!!strategy}
+                  version={changedElsewhere("edited")}
+                />
+              )}
+              {(script?.body.trim() || script?.edit_prompt?.trim() || entries.length > 0) && (
+                <ScriptThread
+                  videoId={video.id}
+                  entries={entries}
+                  names={names}
+                  clientNote={script?.status === "changes_requested" ? script.client_note : null}
+                  approvedByClient={approvedByClient}
+                  remembers={otherVideos ?? 0}
                 />
               )}
               {shootPlan && (
@@ -178,6 +227,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
             <div className="flex flex-col gap-5 p-5">
               {openJobs.length === 0 && (
                 <LaunchEditForm
+                  key={script?.updated_at}
                   videoId={video.id}
                   prompt={script?.edit_prompt ?? undefined}
                   disabledReason={!footage?.length ? "Add the raw footage first." : undefined}
@@ -389,6 +439,130 @@ function ShotList({ shots }: { shots: { text: string; done?: boolean }[] }) {
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
+
+type ThreadEntry = {
+  id: string;
+  kind: RevisionKind;
+  request: string | null;
+  reply: string | null;
+  created_at: string;
+  created_by: string | null;
+  restored_from: string | null;
+};
+
+// The scriptwriter's thread: every version of the script, what was asked and what it
+// answered, with a way back to any version.
+function ScriptThread({
+  videoId,
+  entries,
+  names,
+  clientNote,
+  approvedByClient,
+  remembers,
+}: {
+  videoId: string;
+  entries: ThreadEntry[];
+  names: Map<string, string>;
+  clientNote: string | null;
+  approvedByClient: boolean;
+  remembers: number;
+}) {
+  const current = entries.filter((e) => e.kind !== "client").at(-1)?.id;
+  const meta = (e: ThreadEntry, align: "start" | "end" | "center") => (
+    <div className={cx("flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted", { start: "self-start", end: "self-end", center: "self-center" }[align])}>
+      <LocalDate value={e.created_at} preset="short" />
+      {e.id === current ? (
+        <Badge tone="accent">Current</Badge>
+      ) : (
+        e.kind !== "client" && (
+          <form action={restoreScriptRevision}>
+            <input type="hidden" name="revisionId" value={e.id} />
+            <button className="font-medium text-accent hover:underline">Go back to this version</button>
+          </form>
+        )
+      )}
+    </div>
+  );
+  const studio = (e: ThreadEntry) => (e.created_by && names.get(e.created_by)) || "The studio";
+  const restoredAt = (e: ThreadEntry) => {
+    const at = entries.find((x) => x.id === e.restored_from)?.created_at;
+    return at ? <LocalDate value={at} preset="short" prefix="the version of " /> : "an earlier version";
+  };
+
+  return (
+    <div className="mt-6 border-t border-line pt-5">
+      <h3 className="text-sm font-medium text-ink">Ask the scriptwriter for changes</h3>
+      <p className="mt-1 text-xs text-muted">
+        It changes only what you ask and keeps the rest. Every version stays here, so you can go back to any of them.
+        {remembers > 0 && ` It remembers this client's ${remembers} other video${remembers > 1 ? "s" : ""}.`}
+      </p>
+      {entries.length > 0 && (
+        <ol className="mt-4 flex flex-col gap-4">
+          {entries.map((e) => (
+            <li key={e.id} className="flex flex-col gap-1.5">
+              {e.kind === "revised" && (
+                <>
+                  <Bubble who={studio(e)} side="right">{e.request}</Bubble>
+                  <Bubble who="Scriptwriter" side="left">{e.reply ?? "Done."}</Bubble>
+                  {meta(e, "start")}
+                </>
+              )}
+              {e.kind === "client" && (
+                <>
+                  <Bubble who={`${e.created_by ? names.get(e.created_by) ?? "Client" : "Client"} · client`} side="right">{e.request}</Bubble>
+                  {meta(e, "end")}
+                </>
+              )}
+              {e.kind === "written" && (
+                <>
+                  {e.request && <Bubble who={studio(e)} side="right">{e.request}</Bubble>}
+                  <Bubble who="Scriptwriter" side="left">{e.reply ? `New version: ${e.reply}` : "Wrote this version."}</Bubble>
+                  {meta(e, "start")}
+                </>
+              )}
+              {e.kind === "pasted" && (
+                <>
+                  <p className="self-center text-xs text-muted">{studio(e)} pasted the studio&apos;s script{e.request ? `: “${e.request}”` : ""}</p>
+                  {e.reply && <Bubble who="Scriptwriter" side="left">{e.reply}</Bubble>}
+                  {meta(e, e.reply ? "start" : "center")}
+                </>
+              )}
+              {e.kind === "edited" && (
+                <>
+                  <p className="self-center text-xs text-muted">{e.created_by ? `${studio(e)} edited it by hand` : "The script before these changes"}</p>
+                  {meta(e, "center")}
+                </>
+              )}
+              {e.kind === "restored" && (
+                <>
+                  <p className="self-center text-xs text-muted">
+                    {studio(e)} went back to {restoredAt(e)}
+                  </p>
+                  {meta(e, "center")}
+                </>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+      <ReviseScriptForm videoId={videoId} clientNote={clientNote} approvedByClient={approvedByClient} />
+    </div>
+  );
+}
+
+function Bubble({ who, side, children }: { who: string; side: "left" | "right"; children: ReactNode }) {
+  return (
+    <div
+      className={cx(
+        "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+        side === "right" ? "self-end rounded-br-md bg-accent-soft text-ink" : "self-start rounded-bl-md bg-surface-2 text-ink-2",
+      )}
+    >
+      <div className="mb-0.5 text-[11px] font-medium text-muted">{who}</div>
+      <p className="whitespace-pre-wrap">{children}</p>
     </div>
   );
 }

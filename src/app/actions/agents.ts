@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { claudeConfigured } from "@/lib/claude";
 import { runStrategist } from "@/lib/agents";
+import { clientMemory } from "@/lib/memory";
 import { QUESTIONS, answeredCount, readAnswers } from "@/lib/questionnaire";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,17 +27,19 @@ export async function saveQuestionnaire(_: ActionResult, formData: FormData): Pr
 }
 
 // Agent 1: questionnaire -> niche, charte graphique, business and needs. Also fills the
-// brand kit, so every script and edit follows it from now on.
+// brand kit, so every script and edit follows it from now on. It reads the client's videos
+// so far, so a second run builds on them.
 export async function runBrandStrategist(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin", "editor");
   if (!claudeConfigured()) return fail("Claude isn't connected yet: ANTHROPIC_API_KEY is missing.");
   const clientId = text(formData, "clientId");
 
   const supabase = await createClient();
-  const [{ data: client }, { data: form }, { data: kit }] = await Promise.all([
+  const [{ data: client }, { data: form }, { data: kit }, memory] = await Promise.all([
     supabase.from("clients").select("id, name").eq("id", clientId).maybeSingle(),
     supabase.from("brand_questionnaires").select("answers").eq("client_id", clientId).maybeSingle(),
     supabase.from("brand_kits").select("client_id, logo_path").eq("client_id", clientId).maybeSingle(),
+    clientMemory(clientId, { depth: "brief" }),
   ]);
   if (!client) return fail("Client not found.");
   const answers = readAnswers(form?.answers);
@@ -44,7 +47,7 @@ export async function runBrandStrategist(_: ActionResult, formData: FormData): P
 
   let strategy;
   try {
-    strategy = await runStrategist({ clientName: client.name, answers });
+    strategy = await runStrategist({ clientName: client.name, answers, memory: memory.text });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "The brand strategist couldn't finish.");
   }

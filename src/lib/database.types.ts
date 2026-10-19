@@ -476,6 +476,73 @@ export type Database = {
           },
         ]
       }
+      script_revisions: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          edit_prompt: string | null
+          id: string
+          kind: Database["public"]["Enums"]["script_revision_kind"]
+          reply: string | null
+          request: string | null
+          restored_from: string | null
+          shoot_plan: Json | null
+          shot_list: Json | null
+          video_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          edit_prompt?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["script_revision_kind"]
+          reply?: string | null
+          request?: string | null
+          restored_from?: string | null
+          shoot_plan?: Json | null
+          shot_list?: Json | null
+          video_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          edit_prompt?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["script_revision_kind"]
+          reply?: string | null
+          request?: string | null
+          restored_from?: string | null
+          shoot_plan?: Json | null
+          shot_list?: Json | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_revisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "script_revisions_restored_from_fkey"
+            columns: ["restored_from"]
+            isOneToOne: false
+            referencedRelation: "script_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "script_revisions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scripts: {
         Row: {
           approved_at: string | null
@@ -802,6 +869,13 @@ export type Database = {
       edit_job_source: "launch" | "editor_fix" | "client_changes"
       edit_job_status: "queued" | "running" | "done" | "failed" | "cancelled"
       footage_source: "upload" | "drive"
+      script_revision_kind:
+        | "written"
+        | "revised"
+        | "edited"
+        | "pasted"
+        | "restored"
+        | "client"
       script_status:
         | "draft"
         | "client_review"
@@ -955,6 +1029,14 @@ export const Constants = {
       edit_job_source: ["launch", "editor_fix", "client_changes"],
       edit_job_status: ["queued", "running", "done", "failed", "cancelled"],
       footage_source: ["upload", "drive"],
+      script_revision_kind: [
+        "written",
+        "revised",
+        "edited",
+        "pasted",
+        "restored",
+        "client",
+      ],
       script_status: [
         "draft",
         "client_review",

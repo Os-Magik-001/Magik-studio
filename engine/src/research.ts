@@ -11,6 +11,7 @@ import { config, db } from "./config.ts";
 import { run } from "./exec.ts";
 import { log } from "./job.ts";
 import { contactSheets, probe } from "./media.ts";
+import { clientMemory } from "./memory.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
 type Report = { id: string; client_id: string; hashtags: string[]; accounts: string[]; attempts: number };
@@ -189,7 +190,8 @@ export async function watchReels(items: Item[], workDir: string, onProgress: (st
   return watched;
 }
 
-export type StudyContext = { client: string; niche?: string | null; business?: string | null; audience?: string | null; needs?: string[] };
+// `earlier`: the videos already made for the client (see memory.ts), so the ideas are new.
+export type StudyContext = { client: string; niche?: string | null; business?: string | null; audience?: string | null; needs?: string[]; earlier?: string | null };
 
 // Searches, picks, watches and analyses; no database. `onProgress` reports each step.
 export async function study(hashtags: string[], accounts: string[], context: StudyContext, workDir: string, onProgress: (step: string) => unknown = () => {}) {
@@ -214,6 +216,7 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
       text: [
         `Client: ${context.client}`,
         context.niche && `Niche: ${context.niche}\nBusiness: ${context.business ?? ""}\nAudience: ${context.audience ?? ""}\nNeeds: ${(context.needs ?? []).join("; ")}`,
+        context.earlier && `Videos the studio already made for this client (your ideas must be new, not repeats of these):\n${context.earlier}`,
         `Searched: ${hashtags.map((h) => `#${h}`).join(" ")} ${accounts.map((a) => `@${a}`).join(" ")}`,
         `The ${watched.length} top reels, by reach:`,
       ]
@@ -270,7 +273,8 @@ export async function runResearch(report: Report) {
   try {
     const { data: strategy } = await db.from("brand_strategies").select("niche, business, audience, needs").eq("client_id", report.client_id).maybeSingle();
     const { data: client } = await db.from("clients").select("name").eq("id", report.client_id).single();
-    const { reels, findings } = await study(report.hashtags, report.accounts, { client: client?.name ?? "", ...strategy }, dir, (progress) =>
+    const earlier = await clientMemory(report.client_id, null, "brief").catch(() => null);
+    const { reels, findings } = await study(report.hashtags, report.accounts, { client: client?.name ?? "", ...strategy, earlier }, dir, (progress) =>
       db.from("trend_reports").update({ progress }).eq("id", report.id),
     );
     await db.from("trend_reports").update({ status: "done", reels, findings, progress: null, finished_at: new Date().toISOString() }).eq("id", report.id);

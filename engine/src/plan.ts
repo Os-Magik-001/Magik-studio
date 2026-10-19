@@ -312,6 +312,8 @@ export type PlanInput = {
   skills: Skill[];
   clips: Clip[];
   previous: { number: number; plan: EditPlan; comments: { timecodeMs: number | null; body: string; fromClient: boolean }[] } | null;
+  // The client's other videos (see memory.ts), so a series stays consistent.
+  memory?: string | null;
   // The music library, described for planning; empty when there is none.
   music?: string;
   // Self-review: contact sheets of the cut being revised, one frame per second.
@@ -459,6 +461,8 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
       ]
         .filter(Boolean)
         .join("\n")}`,
+    input.memory &&
+      `The client's other videos (the studio's memory; this video's own script is above). Keep what recurs consistent with them (intros, titles, captions, music, running jokes) and don't repeat what was asked to change on them:\n${input.memory}`,
     input.source === "launch" && input.instructions && `Editor's notes for this edit:\n${input.instructions}`,
     input.previous && describePrevious(input.previous),
     input.source !== "launch" && input.instructions && `What was asked for this revision:\n${input.instructions}`,

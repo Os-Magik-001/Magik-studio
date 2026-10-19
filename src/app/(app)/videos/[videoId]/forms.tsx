@@ -17,6 +17,7 @@ import {
   markFootageComplete,
   registerDraftVersion,
   registerFootage,
+  reviseScriptWithClaude,
   saveScript,
   sendScriptToClient,
 } from "@/app/actions/workflow";
@@ -112,6 +113,7 @@ export function ScriptEditor({
   draftedByClaude,
   editPrompt,
   hasStrategy,
+  version,
 }: {
   videoId: string;
   body: string;
@@ -122,8 +124,10 @@ export function ScriptEditor({
   draftedByClaude: boolean;
   editPrompt: string;
   hasStrategy: boolean;
+  // Changes when the script changed outside this form (a revision, a restore, the fast track).
+  version: string;
 }) {
-  // Remount the textareas after Claude writes a new draft.
+  // Remount the textareas after Claude writes a new draft, or the script changed elsewhere.
   const [key, setKey] = useState(0);
   return (
     <div className="flex flex-col gap-5">
@@ -139,7 +143,9 @@ export function ScriptEditor({
         </div>
         <p className="mt-2 text-xs text-muted">
           Agent 3 writes the script, the videographer&apos;s shoot plan and the edit prompt
-          {hasStrategy ? ", from the brand strategy and the latest viral research." : ". Run the brand strategist on the client's Brand & strategy page for sharper scripts."}
+          {hasStrategy
+            ? ", from the brand strategy, the latest viral research and the client's other videos."
+            : ". Run the brand strategist on the client's Brand & strategy page for sharper scripts."}
         </p>
         {!hasBrief && <p className="mt-2 text-xs text-muted">Add the client brief in Details first.</p>}
         {!claudeReady && (
@@ -147,7 +153,7 @@ export function ScriptEditor({
         )}
       </ActionForm>
 
-      <ActionForm key={key} action={saveScript} className="flex flex-col gap-4">
+      <ActionForm key={`${key}:${version}`} action={saveScript} className="flex flex-col gap-4">
         <input type="hidden" name="videoId" value={videoId} />
         <Field label={draftedByClaude ? "Script (drafted by Claude)" : "Script"}>
           <Textarea name="body" rows={14} defaultValue={body} className="font-mono text-[13px]" />
@@ -173,6 +179,32 @@ export function ScriptEditor({
         </div>
       </ActionForm>
     </div>
+  );
+}
+
+// Notes for the scriptwriter on what it delivered: it changes only that, and each round joins
+// the thread above.
+export function ReviseScriptForm({ videoId, clientNote, approvedByClient }: { videoId: string; clientNote: string | null; approvedByClient: boolean }) {
+  return (
+    <ActionForm action={reviseScriptWithClaude} resetOnSuccess className="mt-4 flex flex-col gap-3">
+      <input type="hidden" name="videoId" value={videoId} />
+      <Field
+        label="What should change?"
+        hint={approvedByClient ? "The client approved this script: if the script itself changes, it goes back to them for approval. Shot list and edit prompt changes don't." : undefined}
+      >
+        <Textarea name="request" rows={3} placeholder="Make the hook a question, cut scene 3, end on the offer, a faster edit" />
+      </Field>
+      <div className="flex flex-wrap items-center gap-2">
+        <SubmitButton pendingText="The scriptwriter is making the changes (about a minute)…" variant="secondary">
+          <Sparkles size={14} aria-hidden /> Ask for changes
+        </SubmitButton>
+        {clientNote && (
+          <SubmitButton name="useClientNote" value="1" variant="ghost" pendingText="…">
+            Apply the client&apos;s changes
+          </SubmitButton>
+        )}
+      </div>
+    </ActionForm>
   );
 }
 

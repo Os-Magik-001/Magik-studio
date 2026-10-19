@@ -3,6 +3,7 @@ import type { Database } from "@/lib/database.types";
 type Enums = Database["public"]["Enums"];
 export type VideoStatus = Enums["video_status"];
 export type ScriptStatus = Enums["script_status"];
+export type RevisionKind = Enums["script_revision_kind"];
 export type VersionStatus = Enums["version_status"];
 export type VideoFormat = Enums["video_format"];
 

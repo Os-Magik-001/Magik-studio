@@ -6,6 +6,7 @@ import path from "node:path";
 import { config, db } from "./config.ts";
 import { contactSheets, download, probe } from "./media.ts";
 import { driveWorkingCopy, pruneCache } from "./drive.ts";
+import { clientMemory } from "./memory.ts";
 import { describeLibrary, loadLibrary, trackFile } from "./music.ts";
 import { parseStoredPlan, planEdit, timelineOf, timelineWords, validatePlan, type BrandKit, type Clip, type EditPlan, type PlanInput } from "./plan.ts";
 import { render, type Brand } from "./render.ts";
@@ -255,11 +256,13 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
     await step("Gathering the script, brand kit and footage");
     const { data: video } = await db.from("videos").select("*").eq("id", job.video_id).single();
     if (!video) throw new Error("The video no longer exists.");
-    const [{ data: client }, { data: kit }, { data: script }, { data: footage }] = await Promise.all([
+    const [{ data: client }, { data: kit }, { data: script }, { data: footage }, memory] = await Promise.all([
       db.from("clients").select("name").eq("id", video.client_id).single(),
       db.from("brand_kits").select("*").eq("client_id", video.client_id).maybeSingle(),
       db.from("scripts").select("body, shot_list, status").eq("video_id", video.id).maybeSingle(),
       db.from("footage").select("storage_path, file_name, source, drive_file_id").eq("video_id", video.id).order("created_at"),
+      // The edit goes ahead without it if it can't be read.
+      clientMemory(video.client_id, video.id, "edit").catch(() => null),
     ]);
     // For now Claude can edit before the script is approved, or with no script (brief and footage only).
     if (!footage?.length) throw new Error("There's no footage on this video.");
@@ -320,6 +323,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit) 
         script: script?.body ?? "",
         shots,
         brandKit,
+        memory,
         instructions: job.instructions,
         source: job.source,
         previous,

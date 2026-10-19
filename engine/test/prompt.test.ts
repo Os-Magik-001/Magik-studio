@@ -52,6 +52,12 @@ test("revision prompt pins each comment to the shot it falls on", async () => {
   assert.match(text, /Address every open comment/);
 });
 
+test("the editor is told the client's other videos when there are some", async () => {
+  const text = async (memory: string | null) => (await buildContent({ ...input, memory })).map((b) => (b.type === "text" ? b.text : "")).join("\n");
+  assert.match(await text('1 other video for this client, oldest first.\n\n### "Episode 1"'), /The client's other videos \(the studio's memory[^\n]*\n1 other video for this client/);
+  assert.doesNotMatch(await text(null), /the studio's memory/);
+});
+
 test("the timeline accounts for speed and transitions when pinning comments", async () => {
   const moved: EditPlan = {
     ...plan,

@@ -7,11 +7,13 @@ import { notify } from "@/lib/notify";
 import { objectExists } from "@/lib/storage";
 import { DriveError, driveConfigured, parseDriveLink, resolveDriveVideos } from "@/lib/drive";
 import { claudeConfigured } from "@/lib/claude";
-import { adaptScript, runScriptwriter } from "@/lib/agents";
-import { asFindings } from "@/lib/agent-types";
+import { adaptScript, describeThread, reviseScript, runScriptwriter } from "@/lib/agents";
+import { asFindings, asShootPlan } from "@/lib/agent-types";
+import { clientMemory } from "@/lib/memory";
+import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatTimecode, videoStatusIndex, type VideoStatus } from "@/lib/workflow";
+import { formatTimecode, parseShotList, videoStatusIndex, type RevisionKind, type ScriptStatus, type VideoStatus } from "@/lib/workflow";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // Moves a video forward, never backwards (e.g. a late footage upload doesn't undo "editing").
@@ -26,40 +28,123 @@ async function advance(videoId: string, to: VideoStatus) {
 const setStatus = (videoId: string, status: VideoStatus) =>
   createAdminClient().from("videos").update({ status }).eq("id", videoId);
 
+// ---------------------------------------------------------------- the script's thread
+
+// Every version of a script stays in its thread (script_revisions) with what was asked for it,
+// so the studio can go back to any version and the agents remember what was asked.
+type Version = { body: string; shot_list: Json; shoot_plan: Json | null; edit_prompt: string | null };
+type CurrentScript = Version & { video_id: string; status: ScriptStatus; approved_by: string | null; drafted_by_claude: boolean; updated_at: string };
+
+const sameText = (a: string | null, b: string | null) => (a ?? "").trim() === (b ?? "").trim();
+const shotTexts = (shots: Json) => parseShotList(shots).map((s) => s.text).join("\n");
+const sameVersion = (a: Version, b: Version) =>
+  sameText(a.body, b.body) && sameText(a.edit_prompt, b.edit_prompt) && shotTexts(a.shot_list) === shotTexts(b.shot_list) && JSON.stringify(a.shoot_plan) === JSON.stringify(b.shoot_plan);
+const versionOf = (s: Version): Version => ({ body: s.body, shot_list: s.shot_list, shoot_plan: s.shoot_plan, edit_prompt: s.edit_prompt });
+
+async function record(videoId: string, kind: RevisionKind, by: string | null, entry: { request?: string | null; reply?: string | null; version?: Version; restoredFrom?: string; at?: string } = {}) {
+  await createAdminClient()
+    .from("script_revisions")
+    .insert({
+      video_id: videoId,
+      kind,
+      request: entry.request ?? null,
+      reply: entry.reply ?? null,
+      ...entry.version,
+      restored_from: entry.restoredFrom ?? null,
+      created_by: by,
+      ...(entry.at ? { created_at: entry.at } : {}),
+    });
+}
+
+// The thread starts with the script as it was before its first recorded change, so that
+// version can always come back.
+async function keepCurrent(script: CurrentScript | null) {
+  if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return;
+  const { count } = await createAdminClient()
+    .from("script_revisions")
+    .select("id", { count: "exact", head: true })
+    .eq("video_id", script.video_id)
+    .neq("kind", "client");
+  if (count === 0) await record(script.video_id, script.drafted_by_claude ? "written" : "edited", null, { version: versionOf(script), at: script.updated_at });
+}
+
+// A client's approval covers the script they read: when the script itself changes it goes
+// back to draft. A new shot list or edit prompt, or a script the studio approved itself
+// (fast track), stays approved.
+async function approvalAfter(current: CurrentScript, body: string, viewerId: string): Promise<{ status?: ScriptStatus; approved_by?: string | null; approved_at?: string | null }> {
+  if (sameText(current.body, body)) return {};
+  if (current.status !== "approved") return { status: "draft" };
+  const { data: approver } = current.approved_by
+    ? await createAdminClient().from("profiles").select("role").eq("id", current.approved_by).maybeSingle()
+    : { data: null };
+  if (approver && approver.role !== "client") return { approved_by: viewerId, approved_at: new Date().toISOString() };
+  return { status: "draft", approved_by: null, approved_at: null };
+}
+
+// A shot keeps its tick from the set when the new list still has it.
+function withTicks(shots: string[], before: Json | undefined) {
+  const ticked = new Set(parseShotList(before).filter((s) => s.done).map((s) => s.text));
+  return shots.map((s) => (ticked.has(s) ? { text: s, done: true } : { text: s }));
+}
+
 // ---------------------------------------------------------------- script
 
 export async function saveScript(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  await requireRole("admin", "editor");
+  const viewer = await requireRole("admin", "editor");
   const videoId = text(formData, "videoId");
   if (!(await visibleVideo(videoId))) return fail("Video not found.");
 
   const shots = text(formData, "shots")
     .split("\n")
     .map((s) => s.replace(/^\s*[-*•\d.)]+\s*/, "").trim())
-    .filter(Boolean)
-    .map((s) => ({ text: s }));
+    .filter(Boolean);
 
   const supabase = await createClient();
-  const { data: current } = await supabase.from("scripts").select("status").eq("video_id", videoId).maybeSingle();
+  const { data: current } = await supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle();
   if (current?.status === "approved") return fail("This script is approved. It can't be edited.");
 
+  const version: Version = {
+    body: text(formData, "body"),
+    shot_list: withTicks(shots, current?.shot_list),
+    shoot_plan: current?.shoot_plan ?? null,
+    edit_prompt: optionalText(formData, "editPrompt"),
+  };
   const { error } = await supabase.from("scripts").upsert({
     video_id: videoId,
-    body: text(formData, "body"),
-    shot_list: shots,
-    edit_prompt: optionalText(formData, "editPrompt"),
+    body: version.body,
+    shot_list: version.shot_list,
+    edit_prompt: version.edit_prompt,
     // Editing a script the client asked to change puts it back in draft.
     status: "draft",
   });
   if (error) return fail("Couldn't save the script.");
+  if (current ? !sameVersion(current, version) : version.body || version.edit_prompt) await recordHandEdit(videoId, viewer.id, current, version);
   refresh();
   return done("Script saved.");
+}
+
+// Saves by the same person a few minutes apart are one version, not a version per click.
+async function recordHandEdit(videoId: string, by: string, before: CurrentScript | null, version: Version) {
+  await keepCurrent(before);
+  const admin = createAdminClient();
+  const { data: last } = await admin
+    .from("script_revisions")
+    .select("id, kind, created_by, created_at")
+    .eq("video_id", videoId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (last?.kind === "edited" && last.created_by === by && Date.now() - Date.parse(last.created_at) < 15 * 60_000) {
+    await admin.from("script_revisions").update({ ...version, created_at: new Date().toISOString() }).eq("id", last.id);
+  } else {
+    await record(videoId, "edited", by, { version });
+  }
 }
 
 // Agent 3: the brand strategy, the latest trend research and the brief become the
 // script, the videographer's shoot plan and the edit prompt for the engine.
 export async function draftScriptWithClaude(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  await requireRole("admin", "editor");
+  const viewer = await requireRole("admin", "editor");
   if (!claudeConfigured()) {
     return fail("Claude isn't connected yet. Add ANTHROPIC_API_KEY to the environment.");
   }
@@ -70,10 +155,10 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }] = await Promise.all([
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
-    supabase.from("scripts").select("status, client_note").eq("video_id", videoId).maybeSingle(),
+    supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
     admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
     admin
       .from("trend_reports")
@@ -83,9 +168,12 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       .order("finished_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
+    clientMemory(video.client_id, { except: videoId }),
   ]);
   if (script?.status === "approved") return fail("This script is already approved.");
 
+  const notes = text(formData, "notes");
   try {
     const draft = await runScriptwriter({
       clientName: client?.name ?? "Client",
@@ -93,31 +181,123 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       format: video.format.replace("_", " "),
       aspect: video.aspect,
       brief: video.brief,
-      notes: [text(formData, "notes"), script?.client_note && `The client asked for: ${script.client_note}`].filter(Boolean).join("\n"),
+      notes: [notes, script?.client_note && `The client asked for: ${script.client_note}`].filter(Boolean).join("\n"),
+      thread: describeThread(thread ?? []),
       strategy,
       findings: asFindings(report?.findings),
       styleRules: kit?.style_rules ?? null,
+      memory: memory.text,
     });
+    await keepCurrent(script);
+    const version: Version = { body: draft.script, shot_list: draft.shots.map((s) => ({ text: s })), shoot_plan: draft.plan, edit_prompt: draft.edit_prompt };
     const { error } = await supabase.from("scripts").upsert({
       video_id: videoId,
-      body: draft.script,
-      shot_list: draft.shots.map((s) => ({ text: s })),
-      shoot_plan: draft.plan,
-      edit_prompt: draft.edit_prompt,
+      ...version,
       trend_report_id: report?.id ?? null,
       status: "draft",
       drafted_by_claude: true,
     });
     if (error) return fail("Claude wrote a draft but it couldn't be saved.");
+    await record(videoId, "written", viewer.id, { request: notes || null, reply: draft.concept, version });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "Claude couldn't draft the script.");
   }
   refresh();
+  const remembered = memory.count ? ` It remembered the client's ${memory.count} other video${memory.count > 1 ? "s" : ""}.` : "";
   return done(
     strategy
-      ? "Script, shoot plan and edit prompt are ready. Review them before sending to the client."
-      : "Script ready. Run the brand strategist on the client page for sharper scripts.",
+      ? `Script, shoot plan and edit prompt are ready.${remembered} Review them before sending to the client.`
+      : `Script ready.${remembered} Run the brand strategist on the client page for sharper scripts.`,
   );
+}
+
+// The studio asks the scriptwriter for changes on what it delivered, like notes in a
+// writers' room. Each round is a new version in the thread, so it can be undone.
+export async function reviseScriptWithClaude(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const viewer = await requireRole("admin", "editor");
+  if (!claudeConfigured()) return fail("Claude isn't connected yet: ANTHROPIC_API_KEY is missing.");
+  const videoId = text(formData, "videoId");
+  const video = await visibleVideo(videoId);
+  if (!video) return fail("Video not found.");
+
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory] = await Promise.all([
+    supabase.from("clients").select("name").eq("id", video.client_id).single(),
+    supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
+    supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
+    admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
+    admin.from("trend_reports").select("findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
+    clientMemory(video.client_id, { except: videoId }),
+  ]);
+  if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return fail("There's no script yet. Write one first.");
+  const asked = text(formData, "request");
+  const request = formData.get("useClientNote") === "1" && script.client_note ? [`The client asked for: ${script.client_note}`, asked].filter(Boolean).join("\n") : asked;
+  if (!request) return fail("Tell the scriptwriter what to change.");
+
+  let revised;
+  try {
+    revised = await reviseScript({
+      clientName: client?.name ?? "Client",
+      title: video.title,
+      format: video.format.replace("_", " "),
+      aspect: video.aspect,
+      brief: video.brief,
+      current: { script: script.body, shots: parseShotList(script.shot_list).map((s) => s.text), plan: asShootPlan(script.shoot_plan), editPrompt: script.edit_prompt },
+      thread: describeThread(thread ?? []),
+      request,
+      strategy,
+      findings: asFindings(report?.findings),
+      styleRules: kit?.style_rules ?? null,
+      memory: memory.text,
+    });
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : "The scriptwriter couldn't make the changes.");
+  }
+
+  await keepCurrent(script);
+  const approval = await approvalAfter(script, revised.script, viewer.id);
+  const version: Version = { body: revised.script, shot_list: withTicks(revised.shots, script.shot_list), shoot_plan: revised.plan, edit_prompt: revised.edit_prompt };
+  const { error } = await supabase.from("scripts").update({ ...version, ...approval }).eq("video_id", videoId);
+  if (error) return fail("The scriptwriter made the changes but they couldn't be saved.");
+  await record(videoId, "revised", viewer.id, { request, reply: revised.reply, version });
+  refresh();
+  return done(
+    script.status === "approved" && approval.status === "draft"
+      ? "Done. The script itself changed, so it needs the client's approval again."
+      : "Done. The changes are saved.",
+  );
+}
+
+export async function restoreScriptRevision(formData: FormData) {
+  const viewer = await requireRole("admin", "editor");
+  const admin = createAdminClient();
+  const { data: earlier } = await admin
+    .from("script_revisions")
+    .select("id, video_id, body, shot_list, shoot_plan, edit_prompt")
+    .eq("id", text(formData, "revisionId"))
+    .neq("kind", "client")
+    .maybeSingle();
+  if (!earlier || earlier.body === null || !(await visibleVideo(earlier.video_id))) return;
+  const supabase = await createClient();
+  const { data: script } = await supabase.from("scripts").select("*").eq("video_id", earlier.video_id).maybeSingle();
+  if (!script) return;
+
+  await keepCurrent(script);
+  const version: Version = {
+    body: earlier.body,
+    shot_list: withTicks(parseShotList(earlier.shot_list).map((s) => s.text), script.shot_list),
+    shoot_plan: earlier.shoot_plan,
+    edit_prompt: earlier.edit_prompt,
+  };
+  const { error } = await supabase
+    .from("scripts")
+    .update({ ...version, ...(await approvalAfter(script, version.body, viewer.id)) })
+    .eq("video_id", earlier.video_id);
+  if (error) return;
+  await record(earlier.video_id, "restored", viewer.id, { version, restoredFrom: earlier.id });
+  refresh();
 }
 
 // Fast track: the studio already has the script (and often the footage). Keep the
@@ -140,7 +320,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
   const [{ data: client }, { data: kit }, { data: current }, { data: strategy }, { data: report }, { count: footageCount }, { count: openJobs }] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
-    supabase.from("scripts").select("shot_list, edit_prompt").eq("video_id", videoId).maybeSingle(),
+    supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
     admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
     admin.from("trend_reports").select("id, findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
     admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
@@ -162,6 +342,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
         strategy,
         findings: asFindings(report?.findings),
         styleRules: kit?.style_rules ?? null,
+        memory: (await clientMemory(video.client_id, { except: videoId })).text,
       });
       editPrompt = adapted.edit_prompt;
       shots = adapted.shots.map((s) => ({ text: s }));
@@ -170,6 +351,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
     }
   }
 
+  await keepCurrent(current);
   const { error } = await supabase.from("scripts").upsert({
     video_id: videoId,
     body,
@@ -182,6 +364,11 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
     approved_by: skipApproval ? viewer.id : null,
   });
   if (error) return fail("Couldn't save the script.");
+  await record(videoId, "pasted", viewer.id, {
+    request: writePrompt ? optionalText(formData, "editPrompt") : null,
+    reply: writePrompt ? "I wrote the edit prompt and the shot list from your script." : null,
+    version: { body, shot_list: shots, shoot_plan: current?.shoot_plan ?? null, edit_prompt: editPrompt },
+  });
   if (skipApproval) await advance(videoId, footageCount ? "footage_in" : "shoot");
 
   let started = false;
@@ -247,6 +434,7 @@ export async function decideScript(_: ActionResult, formData: FormData): Promise
 
   if (!note) return fail("Tell us what to change.");
   await admin.from("scripts").update({ status: "changes_requested", client_note: note }).eq("video_id", videoId);
+  await record(videoId, "client", viewer.id, { request: note });
   await notify(
     { videoId, editor: true, exclude: viewer.id },
     { kind: "script_changes", title: `Script changes requested: ${video.title}`, body: note },
