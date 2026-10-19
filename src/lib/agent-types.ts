@@ -86,6 +86,19 @@ export type SoundReport = {
   trend: { title: string; artist: string; link: string | null; use: string } | null;
   credits: string[];
   limits: string[];
+  bars?: number[];
+};
+
+// The motion director's design for a video (src/lib/agents.ts, runMotionDirector).
+export type DesignBrief = {
+  concept: string;
+  system: string;
+  scenes: { moment: string; template: string; prompt: string; needs: string }[];
+  captions: string;
+  end_card: string;
+  editor_notes: string;
+  templates: string[];
+  written_at: string;
 };
 
 export const asCharte = (v: unknown) => (v && typeof v === "object" && "palette" in v ? (v as Charte) : null);
@@ -94,4 +107,5 @@ export const asFindings = (v: unknown) => (v && typeof v === "object" && "hooks"
 export const asReels = (v: unknown) => (Array.isArray(v) ? (v as TrendReel[]) : []);
 export const asTrendAudio = (v: unknown) => (Array.isArray(v) ? (v as TrendAudio[]) : []);
 export const asSoundReport = (v: unknown) => (v && typeof v === "object" && "concept" in v ? (v as SoundReport) : null);
+export const asDesignBrief = (v: unknown) => (v && typeof v === "object" && "scenes" in v && "concept" in v ? (v as DesignBrief) : null);
 export const asShootPlan = (v: unknown) => (v && typeof v === "object" && "scenes" in v ? (v as ShootPlan) : null);

@@ -4,12 +4,12 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
-import { asCharte, asFindings, asPillars, asReels, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
+import { asCharte, asDesignBrief, asFindings, asPillars, asReels, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
 import { parseShotList } from "@/lib/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { EmptyState, LinkButton, PageHeader, cx } from "@/components/ui";
 import { AgentHud, type HudEvent, type HudLink, type HudNode, type NodeId, type NodeState } from "@/components/agents/hud";
-import { FindingsView, ShootPlanView, SoundView, StrategyView } from "@/components/agents/views";
+import { DesignBriefView, FindingsView, ShootPlanView, SoundView, StrategyView } from "@/components/agents/views";
 
 export const metadata: Metadata = { title: "Agents" };
 
@@ -42,12 +42,12 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       .order("created_at", { ascending: false })
       .limit(5),
     supabase.from("videos").select("id, title, status, footage_complete_at, created_at").eq("client_id", client.id).order("created_at", { ascending: false }),
-    supabase.from("brand_kits").select("style_rules").eq("client_id", client.id).maybeSingle(),
+    supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", client.id).maybeSingle(),
   ]);
   const video = (videos ?? []).find((v) => v.id === videoParam) ?? videos?.[0] ?? null;
   const [{ data: script }, { data: footage }, { data: jobs }, { data: versions }, { data: asks }] = video
     ? await Promise.all([
-        supabase.from("scripts").select("body, shot_list, shoot_plan, edit_prompt, updated_at").eq("video_id", video.id).maybeSingle(),
+        supabase.from("scripts").select("body, shot_list, shoot_plan, edit_prompt, updated_at, design_brief, design_templates").eq("video_id", video.id).maybeSingle(),
         supabase.from("footage").select("file_name, created_at").eq("video_id", video.id).order("created_at"),
         supabase.from("edit_jobs").select("id, source, status, progress, error, created_at, started_at, finished_at").eq("video_id", video.id).order("created_at"),
         supabase.from("versions").select("number, status, made_by, created_at, sound").eq("video_id", video.id).order("number"),
@@ -70,6 +70,9 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const shots = parseShotList(script?.shot_list);
   const openJob = (jobs ?? []).find((j) => j.status === "queued" || j.status === "running");
   const scoring = !!openJob?.progress && /sound designer/i.test(openJob.progress);
+  const designBrief = asDesignBrief(script?.design_brief);
+  const designed = kit?.graphics === "designed" || !!script?.design_templates?.length;
+  const drawing = !!openJob?.progress && /design|graphics/i.test(openJob.progress);
   const lastJob = jobs?.at(-1);
   const researching = latestReport && (latestReport.status === "queued" || latestReport.status === "running");
   const plays = reels.reduce((a, r) => a + Math.max(0, r.plays ?? 0), 0);
@@ -82,6 +85,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     { id: "a2", kind: "AGENT 02", title: "RESEARCHER", role: "Watches the top reels, writes what works", meta: doneReport ? `${reels.length} reels · ${compact(plays)} plays` : "waiting", state: st(!!researching, !!doneReport, latestReport?.status === "failed"), progress: researching ? latestReport?.progress ?? "Queued on the engine" : null },
     { id: "a3", kind: "AGENT 03", title: "SCRIPTWRITER", role: "Script, shoot plan, edit prompt", meta: plan ? `${plan.scenes.length} scenes · ${Math.round(plan.length_seconds)}s` : script ? "script only" : "waiting", state: st(false, !!script?.edit_prompt) },
     { id: "a4", kind: "AGENT 04", title: "SOUND DESIGNER", role: "Music, sound effects, trending audio", meta: sound ? (sound.track ? sound.track.title : "dialogue only") : trendAudio.length ? `${trendAudio.length} trending sounds in` : "waiting for a cut", state: st(scoring, !!sound), progress: scoring ? openJob?.progress ?? null : null },
+    { id: "a5", kind: "AGENT 05", title: "MOTION DIRECTOR", role: "Design templates, a design prompt per scene", meta: designBrief ? `${designBrief.scenes.length} scenes designed` : designed ? "waiting for the script" : "engine templates", state: st(drawing, !!designBrief), progress: drawing ? openJob?.progress ?? null : null },
     { id: "shoot", kind: "HUMAN", title: "VIDEOGRAPHER", role: "Shoots from the plan", meta: footage?.length ? `${footage.length} file${footage.length > 1 ? "s" : ""}` : `${shots.length} shots to get`, state: st(!!footage?.length && !video?.footage_complete_at, !!video?.footage_complete_at) },
     { id: "engine", kind: "ENGINE", title: "EDIT ENGINE", role: "Cuts, captions, 3D motion, music", meta: openJob ? "editing" : versions?.length ? `v${versions.at(-1)!.number} rendered` : "waiting for footage", state: st(!!openJob, !!versions?.length, !openJob && lastJob?.status === "failed"), progress: openJob ? openJob.progress ?? "Queued" : null },
     { id: "video", kind: "OUTPUT", title: "VIDEO", role: video?.title ?? "No video yet", meta: versions?.length ? `v${versions.at(-1)!.number} · ${versions.at(-1)!.status.replace("_", " ")}` : "—", state: st(false, !!versions?.length) },
@@ -99,6 +103,8 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     { a: "engine", b: "video", label: "render", active: !!versions?.length },
     { a: "a2", b: "a4", label: trendAudio.length ? `${trendAudio.length} trending sounds` : "trending sounds", hot: true, active: !!trendAudio.length },
     { a: "a4", b: "engine", label: "music + effects", hot: true, active: !!sound },
+    { a: "a3", b: "a5", label: "script", active: !!designBrief },
+    { a: "a5", b: "engine", label: designBrief ? `${designBrief.scenes.length} design prompts` : "design prompts", hot: true, active: !!designBrief },
   ];
 
   // ------------------------------------------------------------ the comm log, from timestamps
@@ -119,6 +125,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     }
     if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "RESEARCHER", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
   }
+  if (designBrief) events.push({ at: designBrief.written_at, who: "MOTION DIRECTOR → ENGINE", msg: `${designBrief.scenes.length} design prompts: ${designBrief.concept}`, link: 13 });
   if (script?.edit_prompt) {
     events.push({ at: script.updated_at, who: "SCRIPTWRITER → VIDEOGRAPHER", msg: plan ? `${plan.scenes.length} scenes, ${shots.length} shots` : `${shots.length} shots`, link: 6 });
     events.push({ at: script.updated_at, who: "SCRIPTWRITER → ENGINE", msg: `Edit prompt (${script.edit_prompt.split(/\s+/).length} words)`, link: 7 });
@@ -208,6 +215,18 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
         "After the editor locks each cut, the sound designer picks the music from every library, lines it up, adds the effects and the trending sound to post with.",
         "/sounds",
         "See the libraries",
+      )
+    ),
+    a5: designBrief ? (
+      <DesignBriefView brief={designBrief} chosen={script?.design_templates ?? []} />
+    ) : (
+      empty(
+        designed ? "No design brief yet" : "Using the engine's templates",
+        designed
+          ? "The motion director designs the scenes as soon as the scriptwriter writes the script, or press Design the motion on the video."
+          : "Choose design templates on a video, or make designed graphics the client's default in its brand kit.",
+        video ? `/videos/${video.id}` : `/clients/${client.id}`,
+        "Open",
       )
     ),
     shoot: (

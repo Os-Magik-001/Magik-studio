@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
-import type { Charte, Pillar, ShootPlan, SoundReport, TrendAudio, TrendFindings, TrendReel } from "@/lib/agent-types";
+import type { Charte, DesignBrief, Pillar, ShootPlan, SoundReport, TrendAudio, TrendFindings, TrendReel } from "@/lib/agent-types";
+import { templateById } from "@/lib/design-templates";
+import { Badge } from "@/components/ui";
+import { LocalDate } from "@/components/local-date";
 
 // Read-only views of what the agents wrote.
 
@@ -306,6 +309,46 @@ export function SoundView({ sound }: { sound: SoundReport }) {
         </div>
       )}
       {sound.notes && <p className="text-[13px] text-muted">{sound.notes}</p>}
+    </div>
+  );
+}
+
+// The motion director's brief: the concept, the system and a design prompt per scene. With
+// `chosen`, it says when the templates changed after the brief was written.
+export function DesignBriefView({ brief, chosen }: { brief: DesignBrief; chosen?: string[] }) {
+  const stale = chosen?.some((id) => !brief.templates.includes(id));
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <div className="flex flex-wrap items-baseline gap-2">
+        <span className="kicker">Design brief</span>
+        <span className="text-xs text-muted">
+          <LocalDate value={brief.written_at} preset="short" prefix="written " />
+        </span>
+      </div>
+      {stale && <p className="text-[13px] text-warning">The templates changed since this brief: design the motion again.</p>}
+      <p className="leading-relaxed text-ink">{brief.concept}</p>
+      <p className="text-[13px] text-ink-2">{brief.system}</p>
+      <ol className="flex flex-col gap-2">
+        {brief.scenes.map((s, i) => (
+          <li key={i} className="rounded-xl bg-white/[0.04] p-3">
+            <div className="flex flex-wrap items-center gap-2 text-[13px]">
+              <span className="font-medium text-ink">{s.moment}</span>
+              <Badge>{templateById(s.template)?.title ?? (s.template === "custom" ? "Custom" : s.template)}</Badge>
+            </div>
+            <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-ink-2">{s.prompt}</p>
+            {s.needs && <p className="mt-1 text-xs text-warning">Needs: {s.needs}</p>}
+          </li>
+        ))}
+      </ol>
+      <p className="text-[13px] text-ink-2">
+        <span className="font-medium text-ink">Captions: </span>
+        {brief.captions}
+      </p>
+      <p className="text-[13px] text-ink-2">
+        <span className="font-medium text-ink">End card: </span>
+        {brief.end_card}
+      </p>
+      {brief.editor_notes && <p className="text-xs text-muted">For the editor: {brief.editor_notes}</p>}
     </div>
   );
 }

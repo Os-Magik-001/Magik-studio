@@ -11,6 +11,7 @@ import { ASPECTS, FORMAT_LABEL, type ScriptStatus } from "@/lib/workflow";
 import { markDelivered, scheduleShoot, updateVideo } from "@/app/actions/studio";
 import {
   addDriveFootage,
+  directMotion,
   draftScriptWithClaude,
   fastTrackScript,
   launchEdit,
@@ -18,6 +19,7 @@ import {
   registerDraftVersion,
   registerFootage,
   reviseScriptWithClaude,
+  saveDesignTemplates,
   saveScript,
   sendScriptToClient,
 } from "@/app/actions/workflow";
@@ -114,6 +116,7 @@ export function ScriptEditor({
   editPrompt,
   hasStrategy,
   version,
+  designed,
 }: {
   videoId: string;
   body: string;
@@ -126,6 +129,8 @@ export function ScriptEditor({
   hasStrategy: boolean;
   // Changes when the script changed outside this form (a revision, a restore, the fast track).
   version: string;
+  // The motion director designs the scenes after the scriptwriter.
+  designed: boolean;
 }) {
   // Remount the textareas after Claude writes a new draft, or the script changed elsewhere.
   const [key, setKey] = useState(0);
@@ -137,7 +142,7 @@ export function ScriptEditor({
           <Field label="Notes for Claude (optional)" className="flex-1">
             <Input name="notes" placeholder="Keep it under 45 seconds, open on the product" />
           </Field>
-          <SubmitButton pendingText="The scriptwriter is working (about a minute)…" variant="secondary">
+          <SubmitButton pendingText={designed ? "The scriptwriter, then the motion director, are working (about two minutes)…" : "The scriptwriter is working (about a minute)…"} variant="secondary">
             <Sparkles size={14} aria-hidden /> {body ? "Rewrite with the scriptwriter" : "Write with the scriptwriter"}
           </SubmitButton>
         </div>
@@ -401,6 +406,61 @@ export function DeliverButton({ videoId }: { videoId: string }) {
       <SubmitButton variant="success" pendingText="…">
         Mark delivered
       </SubmitButton>
+    </ActionForm>
+  );
+}
+
+type TemplateOption = { id: string; title: string; category: string; summary: string };
+
+// The design templates for one video: the studio's own, by category, and the team's saved
+// motion prompts. None chosen: the motion director picks.
+export function DesignTemplatesForm({ videoId, templates, saved, chosen }: { videoId: string; templates: TemplateOption[]; saved: TemplateOption[]; chosen: string[] }) {
+  const categories = [...new Set(templates.map((t) => t.category))];
+  const box = "mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]";
+  const option = (t: TemplateOption) => (
+    <label key={t.id} className="flex items-start gap-2.5 rounded-xl border border-line p-3 text-[13px] has-[:checked]:border-accent/60 has-[:checked]:bg-accent-soft">
+      <input type="checkbox" name="templates" value={t.id} defaultChecked={chosen.includes(t.id)} className={box} />
+      <span>
+        <span className="block font-medium text-ink">{t.title}</span>
+        <span className="block text-xs text-muted">{t.summary}</span>
+      </span>
+    </label>
+  );
+  return (
+    <ActionForm action={saveDesignTemplates} className="flex flex-col gap-4">
+      <input type="hidden" name="videoId" value={videoId} />
+      {categories.map((c) => (
+        <fieldset key={c} className="flex flex-col gap-2">
+          <legend className="kicker mb-1">{c}</legend>
+          <div className="grid gap-2 sm:grid-cols-2">{templates.filter((t) => t.category === c).map(option)}</div>
+        </fieldset>
+      ))}
+      {saved.length > 0 && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="kicker mb-1">Your saved motion prompts</legend>
+          <div className="grid gap-2 sm:grid-cols-2">{saved.map(option)}</div>
+        </fieldset>
+      )}
+      <div className="flex flex-wrap items-center gap-3">
+        <SubmitButton variant="secondary" pendingText="Saving…">
+          Save templates
+        </SubmitButton>
+        <span className="text-xs text-muted">Pick one or several (up to 6), or none and the motion director chooses.</span>
+      </div>
+    </ActionForm>
+  );
+}
+
+export function DirectMotionForm({ videoId, again, ready }: { videoId: string; again: boolean; ready: boolean }) {
+  return (
+    <ActionForm action={directMotion} className="flex flex-col gap-2">
+      <input type="hidden" name="videoId" value={videoId} />
+      <div>
+        <SubmitButton pendingText="The motion director is designing (about a minute)…">
+          <Sparkles size={14} aria-hidden /> {again ? "Design the motion again" : "Design the motion"}
+        </SubmitButton>
+      </div>
+      {!ready && <p className="text-xs text-muted">Write the script first: the motion director designs from it.</p>}
     </ActionForm>
   );
 }

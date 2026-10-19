@@ -56,6 +56,13 @@ test("a drop lands on the moment: the track moment snaps to its bar", () => {
   assert.equal(report.track?.bpm, 120);
 });
 
+test("the report gives the music's bars on the timeline, for graphics on the beat", () => {
+  const { report } = applySound(plan, sound({}), ctx);
+  // Bars every 2 s in the track from 0.1 s; the track starts 22.1 s in, so they land on 0, 2, 4...
+  assert.deepEqual(report.bars?.slice(0, 4), [0, 2, 4, 6]);
+  assert.ok(report.bars!.every((b) => b >= 0 && b <= 22));
+});
+
 test("a moment earlier in the track than in the video makes the music come in later", () => {
   const { plan: out } = applySound(plan, sound({ track_time: 4.1 }), ctx);
   assert.equal(out.music.start, 0);

@@ -102,6 +102,8 @@ export type SoundReport = {
   // Lines the post must carry, and licence limits worth knowing.
   credits: string[];
   limits: string[];
+  // Where the music's bars start on the timeline, for graphics that move with it.
+  bars?: number[];
 };
 
 // ---------------------------------------------------------------- the cut, in words
@@ -403,6 +405,14 @@ export function applySound(plan: EditPlan, sound: SoundPlan, ctx: { catalog: Tra
   const listed = sound.trend ? ctx.trend.find((t) => t.title.toLowerCase() === sound.trend!.title.toLowerCase()) : undefined;
   if (sound.trend && !listed) problems.push(`Dropped the trend "${sound.trend.title}": it isn't in the researcher's list.`);
 
+  const bars: number[] = [];
+  if (track && music.track && a) {
+    const bar = 240 / a.bpm;
+    for (let t = a.downbeat; t < a.end; t += bar) {
+      const onTimeline = (music.at ?? 0) + (t - music.start);
+      if (onTimeline >= 0 && onTimeline <= length) bars.push(round(onTimeline));
+    }
+  }
   const report: SoundReport = {
     concept: sound.concept,
     notes: sound.notes,
@@ -419,6 +429,7 @@ export function applySound(plan: EditPlan, sound: SoundPlan, ctx: { catalog: Tra
     trend: listed && sound.trend ? { title: listed.title, artist: listed.artist, link: listed.link, use: sound.trend.use } : null,
     credits: track && music.track && track.credit ? [track.credit] : [],
     limits: track && music.track && track.library === "mixkit" ? ["Mixkit music: web and social media only, not TV, radio or CDs."] : [],
+    bars,
   };
   return { plan: { ...plan, music, sfx }, report, problems };
 }

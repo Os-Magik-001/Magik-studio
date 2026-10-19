@@ -14,12 +14,15 @@ import { Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, buttonClas
 import { ScriptStatusBadge, StatusStepper, VersionStatusBadge, VideoStatusBadge } from "@/components/status";
 import { deleteFootage, cancelEditJob, restoreScriptRevision, retryEditJob } from "@/app/actions/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { ShootPlanView, SoundView } from "@/components/agents/views";
-import { asShootPlan, asSoundReport } from "@/lib/agent-types";
+import { DesignBriefView, ShootPlanView, SoundView } from "@/components/agents/views";
+import { DESIGN_TEMPLATES } from "@/lib/design-templates";
+import { asDesignBrief, asShootPlan, asSoundReport } from "@/lib/agent-types";
 import { LocalDate } from "@/components/local-date";
 import { deleteShoot, deleteVideo } from "@/app/actions/studio";
 import {
   DeliverButton,
+  DesignTemplatesForm,
+  DirectMotionForm,
   DraftUpload,
   FootageDrop,
   FastTrackForm,
@@ -59,6 +62,8 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
     { data: strategy },
     { data: thread },
     { count: otherVideos },
+    { data: kit },
+    { data: savedPrompts },
   ] = await Promise.all([
       supabase.from("clients").select("id, name, revision_limit").eq("id", video.client_id).single(),
       supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -78,6 +83,8 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         .eq("video_id", videoId)
         .order("created_at"),
       supabase.from("videos").select("id", { count: "exact", head: true }).eq("client_id", video.client_id).neq("id", videoId),
+      supabase.from("brand_kits").select("graphics").eq("client_id", video.client_id).maybeSingle(),
+      supabase.from("motion_prompts").select("id, title, creator, notes, tags").order("created_at", { ascending: false }),
     ]);
 
   const footageUrls = await signedUrls("footage", (footage ?? []).flatMap((f) => (f.storage_path ? [f.storage_path] : [])));
@@ -90,6 +97,9 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
     (staff ?? []).filter((p) => p.role === role).map((p) => ({ id: p.id, name: displayName(p) }));
   const scriptStatus = script?.status ?? "draft";
   const shootPlan = asShootPlan(script?.shoot_plan);
+  const designTemplates = script?.design_templates ?? [];
+  const designed = kit?.graphics === "designed" || designTemplates.length > 0;
+  const designBrief = asDesignBrief(script?.design_brief);
 
   const entries = thread ?? [];
   const peopleIds = [...new Set([...entries.map((e) => e.created_by), script?.approved_by].filter((id): id is string => !!id))];
@@ -197,6 +207,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                   editPrompt={script?.edit_prompt ?? ""}
                   hasStrategy={!!strategy}
                   version={changedElsewhere("edited")}
+                  designed={designed}
                 />
               )}
               {(script?.body.trim() || script?.edit_prompt?.trim() || entries.length > 0) && (
@@ -216,6 +227,33 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                     <ShootPlanView plan={shootPlan} />
                   </div>
                 </details>
+              )}
+            </div>
+          </Card>
+
+          {/* Motion design */}
+          <Card>
+            <CardHeader
+              title="Motion design"
+              description={
+                designed
+                  ? "The motion director (agent 5) writes a design prompt for every scene; in the edit, the engine's motion designer codes the graphics from it."
+                  : "The engine uses its own motion templates. Choose design templates to have this video's graphics designed by the motion director, or make it the client's default in its brand kit."
+              }
+              actions={designed ? <Badge tone="accent">Designed</Badge> : undefined}
+            />
+            <div className="flex flex-col gap-6 p-5">
+              <DesignTemplatesForm
+                videoId={video.id}
+                templates={DESIGN_TEMPLATES.map(({ id, title, category, summary }) => ({ id, title, category, summary }))}
+                saved={(savedPrompts ?? []).map((p) => ({ id: `prompt:${p.id}`, title: p.title, category: "Saved", summary: [p.creator && `by ${p.creator}`, p.notes ?? p.tags.join(", ")].filter(Boolean).join(" · ") }))}
+                chosen={designTemplates}
+              />
+              {designed && (
+                <div className="flex flex-col gap-4 border-t border-line pt-5">
+                  {designBrief && <DesignBriefView brief={designBrief} chosen={designTemplates} />}
+                  <DirectMotionForm videoId={video.id} again={!!designBrief} ready={!!(script?.body.trim() || script?.edit_prompt?.trim())} />
+                </div>
               )}
             </div>
           </Card>

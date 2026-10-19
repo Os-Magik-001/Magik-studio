@@ -20,6 +20,7 @@ export type Database = {
           colors: string[]
           edit_style: string
           fonts: string[]
+          graphics: string
           logo_path: string | null
           music_mood: string | null
           style_rules: string | null
@@ -30,6 +31,7 @@ export type Database = {
           colors?: string[]
           edit_style?: string
           fonts?: string[]
+          graphics?: string
           logo_path?: string | null
           music_mood?: string | null
           style_rules?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           colors?: string[]
           edit_style?: string
           fonts?: string[]
+          graphics?: string
           logo_path?: string | null
           music_mood?: string | null
           style_rules?: string | null
@@ -596,6 +599,8 @@ export type Database = {
           approved_by: string | null
           body: string
           client_note: string | null
+          design_brief: Json | null
+          design_templates: string[]
           drafted_by_claude: boolean
           edit_prompt: string | null
           shoot_plan: Json | null
@@ -610,6 +615,8 @@ export type Database = {
           approved_by?: string | null
           body?: string
           client_note?: string | null
+          design_brief?: Json | null
+          design_templates?: string[]
           drafted_by_claude?: boolean
           edit_prompt?: string | null
           shoot_plan?: Json | null
@@ -624,6 +631,8 @@ export type Database = {
           approved_by?: string | null
           body?: string
           client_note?: string | null
+          design_brief?: Json | null
+          design_templates?: string[]
           drafted_by_claude?: boolean
           edit_prompt?: string | null
           shoot_plan?: Json | null
@@ -872,6 +881,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           decided_at: string | null
+          design: Json | null
           edit_plan: Json | null
           file_name: string
           id: string
@@ -888,6 +898,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           decided_at?: string | null
+          design?: Json | null
           edit_plan?: Json | null
           file_name: string
           id?: string
@@ -904,6 +915,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           decided_at?: string | null
+          design?: Json | null
           edit_plan?: Json | null
           file_name?: string
           id?: string

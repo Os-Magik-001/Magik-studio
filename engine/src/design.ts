@@ -42,6 +42,8 @@ export type DesignInput = {
   from?: string;
   // false renders `from` as it is, with no review by Claude (a composition a person wrote and checked).
   review?: boolean;
+  // On a revision of `from`: what was asked, applied in the first review round.
+  changes?: string | null;
 };
 
 const Code = {
@@ -159,6 +161,63 @@ const RUBRIC = `Review these frames of your composition over the video like the 
 - Captions: right words at the right time, phrases not single jumping words, never over faces.
 Be harsh: list every issue. Then return the complete revised composition (all css, html and js, not a diff), or verdict ship with the same code if nothing is left to fix.`;
 
+// The motion director's design for a video (written in the app with the script).
+export type DirectorBrief = {
+  concept: string;
+  system: string;
+  scenes: { moment: string; template: string; prompt: string; needs: string }[];
+  captions: string;
+  end_card: string;
+  editor_notes: string;
+  directions: { id: string; title: string; direction: string }[];
+};
+
+// The brief the motion designer works from in a real edit: the video, the motion director's
+// design (or, without one, the script and the chosen templates), the editor's ideas, what
+// the engine already drew, the music's bars and the brand.
+export function buildDesignBrief(input: {
+  clientName: string;
+  title: string;
+  format: string;
+  aspect: string;
+  brief: string | null;
+  script: string;
+  instructions: string | null;
+  direction: DirectorBrief | null;
+  templates: { id: string; title: string; direction: string }[];
+  summary: string;
+  suggestions: unknown;
+  kept: { template: string; start: number; end: number; title: string }[];
+  music: { title: string; bpm: number | null; bars: number[] } | null;
+  brand: { colors: string[]; fonts: string[]; styleRules: string | null };
+  assets: { name: string; kind: string; description: string }[];
+}) {
+  const d = input.direction;
+  const templates = d?.directions.length ? d.directions : input.templates;
+  const f = (t: number) => `${t.toFixed(1)}s`;
+  return [
+    `Client: ${input.clientName}. Video: ${input.title}. Format: ${input.format}, ${input.aspect}.`,
+    input.brief && `Client brief:\n${input.brief}`,
+    input.script && `Script:\n${input.script}`,
+    input.instructions && `Notes for this edit:\n${input.instructions}`,
+    d &&
+      `The motion director's design for this video (build it):\nConcept: ${d.concept}\nDesign system: ${d.system}\nScenes:\n${d.scenes
+        .map((s, i) => `${i + 1}. ${s.moment} (template: ${s.template}): ${s.prompt}${s.needs ? ` [needs: ${s.needs}]` : ""}`)
+        .join("\n")}\nCaptions: ${d.captions}\nEnd card: ${d.end_card}`,
+    templates.length && `Design templates the video follows (the studio's directions; adapt them, don't copy):\n${templates.map((t) => `<template id="${t.id}" title="${t.title.replace(/"/g, "'")}">\n${t.direction}\n</template>`).join("\n\n")}`,
+    `The editor's summary of the cut:\n${input.summary}`,
+    `The editor's graphics suggestions (ideas only; you design them):\n${JSON.stringify(input.suggestions)}`,
+    input.kept.length &&
+      `Already in the cut, drawn by the engine with the person cut out: ${input.kept.map((k) => `${k.template} "${k.title}" ${f(k.start)}–${f(k.end)}`).join("; ")}. Leave those moments clear.`,
+    input.music &&
+      `Music: "${input.music.title}"${input.music.bpm ? ` at ${Math.round(input.music.bpm)} BPM` : ""}.${input.music.bars.length ? ` Bars (downbeats) on the timeline: ${input.music.bars.map((b) => b.toFixed(2)).join(", ")}. Time scene changes, kinetic type and pulses to them.` : ""}`,
+    `Brand: colours ${input.brand.colors.join(", ") || "not set"}; fonts ${input.brand.fonts.join(", ") || "not set"}.${input.brand.styleRules ? ` Style rules: ${input.brand.styleRules}` : ""}`,
+    input.assets.length && `Assets: ${input.assets.map((a) => `${a.name} (${a.kind}): ${a.description}`).join("; ")}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 // What the page needs for one video: its size, DATA, and the assets' frames.
 async function prepare(input: DesignInput) {
   const { video, workDir } = input;
@@ -227,6 +286,9 @@ export async function designPass(input: DesignInput) {
       break;
     }
     const content: Anthropic.Beta.BetaContentBlockParam[] = [];
+    if (round === 1 && input.from && input.changes) {
+      content.push({ type: "text", text: `This composition is the previous version's, over the new cut (its words and shots are in DATA, and may have moved). What was asked for this version, to apply in this round while keeping everything else:\n${input.changes}` });
+    }
     if (errors.length) content.push({ type: "text", text: `The composition threw errors (fix them first):\n${errors.join("\n")}` });
     for (const f of frames) content.push({ type: "text", text: `t = ${f.t}s` }, await image(f.file));
     content.push({ type: "text", text: RUBRIC });

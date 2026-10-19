@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { config, db } from "./config.ts";
+import { buildDesignBrief, designPass, type DesignAsset, type DirectorBrief } from "./design.ts";
+import { run } from "./exec.ts";
 import { contactSheets, download, probe } from "./media.ts";
 import { driveWorkingCopy, pruneCache } from "./drive.ts";
 import { driveLibraries } from "./libraries.ts";
@@ -164,6 +166,18 @@ export type EditRequest = Omit<PlanInput, "skills" | "clips" | "music"> & {
   trend?: SoundRequest["trend"];
   soundMemory?: string | null;
   previousSound?: SoundReport | null;
+  // Designed graphics: the motion designer draws every graphic over the cut (see DesignRequest).
+  design?: DesignRequest | null;
+};
+
+export type DesignRequest = {
+  // The motion director's brief from the script; without one, the designer works from the
+  // script and the editor's suggestions.
+  direction: DirectorBrief | null;
+  assets: DesignAsset[];
+  // On a revision of a designed version: its composition, and what was asked.
+  from: string | null;
+  changes: string | null;
 };
 
 // Every library the sound designer searches: the built-in ones and the studio's Drive folders.
@@ -175,12 +189,27 @@ async function soundCatalogs(note: Note): Promise<{ music: Track[]; sfx: SfxEntr
 
 // The cut with no graphics at all, for the design pass to design over: the plan's
 // captions, titles and motion stay in the plan as the editor's suggestions.
-export const bareOf = (plan: EditPlan): EditPlan => ({ ...plan, captions: { ...plan.captions, mode: "off" }, on_screen_text: [], graphics: [], motion: [], end_card: { ...plan.end_card, include: false } });
+// Character intros and cast lineups stay: only the engine can cut the person out for them.
+export const KEPT_MOTION = new Set(["character_intro", "cast_lineup"]);
+export const bareOf = (plan: EditPlan): EditPlan => ({ ...plan, captions: { ...plan.captions, mode: "off" }, on_screen_text: [], graphics: [], motion: plan.motion.filter((m) => KEPT_MOTION.has(m.template)), end_card: { ...plan.end_card, include: false } });
 
 // Claude plans the cut, the plan is checked against the real footage, the sound designer
 // scores it, and the edit renders to `output`. `sounder: null` keeps the editor's music.
-export async function planAndRender(req: EditRequest, clips: Clip[], dir: string, output: string, step: Step, note: Note, planner: typeof planEdit = planEdit, sounder: typeof scoreSound | null = scoreSound) {
-  const { formatKey, brand, clean, bare, trend, soundMemory, previousSound, ...rest } = req;
+export async function planAndRender(
+  req: EditRequest,
+  clips: Clip[],
+  dir: string,
+  output: string,
+  step: Step,
+  note: Note,
+  planner: typeof planEdit = planEdit,
+  sounder: typeof scoreSound | null = scoreSound,
+  designer: typeof designPass = designPass,
+) {
+  const { formatKey, brand, clean, trend, soundMemory, previousSound, design, bare: _bare, ...rest } = req;
+  // Designed: the cut renders without graphics, then the motion designer draws them over it.
+  const bare = !!req.bare || !!design;
+  const cutFile = design ? output.replace(/\.mp4$/, "-bare.mp4") : output;
   const shown = (plan: EditPlan) => (bare ? bareOf(plan) : plan);
   const skills = await loadSkills(formatKey, undefined, note, clean ? "clean" : "dynamic", [rest.brief, rest.instructions, rest.title].filter(Boolean).join(" "));
   // The clean style is stated up front, so the plan is built for it rather than stripped after.
@@ -254,21 +283,81 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
     }
   };
 
+  // The motion designer draws the graphics over the finished cut. If it can't, the engine's own
+  // graphics (the editor's suggestions) go out instead.
+  type Final = ReturnType<typeof finish> & { sound: SoundReport | null };
+  const designOver = async (cut: Final) => {
+    if (!design) return { ...cut, design: null };
+    try {
+      const { plan } = cut;
+      // Screen recordings the editor put on a phone or a browser go to the designer as assets.
+      const screens: DesignAsset[] = [];
+      for (const m of plan.motion.filter((x) => x.screen)) {
+        const clip = clips.find((c) => c.id === m.screen!.clip);
+        if (!clip) continue;
+        const file = path.join(dir, `screen-${screens.length + 1}.mp4`);
+        await run(config.ffmpeg, ["-v", "error", "-y", "-ss", m.screen!.start.toFixed(2), "-i", clip.preview, "-t", Math.max(2, m.end - m.start + 1).toFixed(2), "-an", "-vf", "scale='min(1080,iw)':-2", file]);
+        screens.push({ name: `screen-${screens.length + 1}`, file, kind: "video", description: `Screen recording from ${clip.fileName}, which the editor wanted on a ${m.template} at ${m.start.toFixed(1)}s` });
+      }
+      const assets = [...design.assets, ...screens];
+      const t = track(plan);
+      const brief = buildDesignBrief({
+        clientName: rest.clientName,
+        title: rest.title,
+        format: rest.format,
+        aspect: rest.aspect,
+        brief: rest.brief,
+        script: rest.script,
+        instructions: rest.instructions,
+        direction: design.direction,
+        templates: [],
+        summary: plan.summary,
+        suggestions: { captions: plan.captions, on_screen_text: plan.on_screen_text, motion: plan.motion.filter((m) => !KEPT_MOTION.has(m.template)).map(({ people: _, ...m }) => m), look: plan.look },
+        kept: plan.motion.filter((m) => KEPT_MOTION.has(m.template)).map((m) => ({ template: m.template, start: m.start, end: m.end, title: m.title })),
+        music: t && cut.sound?.track ? { title: t.title, bpm: cut.sound.track.bpm, bars: cut.sound.bars ?? [] } : null,
+        brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [], styleRules: rest.brandKit?.styleRules ?? null },
+        assets,
+      });
+      const subtitles = plan.captions.mode === "translate" ? plan.on_screen_text.filter((x) => x.style === "caption").map((x) => ({ text: x.text, start: x.start, end: x.end })) : undefined;
+      const designed = await designer({
+        video: cutFile,
+        words: timelineWords(plan, clips),
+        subtitles,
+        shots: timelineOf(plan).shots.map((s) => ({ start: s.start, end: s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
+        brief,
+        brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [] },
+        assets,
+        workDir: path.join(dir, "design"),
+        output,
+        onStep: step,
+        from: design.from ?? undefined,
+        changes: design.changes,
+      });
+      designed.log.forEach((l) => note(`design ${l}`));
+      return { ...cut, design: { ...designed.comp, log: designed.log } };
+    } catch (err) {
+      note(`design pass skipped: ${err instanceof Error ? err.message : err}; the engine's own graphics go out instead`);
+      await step("Rendering with the engine's graphics");
+      await render({ plan: cut.plan, clips, aspect: req.aspect, brand, workDir: path.join(dir, "graphics"), output, words: timelineWords(cut.plan, clips), musicFile: await music(cut.plan), ...sound });
+      return { ...cut, design: null };
+    }
+  };
+
   if (req.selfReview === false) {
     const scored = await score(first);
     await step(`Rendering ${scored.length.toFixed(1)}s`);
-    await render({ plan: shown(scored.plan), clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(scored.plan, clips), musicFile: await music(scored.plan), ...sound });
-    return scored;
+    await render({ plan: shown(scored.plan), clips, aspect: req.aspect, brand, workDir: dir, output: cutFile, words: timelineWords(scored.plan, clips), musicFile: await music(scored.plan), ...sound });
+    return designOver(scored);
   }
   await step(`Rendering ${first.length.toFixed(1)}s`);
-  await render({ plan: shown(first.plan), clips, aspect: req.aspect, brand, workDir: dir, output, words: timelineWords(first.plan, clips), musicFile: await music(first.plan), ...sound });
+  await render({ plan: shown(first.plan), clips, aspect: req.aspect, brand, workDir: dir, output: cutFile, words: timelineWords(first.plan, clips), musicFile: await music(first.plan), ...sound });
 
   // Self-review: watch the render back, then revise it like a senior editor would.
   // Anything going wrong here leaves the first cut in place rather than failing the edit.
   let revised;
   try {
     await step("Watching the cut back");
-    const review = await reviewRender(output, first.plan, path.join(dir, "review"));
+    const review = await reviewRender(cutFile, first.plan, path.join(dir, "review"));
     note(`self-review: ${review.notes.length} note(s)${review.summary.length ? `: ${review.summary.join(" | ")}` : ""}`);
     await step("Claude is reviewing its own cut");
     const { plan: raw2, usage: usage2 } = await planner({
@@ -288,16 +377,17 @@ export async function planAndRender(req: EditRequest, clips: Clip[], dir: string
     note(`self-review skipped: ${err instanceof Error ? err.message : err}`);
   }
   const final = await score(revised ?? first);
-  // Without a review or a new sound, the first render is already the final one.
-  if (!revised && !final.sound) return final;
-  await step(`Rendering the ${revised ? "reviewed" : "scored"} cut, ${final.length.toFixed(1)}s`);
-  await render({ plan: shown(final.plan), clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output, words: timelineWords(final.plan, clips), musicFile: await music(final.plan), ...sound });
-  return final;
+  // Without a review or a new sound, the first render is already the final cut.
+  if (revised || final.sound) {
+    await step(`Rendering the ${revised ? "reviewed" : "scored"} cut, ${final.length.toFixed(1)}s`);
+    await render({ plan: shown(final.plan), clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output: cutFile, words: timelineWords(final.plan, clips), musicFile: await music(final.plan), ...sound });
+  }
+  return designOver(final);
 }
 
 const CLEAN = `EDITING STYLE: CLEAN (like Cluely's skits). Cuts, framing and subtitles only. Do not use motion templates, freeze frames (hold), titles, labels, stickers, graphics, cards, sound effects, transitions other than cut, pushes or highlight words: they will be removed. Music only as a section under the series intro clip, never under dialogue. All the quality comes from choosing the best takes and cutting them with perfect comic timing.`;
 
-const DESIGNED = `GRAPHICS ARE DESIGNED AFTER YOU: a motion designer designs every caption, title, card, motion graphic and the end card over your finished cut. Still fill in captions, on_screen_text and motion as your suggestions (what text goes where and when, which moments deserve a graphic or a full-frame scene); they guide the designer and are not rendered as they are. Leave the end card out. Your job is the cut itself: takes, timing, shots, framing, holds where a graphic needs a still frame, music and sound effects.`;
+const DESIGNED = `GRAPHICS ARE DESIGNED AFTER YOU: a motion designer designs every caption, title, card, motion graphic and the end card over your finished cut. Still fill in captions, on_screen_text and motion as your suggestions (what text goes where and when, which moments deserve a graphic or a full-frame scene); they guide the designer and are not rendered as they are, except character_intro and cast_lineup, which the engine still draws because they cut the person out. Leave the end card out. Your job is the cut itself: takes, timing, shots, framing, holds where a graphic needs a still frame, music and sound effects.`;
 
 const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you are now the senior editor reviewing it before anyone sees it. Watch the render sheets and read the notes pinned to its timeline, then deliver the final cut:
 - Natural timing, not maximum tightness: 0.25 to 0.45 s between lines on the same shot, about 0.5 to 0.7 s when a speaker change falls on a cut. Long gaps (over 0.9 s) go, unless they are the beat before a punchline or a reaction. No second take of a line, no stutter.
@@ -331,7 +421,7 @@ export function soundLine(s: SoundReport) {
 
 // `planner` and `sounder` are injectable so tests can run the whole pipeline without
 // calling Claude (`sounder: null` skips the sound designer).
-export async function processJob(job: Job, planner: typeof planEdit = planEdit, sounder: typeof scoreSound | null = scoreSound) {
+export async function processJob(job: Job, planner: typeof planEdit = planEdit, sounder: typeof scoreSound | null = scoreSound, designer: typeof designPass = designPass) {
   const dir = path.join(config.workDir, job.id);
   await mkdir(dir, { recursive: true });
   const cachedFiles = new Set<string>();
@@ -344,7 +434,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
     const [{ data: client }, { data: kit }, { data: script }, { data: footage }, memory, soundMemory, { data: research }] = await Promise.all([
       db.from("clients").select("name").eq("id", video.client_id).single(),
       db.from("brand_kits").select("*").eq("client_id", video.client_id).maybeSingle(),
-      db.from("scripts").select("body, shot_list, status").eq("video_id", video.id).maybeSingle(),
+      db.from("scripts").select("body, shot_list, status, design_templates, design_brief").eq("video_id", video.id).maybeSingle(),
       db.from("footage").select("storage_path, file_name, source, drive_file_id").eq("video_id", video.id).order("created_at"),
       // The edit goes ahead without the memories if they can't be read.
       clientMemory(video.client_id, video.id, "edit").catch(() => null),
@@ -367,9 +457,11 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
     // Revisions start from the previous cut and its open comments.
     let previous = null;
     let previousSound: SoundReport | null = null;
+    let previousDesign: unknown = null;
     if (job.base_version_id) {
-      const { data: base } = await db.from("versions").select("number, edit_plan, sound").eq("id", job.base_version_id).single();
+      const { data: base } = await db.from("versions").select("number, edit_plan, sound, design").eq("id", job.base_version_id).single();
       previousSound = (base?.sound as SoundReport | null) ?? null;
+      previousDesign = base?.design ?? null;
       const plan = parseStoredPlan(base?.edit_plan);
       if (base && plan) {
         const { data: comments } = await db
@@ -399,8 +491,28 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       ? (script.shot_list as { text?: string }[]).map((s) => s?.text ?? "").filter(Boolean)
       : [];
 
+    // Designed graphics (the client's brand kit, or templates chosen on the script): the
+    // motion designer builds the motion director's brief over the cut; a revision changes
+    // the previous version's design rather than starting again.
+    let design: DesignRequest | null = null;
+    if (kit?.graphics === "designed" || (script?.design_templates?.length ?? 0) > 0) {
+      const direction = (script?.design_brief as DirectorBrief | null) ?? null;
+      let from: string | null = null;
+      if (previousDesign) {
+        from = path.join(dir, "previous-design.json");
+        await writeFile(from, JSON.stringify(previousDesign));
+      }
+      design = {
+        direction,
+        assets: logoFile ? [{ name: "logo", file: logoFile, kind: "image", description: "The brand's logo" }] : [],
+        from,
+        changes: job.source === "launch" ? null : job.instructions,
+      };
+      note(`designed graphics: ${direction ? `the motion director's brief, ${direction.scenes.length} scenes` : "no brief yet, designed from the script"}${from ? ", revising the previous design" : ""}`);
+    }
+
     const out = path.join(dir, "cut.mp4");
-    const { plan, sound } = await planAndRender(
+    const { plan, sound, design: drawn } = await planAndRender(
       {
         formatKey: video.format,
         clean: kit?.edit_style === "clean",
@@ -414,12 +526,14 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
         shots,
         brandKit,
         memory,
-        instructions: job.instructions,
+        // The motion director tells the editor where to leave room for its scenes.
+        instructions: [job.instructions, design?.direction?.editor_notes && `The motion director's notes for the cut: ${design.direction.editor_notes}`].filter(Boolean).join("\n\n") || null,
         source: job.source,
         previous,
         trend,
         soundMemory,
         previousSound,
+        design,
       },
       clips,
       dir,
@@ -428,6 +542,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       note,
       planner,
       sounder,
+      designer,
     );
     const rendered = await probe(out);
 
@@ -451,6 +566,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       plan.summary,
       plan.open_questions.length ? `Check: ${plan.open_questions.join(" ")}` : null,
       sound && soundLine(sound),
+      drawn && `Graphics designed by the motion designer: ${drawn.concept}`,
     ]
       .filter(Boolean)
       .join("\n");
@@ -465,6 +581,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
         notes,
         edit_plan: plan,
         sound,
+        design: drawn,
       })
       .select("id")
       .single();

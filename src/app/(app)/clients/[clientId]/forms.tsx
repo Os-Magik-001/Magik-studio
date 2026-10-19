@@ -93,7 +93,7 @@ export function BrandKitForm({
 }: {
   clientId: string;
   logoUrl?: string;
-  kit: { colors: string; fonts: string; musicMood: string; styleRules: string; editStyle: string };
+  kit: { colors: string; fonts: string; musicMood: string; styleRules: string; editStyle: string; graphics: string };
 }) {
   const router = useRouter();
   return (
@@ -138,6 +138,16 @@ export function BrandKitForm({
           <Select name="editStyle" defaultValue={kit.editStyle}>
             <option value="dynamic">Dynamic: motion graphics and effects</option>
             <option value="clean">Clean: cuts and subtitles only</option>
+          </Select>
+        </Field>
+        <Field
+          label="Graphics"
+          hint="Designed: the motion director writes a design prompt for every scene and the engine's motion designer codes the graphics for each video (slower, costs more per edit). A video can also be designed on its own by choosing design templates on its script."
+          className="sm:col-span-2"
+        >
+          <Select name="graphics" defaultValue={kit.graphics}>
+            <option value="templates">The engine&apos;s motion templates</option>
+            <option value="designed">Designed for each video by the motion director</option>
           </Select>
         </Field>
         <Field label="Music mood" className="sm:col-span-2">
