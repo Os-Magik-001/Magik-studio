@@ -1,7 +1,10 @@
-// Footage that lives in Google Drive. Camera files are often tens of gigabytes, more
-// than this machine has free, so the original never lands on disk: ffmpeg reads it
-// from Drive and writes a smaller working copy (4K at most, high quality) that the
-// rest of the engine uses. Working copies are cached so revisions don't fetch again.
+// Footage that lives in Google Drive, turned into a smaller working copy (4K at most,
+// high quality) that the rest of the engine uses. A file that fits on disk with room to
+// spare is downloaded first, in parallel byte ranges: ffmpeg reading a camera MP4 straight
+// from Drive jumps between its sound and picture, and every jump opened a new connection
+// (0.3 MB/s on Canon files, against 3+ MB/s for a plain download). Camera files of tens of
+// gigabytes, more than this machine has free, never land on disk: ffmpeg reads them from
+// Drive. Working copies are cached so revisions don't fetch again.
 //
 // Mirrors the app's src/lib/drive.ts for the service-account handshake; the engine
 // runs outside the app, so it keeps its own copy.
@@ -9,7 +12,7 @@
 import { spawn } from "node:child_process";
 import { createSign } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { mkdir, readdir, rename, rm, stat, utimes } from "node:fs/promises";
+import { mkdir, open, readdir, rename, rm, stat, statfs, utimes } from "node:fs/promises";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
@@ -76,10 +79,75 @@ export async function driveMeta(id: string, what = "footage file"): Promise<Driv
   return res.json() as Promise<DriveMeta>;
 }
 
+const mediaUrl = (id: string) => `https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true`;
+
+// Errors that another try won't fix (no access, gone): everything else is retried.
+class Permanent extends Error {}
+
+// Downloads `size` bytes of `url` into `out` in parallel byte ranges, each retried on
+// its own, so a dropped connection doesn't restart a 700 MB file.
+export async function downloadRanges(
+  url: string,
+  headers: () => Promise<Record<string, string>>,
+  size: number,
+  out: string,
+  onProgress: (fraction: number) => void = () => {},
+  { chunk = 16 * 1024 ** 2, parallel = 4, retryMs = 2000 } = {},
+) {
+  const file = await open(out, "w");
+  const stop = new AbortController();
+  let next = 0;
+  let done = 0;
+  const worker = async () => {
+    while (next < size && !stop.signal.aborted) {
+      const start = next;
+      const end = Math.min(size, start + chunk) - 1;
+      next = end + 1;
+      for (let attempt = 1; ; attempt++) {
+        try {
+          const res = await fetch(url, {
+            headers: { ...(await headers()), range: `bytes=${start}-${end}` },
+            signal: AbortSignal.any([stop.signal, AbortSignal.timeout(120_000)]),
+          });
+          if (res.status !== 206) {
+            await res.body?.cancel();
+            const message = `Google Drive returned ${res.status} while downloading the footage.`;
+            throw res.status === 429 || res.status >= 500 ? new Error(message) : new Permanent(message);
+          }
+          const bytes = Buffer.from(await res.arrayBuffer());
+          if (bytes.length !== end - start + 1) throw new Error("Google Drive cut a download short.");
+          await file.write(bytes, 0, bytes.length, start);
+          done += bytes.length;
+          onProgress(done / size);
+          break;
+        } catch (err) {
+          if (stop.signal.aborted || err instanceof Permanent || attempt >= 4) throw err;
+          await new Promise((r) => setTimeout(r, attempt * retryMs));
+        }
+      }
+    }
+  };
+  // The first error is the one to report: the others are the downloads it stopped.
+  let failure: unknown = null;
+  try {
+    await Promise.all(
+      Array.from({ length: parallel }, () =>
+        worker().catch((err) => {
+          failure ??= err;
+          stop.abort();
+        }),
+      ),
+    );
+  } finally {
+    await file.close();
+  }
+  if (failure) throw failure;
+}
+
 // A localhost relay that adds a fresh token to every request. ffmpeg seeks around
 // camera files with range requests, and a long fetch outlives one token (an hour).
 async function relay(id: string) {
-  const media = `https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true`;
+  const media = mediaUrl(id);
   const server = http.createServer(async (req, res) => {
     const abort = new AbortController();
     res.on("close", () => abort.abort());
@@ -134,7 +202,8 @@ function transcode(input: string, output: string, preview: string, duration: num
   return new Promise<void>((resolve, reject) => {
     const ff = spawn(config.ffmpeg, [
       "-v", "error", "-nostats", "-y",
-      "-reconnect", "1", "-reconnect_on_network_error", "1", "-reconnect_on_http_error", "5xx", "-reconnect_delay_max", "30",
+      // ffmpeg refuses these on a file on disk.
+      ...(/^https?:/.test(input) ? ["-reconnect", "1", "-reconnect_on_network_error", "1", "-reconnect_on_http_error", "5xx", "-reconnect_delay_max", "30"] : []),
       "-i", input,
       // Long side capped at 3840: enough for 9:16 crops and punch-ins from 4K.
       "-filter_complex", `[0:v:0]split=2[h][l];[h]scale='if(gte(iw,ih),min(3840,iw),-2)':'if(gte(iw,ih),-2,min(3840,ih))'[hq];[l]${PREVIEW}[lo]`,
@@ -198,6 +267,19 @@ export async function driveWorkingCopy(id: string, onProgress: (fraction: number
     return { file, preview: previewOf(file), name: meta.name, cached: true };
   }
 
+  const size = Number(meta.size ?? 0);
+  if (size > 0 && size + DISK_MARGIN < (await freeBytes())) {
+    const original = `${file}.source`;
+    try {
+      const headers = async () => ({ authorization: `Bearer ${await accessToken()}` });
+      await downloadRanges(mediaUrl(id), headers, size, original, (f) => onProgress(f * DOWNLOAD_SHARE));
+      await workingCopy(original, file, (f) => onProgress(DOWNLOAD_SHARE + f * (1 - DOWNLOAD_SHARE)));
+    } finally {
+      await rm(original, { force: true });
+    }
+    return { file, preview: previewOf(file), name: meta.name, cached: false };
+  }
+
   const source = await relay(id);
   try {
     await workingCopy(source.url, file, onProgress);
@@ -205,6 +287,16 @@ export async function driveWorkingCopy(id: string, onProgress: (fraction: number
     await source.close();
   }
   return { file, preview: previewOf(file), name: meta.name, cached: false };
+}
+
+// Room an original must leave on disk to be downloaded; bigger files stream from Drive.
+const DISK_MARGIN = 5 * 1024 ** 3;
+// How much of a file's progress is the download (the rest is making the working copy).
+const DOWNLOAD_SHARE = 0.75;
+
+async function freeBytes() {
+  const s = await statfs(config.cacheDir);
+  return s.bavail * s.bsize;
 }
 
 async function makePreview(file: string) {
