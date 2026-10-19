@@ -39,12 +39,32 @@ export default async function SoundsPage() {
           <Libraries title="Music" items={all.filter((l) => l.kind === "music")} canRemove={viewer.role === "admin"} />
           <Libraries title="Sound effects" items={all.filter((l) => l.kind === "sfx")} canRemove={viewer.role === "admin"} />
         </div>
-        <Card>
-          <CardHeader title="Add a Google Drive library" description="A folder of music or sound effects the studio may use. The engine measures each file once (tempo, sections, drops), then the sound designer searches it with the rest." />
-          <div className="p-5">
-            <AddLibraryForm driveEmail={driveServiceEmail()} />
-          </div>
-        </Card>
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader title="Add a Google Drive library" description="A folder of music or sound effects the studio may use. The engine measures each file once (tempo, sections, drops), then the sound designer searches it with the rest." />
+            <div className="p-5">
+              <AddLibraryForm driveEmail={driveServiceEmail()} />
+            </div>
+          </Card>
+          <Card>
+            <CardHeader title="Pixabay" description="Free for commercial use, no credit needed. Pixabay doesn't let apps download its music (its site blocks them and its public API covers images and videos only), so the studio picks the tracks." />
+            <ol className="flex list-decimal flex-col gap-2 py-5 pr-5 pl-10 text-[13px] text-ink-2">
+              <li>
+                On{" "}
+                <a href="https://pixabay.com/music/" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                  Pixabay music
+                </a>{" "}
+                (or{" "}
+                <a href="https://pixabay.com/sound-effects/" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                  sound effects
+                </a>
+                ), press Download on the tracks you like. Keep Pixabay&apos;s file names: the artist and title are read from them.
+              </li>
+              <li>Put them in one Google Drive folder and share it with the address above.</li>
+              <li>Add the folder with the Pixabay button. Later, drop more tracks in and press Sync again.</li>
+            </ol>
+          </Card>
+        </div>
       </div>
     </>
   );

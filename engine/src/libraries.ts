@@ -62,7 +62,15 @@ export async function recoverStaleLibraries() {
 
 const AUDIO = /\.(mp3|wav|m4a|aac|flac|ogg|aif|aiff)$/i;
 const hash = (s: string) => createHash("sha1").update(s).digest("hex").slice(0, 12);
-const titleOf = (name: string) => name.replace(/\.[a-z0-9]+$/i, "").replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
+// Pixabay names its downloads "<author>-<title words>-<id>.mp3", so the artist and title come
+// from there; other files keep their own name.
+export function nameOf(file: string) {
+  const base = file.replace(/\.[a-z0-9]+$/i, "").trim();
+  const m = base.match(/^([a-z0-9_]+)-(.+)-(\d{4,})$/i);
+  if (!m) return { title: base.replace(/_+/g, " ").replace(/\s+/g, " ").trim(), artist: null, pixabay: null };
+  const title = m[2].replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase());
+  return { title, artist: m[1].replace(/_+/g, " "), pixabay: m[3] };
+}
 const wordsOf = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2);
 
 // The built-in effect closest to a recorded one, from its name and folder.
@@ -101,7 +109,8 @@ export async function syncLibrary(lib: Library) {
         if (!res.ok) throw new Error(`Drive returned ${res.status}`);
         await writeFile(file, Buffer.from(await res.arrayBuffer()));
         const analysis: TrackAnalysis | { peak: number } = lib.kind === "music" ? await analyzeTrack(file) : await peakOf(file);
-        const words = `${titleOf(f.name)} ${f.parent}`;
+        const n = nameOf(f.name);
+        const words = `${n.title} ${n.artist ?? ""} ${f.parent}`;
         await db.from("sound_files").insert({
           library_id: lib.id,
           drive_file_id: f.id,
@@ -145,17 +154,19 @@ export async function driveLibraries(): Promise<{ music: Track[]; sfx: SfxEntry[
   const sfx: SfxEntry[] = [];
   for (const f of files ?? []) {
     const lib = libs.find((l) => l.id === f.library_id)!;
+    const n = nameOf(f.name);
     const page = `https://drive.google.com/file/d/${f.drive_file_id}/view`;
     const license = lib.license || "The studio's own library";
     if (lib.kind === "music") {
       const a = f.analysis as TrackAnalysis | null;
       music.push({
         id: `drive-${hash(f.drive_file_id)}`,
-        title: titleOf(f.name),
-        artist: f.folder || lib.name,
+        title: n.title,
+        artist: n.artist ?? (f.folder || lib.name),
         library: lib.name,
         mood: MOODS.includes(f.mood as Mood) ? (f.mood as Mood) : null,
         tags: f.tags,
+        description: n.pixabay ? `Pixabay track ${n.pixabay}` : undefined,
         energy: a?.energy,
         bpm: a?.bpm,
         firstBeat: a?.firstBeat,
@@ -168,7 +179,7 @@ export async function driveLibraries(): Promise<{ music: Track[]; sfx: SfxEntry[
     } else {
       sfx.push({
         id: `drive-sfx-${hash(f.drive_file_id)}`,
-        title: titleOf(f.name),
+        title: n.title,
         library: lib.name,
         category: f.folder || lib.name,
         tags: f.tags,

@@ -153,7 +153,7 @@ Your libraries:
 - freepd: about 290 tracks, CC0 (public domain).
 - mixkit: free licence for the web and social media (posts, ads, YouTube); not TV, radio or CDs.
 - incompetech: Kevin MacLeod's catalogue, CC BY 4.0, so the post must credit the track.
-- the studio's Google Drive libraries, under the licence noted for each.
+- the studio's Google Drive libraries, under the licence noted for each. Pixabay libraries hold tracks the studio downloaded from Pixabay: Pixabay Content License, commercial use, no credit.
 Sound effects: the engine's six built-in ones (whoosh, pop, hit, riser, click, ding) and recorded ones from mixkit and the Drive libraries.
 
 Work with your tools: run several searches with search_music, look closer at two or three candidates with track_details (its times are seconds into the track), find effects with search_sfx, then call submit_sound_plan once with the complete plan. Only use ids your searches returned.
