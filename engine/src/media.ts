@@ -1,5 +1,5 @@
 import { createWriteStream } from "node:fs";
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -65,6 +65,29 @@ const FRAME_SIZES: Record<string, [number, number]> = {
   "16:9": [1920, 1080],
 };
 export const frameSize = (aspect: string) => FRAME_SIZES[aspect] ?? FRAME_SIZES["9:16"];
+
+// A copy of `file` at `out` that is at most `maxBytes`: the picture encoded again at the
+// bitrate that fits (two passes, so it lands just under), the sound kept as it is.
+// Storage on Supabase's free plan takes files up to 50 MB.
+export async function fitUnder(file: string, out: string, maxBytes: number) {
+  const { duration } = await probe(file);
+  const { stdout } = await run(config.ffprobe, ["-v", "error", "-select_streams", "a:0", "-show_entries", "stream=bit_rate", "-of", "csv=p=0", file]);
+  const audio = Number(stdout.trim()) || 192_000;
+  // 4% for the container and the encoder's aim.
+  const video = Math.floor(((maxBytes * 8) / duration) * 0.96 - audio);
+  if (video < 500_000) throw new Error(`The draft is too long to fit the ${Math.round(maxBytes / 1e6)} MB upload limit.`);
+  const passlog = `${out}.pass`;
+  const encode = ["-v", "error", "-y", "-i", file, "-c:v", "libx264", "-preset", "veryfast", "-b:v", String(video), "-pix_fmt", "yuv420p", "-passlogfile", passlog];
+  try {
+    await run(config.ffmpeg, [...encode, "-pass", "1", "-an", "-f", "null", "-"]);
+    await run(config.ffmpeg, [...encode, "-pass", "2", "-c:a", "copy", "-movflags", "+faststart", out]);
+  } finally {
+    for (const f of await readdir(path.dirname(out))) if (f.startsWith(path.basename(passlog))) await rm(path.join(path.dirname(out), f), { force: true });
+  }
+  const { size } = await stat(out);
+  if (size > maxBytes) throw new Error(`The draft is still ${(size / 1e6).toFixed(1)} MB after encoding it again, over the ${Math.round(maxBytes / 1e6)} MB upload limit.`);
+  return out;
+}
 
 export const SHEET_COLS = 3;
 export const SHEET_ROWS = 3;

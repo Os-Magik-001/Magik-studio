@@ -1,12 +1,12 @@
 // One edit job: gather inputs, have Claude plan the cut, render, hand to the editor.
 
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { config, db } from "./config.ts";
 import { buildDesignBrief, designPass, type DesignAsset, type DirectorBrief } from "./design.ts";
 import { run } from "./exec.ts";
-import { contactSheets, download, probe } from "./media.ts";
+import { contactSheets, download, fitUnder, probe } from "./media.ts";
 import { driveWorkingCopy, pruneCache } from "./drive.ts";
 import { driveLibraries } from "./libraries.ts";
 import { clientMemory, musicMemory } from "./memory.ts";
@@ -566,13 +566,21 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       return;
     }
 
+    let upload = out;
+    const { size } = await stat(out);
+    if (size > config.uploadBytes) {
+      await progress(job.id, "Fitting the draft under the upload limit");
+      upload = await fitUnder(out, path.join(dir, "cut-fit.mp4"), config.uploadBytes);
+      note(`the draft was ${(size / 1e6).toFixed(1)} MB: encoded again to ${((await stat(upload)).size / 1e6).toFixed(1)} MB to fit the upload limit`);
+    }
+
     await progress(job.id, "Uploading the draft");
     const { data: last } = await db.from("versions").select("number").eq("video_id", video.id).order("number", { ascending: false }).limit(1).maybeSingle();
     const number = (last?.number ?? 0) + 1;
     const objectPath = `${video.id}/${randomUUID()}-claude-v${number}.mp4`;
     const { error: upErr } = await db.storage
       .from("versions")
-      .upload(objectPath, await readFile(out), { contentType: "video/mp4", upsert: false });
+      .upload(objectPath, await readFile(upload), { contentType: "video/mp4", upsert: false });
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
 
     const notes = [

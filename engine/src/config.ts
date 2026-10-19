@@ -18,6 +18,8 @@ export const config = {
   // Working copies of Google Drive footage, kept between jobs so revisions don't fetch again.
   cacheDir: process.env.ENGINE_CACHE_DIR ?? path.join(os.tmpdir(), "magik-engine-cache"),
   cacheBytes: Number(process.env.ENGINE_CACHE_GB ?? 20) * 1024 ** 3,
+  // Largest file Supabase Storage takes (50 MB on the free plan): bigger drafts are re-encoded to fit.
+  uploadBytes: Number(process.env.ENGINE_UPLOAD_MB ?? 50) * 1000 ** 2,
   pollMs: Number(process.env.ENGINE_POLL_MS ?? 10_000),
   ffmpeg: process.env.FFMPEG_PATH ?? "ffmpeg",
   ffprobe: process.env.FFPROBE_PATH ?? "ffprobe",
