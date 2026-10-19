@@ -393,6 +393,53 @@ export type Database = {
           },
         ]
       }
+      motion_prompts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          creator: string | null
+          id: string
+          kind: string
+          notes: string | null
+          prompt: string
+          source_url: string | null
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          creator?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          prompt: string
+          source_url?: string | null
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          creator?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          prompt?: string
+          source_url?: string | null
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motion_prompts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null

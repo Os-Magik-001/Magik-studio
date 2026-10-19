@@ -10,6 +10,7 @@ import { claudeConfigured } from "@/lib/claude";
 import { adaptScript, describeThread, reviseScript, runScriptwriter } from "@/lib/agents";
 import { asFindings, asShootPlan } from "@/lib/agent-types";
 import { clientMemory } from "@/lib/memory";
+import { motionLibrary } from "@/lib/motion-prompts";
 import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -155,7 +156,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory] = await Promise.all([
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
     supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -170,6 +171,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       .maybeSingle(),
     admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
     clientMemory(video.client_id, { except: videoId }),
+    motionLibrary([video.title, video.brief, text(formData, "notes")].filter(Boolean).join(" ")),
   ]);
   if (script?.status === "approved") return fail("This script is already approved.");
 
@@ -187,6 +189,7 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
       findings: asFindings(report?.findings),
       styleRules: kit?.style_rules ?? null,
       memory: memory.text,
+      motion: motion.text,
     });
     await keepCurrent(script);
     const version: Version = { body: draft.script, shot_list: draft.shots.map((s) => ({ text: s })), shoot_plan: draft.plan, edit_prompt: draft.edit_prompt };
@@ -222,7 +225,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory] = await Promise.all([
+  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
     supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -230,6 +233,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
     admin.from("trend_reports").select("findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
     admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
     clientMemory(video.client_id, { except: videoId }),
+    motionLibrary([video.title, video.brief, text(formData, "request")].filter(Boolean).join(" ")),
   ]);
   if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return fail("There's no script yet. Write one first.");
   const asked = text(formData, "request");
@@ -251,6 +255,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
       findings: asFindings(report?.findings),
       styleRules: kit?.style_rules ?? null,
       memory: memory.text,
+      motion: motion.text,
     });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "The scriptwriter couldn't make the changes.");
@@ -343,6 +348,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
         findings: asFindings(report?.findings),
         styleRules: kit?.style_rules ?? null,
         memory: (await clientMemory(video.client_id, { except: videoId })).text,
+        motion: (await motionLibrary([video.title, video.brief, body].filter(Boolean).join(" "))).text,
       });
       editPrompt = adapted.edit_prompt;
       shots = adapted.shots.map((s) => ({ text: s }));
