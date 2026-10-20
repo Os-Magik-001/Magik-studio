@@ -6,6 +6,7 @@ import { Sparkles } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Input, Select, Textarea } from "@/components/ui";
 import { Field } from "@/components/field";
+import { ScriptField } from "@/components/script-field";
 import { Uploader } from "@/components/uploader";
 import { ASPECTS, FORMAT_LABEL, type ScriptStatus } from "@/lib/workflow";
 import { markDelivered, scheduleShoot, updateVideo } from "@/app/actions/studio";
@@ -161,7 +162,7 @@ export function ScriptEditor({
       <ActionForm key={`${key}:${version}`} action={saveScript} className="flex flex-col gap-4">
         <input type="hidden" name="videoId" value={videoId} />
         <Field label={draftedByClaude ? "Script (drafted by Claude)" : "Script"}>
-          <Textarea name="body" rows={14} defaultValue={body} className="font-mono text-[13px]" />
+          <ScriptField name="body" rows={14} defaultValue={body} className="font-mono text-[13px]" />
         </Field>
         <Field label="Shot list" hint="One shot per line. The videographer ticks these off on set.">
           <Textarea name="shots" rows={6} defaultValue={shots} />
@@ -350,8 +351,8 @@ export function FastTrackForm({ videoId, script, footageCount, hasStrategy }: { 
   return (
     <ActionForm action={fastTrackScript} className="flex flex-col gap-4">
       <input type="hidden" name="videoId" value={videoId} />
-      <Field label="Your script" hint="Paste it as it is: scenes, lines, on-screen text. It won't be rewritten.">
-        <Textarea name="script" rows={10} defaultValue={script} className="font-mono text-[13px]" required />
+      <Field label="Your script" hint="Paste it as it is, or import the file: scenes, lines, on-screen text. It won't be rewritten.">
+        <ScriptField name="script" rows={10} defaultValue={script} className="font-mono text-[13px]" required />
       </Field>
       <Field label="Notes for the edit (optional)" hint="Anything the engine must know: length, style, what to open on.">
         <Textarea name="editPrompt" rows={2} placeholder="Episode style like the series, 40 to 50 seconds, English subtitles" />

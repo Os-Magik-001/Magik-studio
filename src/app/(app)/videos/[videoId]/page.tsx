@@ -231,7 +231,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 <summary className="cursor-pointer text-[13px] font-medium text-ink">
                   Already have the script? <span className="text-accent">Fast track</span>
                 </summary>
-                <p className="mt-2 text-xs text-muted">Paste it (or keep the one below) and the engine edits from it, without the agents rewriting it.</p>
+                <p className="mt-2 text-xs text-muted">Paste it, import it from a PDF, Word or text file, or keep the one below. The engine edits from it without the agents rewriting it.</p>
                 <div className="mt-4">
                   <FastTrackForm key={changedElsewhere("pasted")} videoId={video.id} script={script?.body ?? ""} footageCount={footage?.length ?? 0} hasStrategy={!!strategy} />
                 </div>

@@ -75,6 +75,12 @@ export function formatBytes(n: number | null | undefined) {
   return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+// Script files the script fields can import (read on the server, see @/lib/script-files).
+// Kept under Vercel's 4.5 MB request limit; next.config.ts lets server actions take it.
+export const SCRIPT_FILE_ACCEPT =
+  ".pdf,.docx,.doc,.txt,.md,.rtf,.fountain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain,text/markdown,application/rtf,text/rtf";
+export const SCRIPT_FILE_MAX_BYTES = 4 * 1024 * 1024;
+
 export type ShotItem = { text: string; done?: boolean };
 
 export function parseShotList(value: unknown): ShotItem[] {
