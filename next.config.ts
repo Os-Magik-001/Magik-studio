@@ -11,6 +11,18 @@ const nextConfig: NextConfig = {
     // request bodies up to 4.5 MB.
     serverActions: { bodySizeLimit: "4.5mb" },
   },
+  // Pages open inside the desktop's windows (same-origin iframes); no other site may frame them.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
+    ];
+  },
   // The script file readers are Node libraries; pdf.js loads parts of itself at run time.
   serverExternalPackages: ["unpdf", "mammoth", "word-extractor"],
   turbopack: {

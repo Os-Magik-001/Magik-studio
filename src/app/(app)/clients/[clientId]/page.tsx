@@ -1,3 +1,4 @@
+import { clientTitle } from "@/lib/titles";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -18,7 +19,9 @@ import {
 } from "./forms";
 import { ResetPasswordButton } from "@/components/password-tools";
 
-export const metadata: Metadata = { title: "Client" };
+export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
+  return clientTitle((await params).clientId, "Client");
+}
 
 export default async function ClientPage({ params }: { params: Promise<{ clientId: string }> }) {
   const { clientId } = await params;
@@ -71,6 +74,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
         description={`${videos?.length ?? 0} videos · ${client.revision_limit} included revision rounds per video`}
         actions={
           <>
+            {viewer.role === "admin" && <LinkButton href={`/onboarding/${client.id}`}>Onboarding</LinkButton>}
             <LinkButton href={`/agents?client=${client.id}`}>Agents</LinkButton>
             <LinkButton href={`/clients/${client.id}/brand`}>Brand & strategy</LinkButton>
           </>

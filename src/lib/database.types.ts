@@ -22,6 +22,8 @@ export type Database = {
           fonts: string[]
           graphics: string
           logo_path: string | null
+          logo_source: string | null
+          logo_spec: Json | null
           music_mood: string | null
           style_rules: string | null
           updated_at: string
@@ -33,6 +35,8 @@ export type Database = {
           fonts?: string[]
           graphics?: string
           logo_path?: string | null
+          logo_source?: string | null
+          logo_spec?: Json | null
           music_mood?: string | null
           style_rules?: string | null
           updated_at?: string
@@ -44,6 +48,8 @@ export type Database = {
           fonts?: string[]
           graphics?: string
           logo_path?: string | null
+          logo_source?: string | null
+          logo_spec?: Json | null
           music_mood?: string | null
           style_rules?: string | null
           updated_at?: string
@@ -147,6 +153,76 @@ export type Database = {
           },
         ]
       }
+      client_invites: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          expires_at: string
+          id: string
+          opened_at: string | null
+          revoked_at: string | null
+          sent_at: string | null
+          sent_via: string | null
+          token_hash: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expires_at: string
+          id?: string
+          opened_at?: string | null
+          revoked_at?: string | null
+          sent_at?: string | null
+          sent_via?: string | null
+          token_hash: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string
+          id?: string
+          opened_at?: string | null
+          revoked_at?: string | null
+          sent_at?: string | null
+          sent_via?: string | null
+          token_hash?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_invites_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_team: {
         Row: {
           client_id: string
@@ -179,24 +255,69 @@ export type Database = {
       }
       clients: {
         Row: {
+          address: string | null
+          contact_name: string | null
           created_at: string
+          email: string | null
           id: string
+          instagram: string | null
+          language: string
           name: string
+          notes: string | null
+          pack_id: string | null
+          phone: string | null
           revision_limit: number
+          seller_id: string | null
+          website: string | null
         }
         Insert: {
+          address?: string | null
+          contact_name?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          instagram?: string | null
+          language?: string
           name: string
+          notes?: string | null
+          pack_id?: string | null
+          phone?: string | null
           revision_limit?: number
+          seller_id?: string | null
+          website?: string | null
         }
         Update: {
+          address?: string | null
+          contact_name?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          instagram?: string | null
+          language?: string
           name?: string
+          notes?: string | null
+          pack_id?: string | null
+          phone?: string | null
           revision_limit?: number
+          seller_id?: string | null
+          website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comments: {
         Row: {
@@ -255,6 +376,73 @@ export type Database = {
             columns: ["version_id"]
             isOneToOne: false
             referencedRelation: "versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          file_name: string
+          id: string
+          signed_at: string | null
+          signed_by: string | null
+          signed_ip: string | null
+          signed_name: string | null
+          signed_outside: boolean
+          status: string
+          storage_path: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          id?: string
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_ip?: string | null
+          signed_name?: string | null
+          signed_outside?: boolean
+          status?: string
+          storage_path: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          id?: string
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_ip?: string | null
+          signed_name?: string | null
+          signed_outside?: boolean
+          status?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -396,6 +584,100 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          bill_to: Json
+          client_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_on: string | null
+          id: string
+          issued_on: string
+          issuer: Json
+          language: string
+          lines: Json
+          notes: string | null
+          number: string
+          pack_id: string | null
+          paid_at: string | null
+          sent_at: string | null
+          status: string
+          subtotal_cents: number
+          taxes: Json
+          total_cents: number
+          written_by_claude: boolean
+        }
+        Insert: {
+          bill_to?: Json
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_on?: string | null
+          id?: string
+          issued_on?: string
+          issuer?: Json
+          language?: string
+          lines?: Json
+          notes?: string | null
+          number: string
+          pack_id?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal_cents?: number
+          taxes?: Json
+          total_cents?: number
+          written_by_claude?: boolean
+        }
+        Update: {
+          bill_to?: Json
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_on?: string | null
+          id?: string
+          issued_on?: string
+          issuer?: Json
+          language?: string
+          lines?: Json
+          notes?: string | null
+          number?: string
+          pack_id?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal_cents?: number
+          taxes?: Json
+          total_cents?: number
+          written_by_claude?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motion_prompts: {
         Row: {
           created_at: string
@@ -491,6 +773,92 @@ export type Database = {
           },
         ]
       }
+      onboardings: {
+        Row: {
+          brand_done_at: string | null
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          has_brand: boolean | null
+          questions_done_at: string | null
+          references_done_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_done_at?: string | null
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          has_brand?: boolean | null
+          questions_done_at?: string | null
+          references_done_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_done_at?: string | null
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          has_brand?: boolean | null
+          questions_done_at?: string | null
+          references_done_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboardings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packs: {
+        Row: {
+          active: boolean
+          billing: string
+          created_at: string
+          description: string | null
+          features: string[]
+          id: string
+          name: string
+          price_cents: number
+          revision_rounds: number
+          sort: number
+          updated_at: string
+          videos_per_month: number | null
+        }
+        Insert: {
+          active?: boolean
+          billing?: string
+          created_at?: string
+          description?: string | null
+          features?: string[]
+          id?: string
+          name: string
+          price_cents: number
+          revision_rounds?: number
+          sort?: number
+          updated_at?: string
+          videos_per_month?: number | null
+        }
+        Update: {
+          active?: boolean
+          billing?: string
+          created_at?: string
+          description?: string | null
+          features?: string[]
+          id?: string
+          name?: string
+          price_cents?: number
+          revision_rounds?: number
+          sort?: number
+          updated_at?: string
+          videos_per_month?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           client_id: string | null
@@ -526,6 +894,56 @@ export type Database = {
           },
         ]
       }
+      reference_library: {
+        Row: {
+          active: boolean
+          cover_path: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          platform: string
+          sort: number
+          tags: string[]
+          title: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          cover_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          platform: string
+          sort?: number
+          tags?: string[]
+          title: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          cover_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          platform?: string
+          sort?: number
+          tags?: string[]
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_library_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reference_videos: {
         Row: {
           analysis: Json | null
@@ -538,6 +956,7 @@ export type Database = {
           finished_at: string | null
           focus: string[]
           id: string
+          library_id: string | null
           note: string | null
           owner: string | null
           platform: string
@@ -562,6 +981,7 @@ export type Database = {
           finished_at?: string | null
           focus?: string[]
           id?: string
+          library_id?: string | null
           note?: string | null
           owner?: string | null
           platform: string
@@ -586,6 +1006,7 @@ export type Database = {
           finished_at?: string | null
           focus?: string[]
           id?: string
+          library_id?: string | null
           note?: string | null
           owner?: string | null
           platform?: string
@@ -612,6 +1033,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reference_videos_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "reference_library"
             referencedColumns: ["id"]
           },
           {
@@ -904,6 +1332,54 @@ export type Database = {
           },
         ]
       }
+      studio_settings: {
+        Row: {
+          address: string | null
+          business_name: string
+          currency: string
+          email: string | null
+          id: boolean
+          invoice_prefix: string
+          next_invoice_number: number
+          payment_instructions: string | null
+          payment_terms_days: number
+          phone: string | null
+          taxes: Json
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name?: string
+          currency?: string
+          email?: string | null
+          id?: boolean
+          invoice_prefix?: string
+          next_invoice_number?: number
+          payment_instructions?: string | null
+          payment_terms_days?: number
+          phone?: string | null
+          taxes?: Json
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          currency?: string
+          email?: string | null
+          id?: boolean
+          invoice_prefix?: string
+          next_invoice_number?: number
+          payment_instructions?: string | null
+          payment_terms_days?: number
+          phone?: string | null
+          taxes?: Json
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       trend_reports: {
         Row: {
           accounts: string[]
@@ -1127,7 +1603,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      take_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
       agent_status: "queued" | "running" | "done" | "failed"
@@ -1147,7 +1623,7 @@ export type Database = {
         | "changes_requested"
         | "approved"
       sound_library_kind: "music" | "sfx"
-      user_role: "admin" | "editor" | "videographer" | "client"
+      user_role: "admin" | "editor" | "videographer" | "client" | "seller"
       version_status:
         | "draft"
         | "fixes_requested"
@@ -1310,7 +1786,7 @@ export const Constants = {
         "approved",
       ],
       sound_library_kind: ["music", "sfx"],
-      user_role: ["admin", "editor", "videographer", "client"],
+      user_role: ["admin", "editor", "videographer", "client", "seller"],
       version_status: [
         "draft",
         "fixes_requested",

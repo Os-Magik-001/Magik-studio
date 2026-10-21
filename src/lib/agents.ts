@@ -406,3 +406,70 @@ export async function runMotionDirector(
   });
   return { ...brief, templates: directions.map((d) => d.id), directions, written_at: new Date().toISOString() };
 }
+
+// ---------------------------------------------------------------- onboarding
+
+const InvoiceWording = z.object({
+  detail: z.string().describe("One line, under 160 characters: what the pack includes for this client, in the client's language. No prices."),
+  note: z.string().describe("Two short sentences for the invoice's note, in the client's language: thanks, and the payment terms given. No prices, no promises beyond the pack."),
+});
+
+// The seller's invoice: the numbers are computed by the app; Claude only words the line's
+// detail and the note, in the client's language, from the pack.
+export async function writeInvoiceWording(input: {
+  clientName: string;
+  language: "fr" | "en";
+  pack: { name: string; description: string | null; billing: string; videos_per_month: number | null; revision_rounds: number; features: string[] };
+  paymentTerms: number;
+}) {
+  const prompt = [
+    `Client: ${input.clientName}`,
+    `Language: ${input.language === "fr" ? "French (Québec)" : "English"}`,
+    `Pack: ${input.pack.name} (${input.pack.billing === "monthly" ? "monthly plan" : "one-time"})`,
+    input.pack.description && `Pack description: ${input.pack.description}`,
+    input.pack.videos_per_month && `Videos per month: ${input.pack.videos_per_month}`,
+    `Revision rounds: ${input.pack.revision_rounds}`,
+    input.pack.features.length && `Included: ${input.pack.features.join("; ")}`,
+    `Payment terms: ${input.paymentTerms} days`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return ask(
+    InvoiceWording,
+    "You write the wording of invoices for Magik Studio, a video studio that makes short-form videos for businesses. Be precise, warm and professional. Never invent services, prices or discounts that aren't in the pack.",
+    prompt,
+    "medium",
+  );
+}
+
+const LogoIdeas = z.object({
+  ideas: z
+    .array(
+      z.object({
+        template: z.enum(["wordmark", "underline", "monogram-circle", "monogram-tile", "stacked", "emblem"]),
+        name: z.string().describe("The brand name as written in the logo."),
+        tagline: z.string().describe("Empty, or a 2 to 5 word line under the name in the client's language."),
+        initials: z.string().describe("1 to 3 letters."),
+        font: z.enum(["bebas", "archivo", "montserrat", "space", "unbounded", "syne", "poppins", "playfair", "dmserif", "cormorant"]),
+        uppercase: z.boolean(),
+        tracking: z.number().describe("Letter spacing in em, -0.02 to 0.3."),
+        colors: z.object({ primary: z.string().describe("#RRGGBB, dark enough to read on white"), accent: z.string().describe("#RRGGBB") }),
+        symbol: z.enum(["none", "spark", "star", "diamond", "circle", "bolt", "leaf", "wave", "crown", "heart", "scissors", "camera", "coffee", "home"]),
+      }),
+    )
+    .describe("Exactly 6 logo ideas, each with a different template."),
+});
+
+// Starting points for a client without a brand: six logos built from the creator's templates,
+// fonts and symbols, chosen from their answers.
+export async function designLogoIdeas(input: { clientName: string; answers: Answers }) {
+  const answers = QUESTIONS.filter((q) => input.answers[q.key]).map((q) => `${q.label}: ${input.answers[q.key]}`).join("\n");
+  const fonts = "bebas (bold condensed), archivo (heavy modern), montserrat (clean geometric), space (techy), unbounded (wide playful), syne (artsy editorial), poppins (rounded warm), playfair (elegant serif), dmserif (classic luxurious serif), cormorant (refined high-end serif)";
+  const { ideas } = await ask(
+    LogoIdeas,
+    `You are the brand designer at Magik Studio. You propose six simple, timeless logos for a small business, built only from the studio's logo templates, fonts (${fonts}) and symbols. Fit the business, its customers and its personality; keep the client's own colors when they gave some. Vary templates, fonts and palettes so the six are clearly different.`,
+    `Business: ${input.clientName}\n\nTheir answers:\n${answers || "(none yet)"}\n\nPropose the six logos.`,
+    "medium",
+  );
+  return ideas;
+}

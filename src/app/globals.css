@@ -1,30 +1,38 @@
 @import "tailwindcss";
 
-/* Magik identity (Charte du logo v1.0): black ground, Magik Gold on screen,
-   anthracite surfaces, Cormorant Garamond titles, Montserrat text. */
+/* Magik OS: an Apple-style desktop in the studio's colors (Charte du logo v1.0: black ground,
+   Magik Gold). Dark Liquid Glass: glass is the navigation layer (menu bar, dock, title bars,
+   sidebars, popovers); content sits on calm translucent surfaces inside windows; Magik Gold
+   is the system accent. Apple's system colors for status. */
 :root {
   --bg: #000000;
-  --surface: #0d0d0d;
-  --surface-2: #1a1a1a;
-  --border: #2a2a2a;
-  --border-strong: #3d3d3d;
-  --ink: #ffffff;
-  --ink-2: #d9d6cc;
-  --muted: #8c8a83;
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.085);
+  --border: rgba(255, 255, 255, 0.085);
+  --border-strong: rgba(255, 255, 255, 0.17);
+  --ink: #f5f5f7;
+  --ink-2: rgba(235, 235, 245, 0.84);
+  --muted: rgba(235, 235, 245, 0.56);
   --accent: #f6d43a;
   --accent-ink: #000000;
-  --accent-soft: rgba(246, 212, 58, 0.12);
-  --success: #5fc48a;
+  --accent-soft: rgba(246, 212, 58, 0.14);
+  --success: #30d158;
   --success-ink: #000000;
-  --success-soft: rgba(95, 196, 138, 0.13);
-  --warning: #f0883e;
-  --warning-soft: rgba(240, 136, 62, 0.14);
-  --danger: #f2685f;
-  --danger-soft: rgba(242, 104, 95, 0.14);
+  --success-soft: rgba(48, 209, 88, 0.15);
+  --warning: #ff9f0a;
+  --warning-soft: rgba(255, 159, 10, 0.15);
+  --danger: #ff453a;
+  --danger-soft: rgba(255, 69, 58, 0.15);
+  --info: #0a84ff;
+  --info-soft: rgba(10, 132, 255, 0.16);
   --stage: #000000;
   --stage-2: #0d0d0d;
   --stage-ink: #ffffff;
   --stage-muted: #8c8a83;
+
+  /* Desktop geometry, shared by the window manager and the CSS. */
+  --menubar-h: 34px;
+  --dock-h: 86px;
 }
 
 @theme inline {
@@ -46,35 +54,58 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-stage: var(--stage);
   --color-stage-2: var(--stage-2);
   --color-stage-ink: var(--stage-ink);
   --color-stage-muted: var(--stage-muted);
-  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* San Francisco on Apple devices, Inter everywhere else. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Helvetica Neue", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), "Helvetica Neue", system-ui, sans-serif;
   --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", var(--font-geist-mono), Menlo, monospace;
 }
 
 html {
   color-scheme: dark;
+  background: var(--bg);
+}
+
+/* Inside a desktop window the page is transparent: the window's material shows through. */
+html.embedded,
+html.embedded body {
+  background: transparent;
 }
 
 body {
-  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
+  font-size: 14px;
   font-feature-settings: "lnum" 1;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
 }
 
 ::selection {
-  background: rgba(246, 212, 58, 0.3);
+  background: rgba(246, 212, 58, 0.32);
   color: #fff;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+/* In the base layer, so a control's own focus style (a utility) wins over it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 80%, transparent);
+    outline-offset: 2px;
+  }
 }
 
 /* Date and time pickers: light icons on the dark ground. */
@@ -82,11 +113,17 @@ input::-webkit-calendar-picker-indicator {
   filter: invert(0.85);
 }
 
-/* The "kicker": small uppercase gold label used above titles (from the charte). */
+/* Thin overlay scrollbars, like macOS. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+/* Small uppercase gold label used above titles (from the charte). */
 .kicker {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -101,31 +138,34 @@ input::-webkit-calendar-picker-indicator {
 }
 
 /* ------------------------------------------------------------------ Liquid Glass
-   Apple's Liquid Glass, for the web. Glass is the navigation layer (sidebar,
-   bars, floating controls, the login card), never the content layer. Content
-   sits on "frost": a calmer, mostly opaque surface. Never glass on glass;
-   only the primary action is tinted (Magik Gold). */
+   Glass bends the light behind it: blur, raised saturation, a specular rim brightest at
+   the top-left, and a sheen across the top. Never glass on glass; only the primary action
+   is tinted (Magik Gold). */
 @layer components {
   .glass,
-  .glass-tint {
+  .glass-tint,
+  .glass-bar,
+  .glass-pop {
     position: relative;
     isolation: isolate;
-    -webkit-backdrop-filter: blur(24px) saturate(175%);
-    backdrop-filter: blur(24px) saturate(175%);
   }
 
   .glass {
-    background-color: rgba(10, 10, 10, 0.42);
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.075);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
       inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-      0 18px 50px -18px rgba(0, 0, 0, 0.85);
+      0 8px 24px -12px rgba(0, 0, 0, 0.7);
   }
 
-  /* Specular rim: light catching the edge, brightest top-left and bottom-right. */
+  /* Specular rim: light catching the edge. */
   .glass::before,
-  .glass-tint::before {
+  .glass-tint::before,
+  .glass-bar::before,
+  .glass-pop::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -133,12 +173,12 @@ input::-webkit-calendar-picker-indicator {
     border-radius: inherit;
     pointer-events: none;
     background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.55),
-      rgba(255, 255, 255, 0.1) 28%,
+      140deg,
+      rgba(255, 255, 255, 0.5),
+      rgba(255, 255, 255, 0.1) 26%,
       rgba(255, 255, 255, 0.02) 55%,
-      rgba(255, 255, 255, 0.14) 82%,
-      rgba(255, 255, 255, 0.32)
+      rgba(255, 255, 255, 0.1) 82%,
+      rgba(255, 255, 255, 0.26)
     );
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
@@ -149,53 +189,89 @@ input::-webkit-calendar-picker-indicator {
 
   /* Top sheen: the curved surface reflecting light from above. */
   .glass::after,
-  .glass-tint::after {
+  .glass-tint::after,
+  .glass-bar::after,
+  .glass-pop::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
     border-radius: inherit;
     pointer-events: none;
-    background: radial-gradient(120% 70% at 18% -12%, rgba(255, 255, 255, 0.13), transparent 62%);
+    background: radial-gradient(120% 70% at 18% -12%, rgba(255, 255, 255, 0.12), transparent 62%);
   }
 
   /* Tinted glass, for the one primary action in a view. */
   .glass-tint {
     color: #000;
-    background-color: rgba(246, 212, 58, 0.92);
-    background-image: linear-gradient(180deg, rgba(255, 244, 190, 0.55), rgba(246, 212, 58, 0) 55%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    background-color: rgba(246, 212, 58, 0.94);
+    background-image: linear-gradient(180deg, rgba(255, 246, 200, 0.55), rgba(246, 212, 58, 0) 58%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.7),
-      inset 0 -2px 6px rgba(120, 90, 0, 0.35),
-      0 10px 30px -10px rgba(246, 212, 58, 0.65);
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      inset 0 -2px 6px rgba(120, 90, 0, 0.3),
+      0 8px 22px -10px rgba(246, 212, 58, 0.6);
   }
   .glass-tint::after {
     background: radial-gradient(90% 80% at 30% -20%, rgba(255, 255, 255, 0.45), transparent 60%);
   }
 
-  /* Frost: the content surface. Mostly opaque so text never fights the backdrop. */
-  .frost {
-    background-color: rgba(12, 12, 12, 0.8);
-    -webkit-backdrop-filter: blur(14px) saturate(130%);
-    backdrop-filter: blur(14px) saturate(130%);
-    border: 1px solid rgba(255, 255, 255, 0.075);
+  /* The desktop's bars: menu bar, dock, window title bars, sidebars. */
+  .glass-bar {
+    -webkit-backdrop-filter: blur(40px) saturate(190%);
+    backdrop-filter: blur(40px) saturate(190%);
+    background-color: rgba(40, 40, 44, 0.42);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      0 24px 60px -30px rgba(0, 0, 0, 0.9);
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 20px 50px -20px rgba(0, 0, 0, 0.75);
+  }
+
+  /* Menus, Spotlight and other popovers: more opaque so their text always reads. */
+  .glass-pop {
+    -webkit-backdrop-filter: blur(48px) saturate(200%);
+    backdrop-filter: blur(48px) saturate(200%);
+    background-color: rgba(34, 34, 38, 0.84);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 0 0 0.5px rgba(0, 0, 0, 0.6),
+      0 30px 70px -20px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Content surface inside a window: a grouped box, quiet and legible. */
+  .frost {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  }
+
+  /* A window's body material: the wallpaper and the windows below show through, blurred. */
+  .material-window {
+    -webkit-backdrop-filter: blur(60px) saturate(180%);
+    backdrop-filter: blur(60px) saturate(180%);
+    background-color: rgba(26, 26, 29, 0.8);
   }
 }
 
 /* No backdrop blur, or the person asked for less transparency: go solid. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass { background-color: rgba(22, 22, 22, 0.97); }
-  .frost { background-color: #0e0e0e; }
+  .glass { background-color: rgba(44, 44, 48, 0.97); }
+  .glass-bar,
+  .glass-pop,
+  .material-window { background-color: rgba(30, 30, 33, 0.98); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .glass { background-color: rgba(22, 22, 22, 0.97); }
-  .frost { background-color: #0e0e0e; }
+  .glass { background-color: rgba(44, 44, 48, 0.97); }
+  .glass-bar,
+  .glass-pop,
+  .material-window { background-color: rgba(30, 30, 33, 0.98); }
   .glass,
   .glass-tint,
-  .frost {
+  .glass-bar,
+  .glass-pop,
+  .material-window {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -203,8 +279,138 @@ input::-webkit-calendar-picker-indicator {
 /* Increased contrast: crisp, solid edges instead of soft light. */
 @media (prefers-contrast: more) {
   .glass::before,
-  .glass-tint::before { background: rgba(255, 255, 255, 0.75); }
+  .glass-tint::before,
+  .glass-bar::before,
+  .glass-pop::before { background: rgba(255, 255, 255, 0.75); }
   .frost { border-color: rgba(255, 255, 255, 0.35); }
+}
+
+/* ------------------------------------------------------------------ Desktop */
+
+/* App icons: a squircle with depth, a soft top light and a glass rim (macOS 26). */
+.app-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 23%;
+  color: #fff;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.28),
+    0 6px 16px -6px rgba(0, 0, 0, 0.7);
+}
+.app-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 52%);
+  pointer-events: none;
+}
+.app-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+.app-icon > svg {
+  position: relative;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+}
+
+/* The desktop picture (src/components/desktop/wallpaper.tsx). The gradient underneath shows
+   while the image loads, and is the whole picture for the live Matrix wallpaper. */
+.wallpaper {
+  background-color: #050403;
+  background-image:
+    url("/wallpapers/magik.webp"),
+    radial-gradient(120% 90% at 18% 8%, rgba(246, 212, 58, 0.28), transparent 55%),
+    radial-gradient(90% 80% at 85% 90%, rgba(196, 112, 22, 0.32), transparent 60%),
+    radial-gradient(70% 60% at 70% 20%, rgba(40, 70, 90, 0.35), transparent 65%);
+  background-size: cover;
+  background-position: center;
+}
+html[data-wallpaper="midnight"] .wallpaper {
+  background-color: #04040c;
+  background-image:
+    url("/wallpapers/midnight.webp"),
+    radial-gradient(110% 90% at 20% 10%, rgba(94, 92, 230, 0.4), transparent 58%),
+    radial-gradient(90% 80% at 85% 85%, rgba(140, 50, 200, 0.35), transparent 60%);
+}
+html[data-wallpaper="ember"] .wallpaper {
+  background-color: #0a0303;
+  background-image:
+    url("/wallpapers/ember.webp"),
+    radial-gradient(110% 90% at 15% 20%, rgba(255, 69, 58, 0.45), transparent 58%),
+    radial-gradient(90% 80% at 85% 85%, rgba(255, 159, 10, 0.4), transparent 60%);
+}
+html[data-wallpaper="matrix"] .wallpaper {
+  background-image:
+    radial-gradient(80% 70% at 30% 20%, rgba(246, 212, 58, 0.14), transparent 60%),
+    radial-gradient(70% 60% at 80% 90%, rgba(200, 140, 30, 0.14), transparent 60%);
+}
+
+/* Text set straight on the wallpaper (menu bar, widgets, icon labels). */
+.on-wallpaper {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* Window traffic lights. */
+.traffic {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.25);
+}
+.traffic > svg {
+  opacity: 0;
+  color: rgba(0, 0, 0, 0.62);
+}
+.traffic-group:hover .traffic > svg {
+  opacity: 1;
+}
+.win-inactive .traffic {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+@keyframes win-open {
+  from { opacity: 0; transform: var(--win-from, scale(0.92)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bounce-dock {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-18px); }
+  55% { transform: translateY(0); }
+  75% { transform: translateY(-7px); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.animate-pop-in { animation: pop-in 0.16s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.animate-fade-in { animation: fade-in 0.25s ease both; }
+.animate-rise-in { animation: rise-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.animate-bounce-dock { animation: bounce-dock 0.9s ease-out; }
+.skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
 }
 
 /* Ambient light drifting behind the glass. */
@@ -242,7 +448,7 @@ input::-webkit-calendar-picker-indicator {
 .hud-node:focus-visible > circle:nth-of-type(2) { stroke: var(--accent); stroke-width: 3; }
 .hud-node text, .hud-edge { paint-order: stroke; stroke: #02060c; stroke-width: 4px; stroke-linejoin: round; }
 .hud-kind { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; letter-spacing: 0.2em; fill: #6f9bb3; }
-.hud-title { font-family: var(--font-montserrat), sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.14em; fill: #b8f1ff; }
+.hud-title { font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: 0.14em; fill: #b8f1ff; }
 .hud-meta { font-family: var(--font-geist-mono), monospace; font-size: 11px; fill: #54d6ff; }
 .hud-edge { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; fill: #54d6ff; letter-spacing: 0.04em; }
 .hud-edge.hot { fill: var(--accent); }
@@ -264,3 +470,41 @@ input::-webkit-calendar-picker-indicator {
 .hud-pulse { transform-box: fill-box; transform-origin: center; animation: hud-pulse 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
 @keyframes hud-pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.55); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .hud-packet { display: none; } }
+
+/* The setup assistant's "hello": the outline is drawn, then the letters fill in gold. */
+.hello-word {
+  fill: rgba(246, 212, 58, 0);
+  stroke: #f6d43a;
+  stroke-width: 1.4;
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation:
+    hello-draw 2.4s cubic-bezier(0.6, 0.1, 0.3, 1) 0.2s forwards,
+    hello-fill 0.9s ease 2.2s forwards;
+}
+@keyframes hello-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes hello-fill {
+  to { fill: rgba(246, 212, 58, 1); stroke-width: 0; }
+}
+
+/* Printed documents (invoices): white paper, no desktop. */
+@page {
+  margin: 14mm;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Native select menus on the dark ground. */
+select option {
+  background-color: #2c2c2e;
+  color: #f5f5f7;
+}

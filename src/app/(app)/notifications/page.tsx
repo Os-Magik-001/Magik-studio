@@ -19,7 +19,7 @@ export default async function NotificationsPage() {
   const unread = (items ?? []).filter((n) => !n.read_at).length;
 
   const hrefFor = (n: { video_id: string | null; kind: string }) => {
-    if (!n.video_id) return null;
+    if (!n.video_id) return n.kind.startsWith("onboarding") && (viewer.role === "admin" || viewer.role === "seller") ? "/onboarding" : null;
     if (viewer.role === "client") return `/review/${n.video_id}`;
     if (viewer.role === "videographer") return `/shoots/${n.video_id}`;
     return ["comment", "version_ready", "version_sent", "approved", "changes_requested"].includes(n.kind)

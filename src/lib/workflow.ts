@@ -53,6 +53,7 @@ export const ROLE_LABEL = {
   editor: "Editor",
   videographer: "Videographer",
   client: "Client",
+  seller: "Seller",
 } as const;
 
 export function formatTimecode(ms: number) {

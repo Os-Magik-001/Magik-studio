@@ -1,3 +1,4 @@
+import { videoTitle } from "@/lib/titles";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -11,7 +12,9 @@ import { VideoStatusBadge } from "@/components/status";
 import { ReviewRoom, type ReviewComment, type ReviewVersion } from "@/components/review/review-room";
 import { ScriptReview } from "@/components/review/script-review";
 
-export const metadata: Metadata = { title: "Review" };
+export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
+  return videoTitle((await params).videoId, "Review", "Review · ");
+}
 
 export default async function ReviewPage({
   params,

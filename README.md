@@ -1,15 +1,35 @@
 # Magik OS
 
-The workspace that runs Magik Studio: videographers bring in the footage, Claude edits it, editors check it, and clients approve it, all in one place.
+The workspace that runs Magik Studio: sellers onboard clients, videographers bring in the footage, Claude edits it, editors check it, and clients approve it, all in one place.
+
+## The desktop
+
+Magik OS looks and works like a Mac (dark Liquid Glass): a lock screen to sign in, then a desktop with a menu bar, a Dock, widgets and Spotlight (⌘K). Every feature is an app that opens in its own window; windows move, resize, tile to half the screen (drag to an edge), minimize to the Dock and come back where they were. Videos open as their own document windows. On phones the desktop becomes a home screen and apps open full screen.
+
+- `src/app/page.tsx` + `src/components/desktop/`: the desktop and the window manager.
+- `src/lib/apps.ts`: which apps each role gets and which window a path opens in.
+- Each window is a same-origin iframe of a page in `src/app/(app)/`, so every page works as it did on its own; `embed-bridge.tsx` keeps the window and the desktop in step. A desktop page opened on its own (a bookmark, an email link) opens the desktop with that page in a window (`src/lib/supabase/proxy.ts`).
 
 ## Who sees what
 
-| Role | Space | What they can do |
+| Role | Apps | What they can do |
 |---|---|---|
-| Studio manager (`admin`) | Pipeline, Clients, Shoots, Team | Everything: creates clients and videos, invites people, assigns editors and videographers, sets revision limits |
-| Editor | Pipeline, Clients | Their clients' videos: brief → script (Claude drafts) → shoot → launch the edit → draft check → send to client |
+| Studio manager (`admin`) | Pipeline, Clients, Onboarding, Agents, Library, Sound, Motion, Shoots, Team | Everything: onboards clients, sets packs and invoice details, creates videos, adds people, assigns editors and videographers |
+| Seller (`seller`) | Onboarding | Sets new clients up (details, pack, invoice, contract) and sends them their link. Doesn't see production. |
+| Editor | Pipeline, Clients, Agents, Library, Sound, Motion | Their clients' videos: brief → script (Claude drafts) → shoot → launch the edit → draft check → send to client |
 | Videographer | Shoots | Their shoot calendar, the approved script and shot list, footage drop |
-| Client | Your videos | Only their own videos, only once the editor sends them: approve the script, review cuts Frame.io-style, approve or request changes |
+| Client | Your videos, Your brand, Documents | Only their own videos, only once the editor sends them: approve the script, review cuts Frame.io-style, approve or request changes; their brand, invoices and contract |
+
+Everyone also has Notifications and Settings (name, password, wallpaper).
+
+## Client onboarding
+
+Onboarding starts with the seller, then one link hands over to the client (`src/lib/onboarding.ts` has the 10 steps):
+
+1. **Seller** (Onboarding app): client infos → pack → invoice (generated from the pack and the studio's invoice details, with TPS/TVQ; Claude words it in the client's language when connected) → contract (a PDF; signed in the app by the client, or marked signed by the studio) → link.
+2. **Client**: the link (`/join/<token>`, single use, 7/14/30 days, only its hash is stored; a new link revokes the old one) → their account → the setup assistant (`/setup`): contract signature, the brand questions one at a time, reference videos (from the studio's Library and their own links), then their brand: upload their logo, or create one from templates.
+
+Packs and invoice details are set by the studio manager in the Onboarding app; invoices print or save as PDF from `/invoices/<id>`.
 
 ## How a video moves
 
@@ -128,7 +148,9 @@ vercel env pull .env.local      # Supabase URL + publishable key
 pnpm dev
 ```
 
-The first studio manager has to be created directly (sign-up is invite-only). After that, the studio manager adds people from the Team page with a temporary password, and can reset anyone's password there. Everyone can change their own password on the Account page.
+The first studio manager has to be created directly (sign-up is invite-only). After that, the studio manager adds people from the Team page with a temporary password, and can reset anyone's password there; new clients open their own account from their onboarding link. Everyone can change their own password in Settings.
+
+To try everything without touching production, run Supabase locally (`supabase start`, needs Docker or Colima) and start the app with the local URL and keys exported: values already in the environment win over `.env.local`.
 
 ## Database
 

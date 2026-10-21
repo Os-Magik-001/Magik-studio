@@ -1,3 +1,4 @@
+import { videoTitle } from "@/lib/titles";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -14,7 +15,9 @@ import { FootageCompleteForm, FootageDrop } from "@/app/(app)/videos/[videoId]/f
 import { ShootPlanView } from "@/components/agents/views";
 import { asShootPlan } from "@/lib/agent-types";
 
-export const metadata: Metadata = { title: "Shoot" };
+export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
+  return videoTitle((await params).videoId, "Shoot", "Shoot · ");
+}
 
 export default async function ShootDetail({ params }: { params: Promise<{ videoId: string }> }) {
   const { videoId } = await params;

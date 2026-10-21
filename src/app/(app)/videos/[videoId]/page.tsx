@@ -1,3 +1,4 @@
+import { videoTitle } from "@/lib/titles";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
@@ -37,7 +38,9 @@ import {
   VideoDetailsForm,
 } from "./forms";
 
-export const metadata: Metadata = { title: "Video" };
+export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
+  return videoTitle((await params).videoId, "Video");
+}
 
 const JOB_SOURCE = { launch: "First edit", editor_fix: "Editor fixes", client_changes: "Client changes" } as const;
 const JOB_STATUS = {

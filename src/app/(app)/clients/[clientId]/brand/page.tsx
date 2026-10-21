@@ -1,3 +1,4 @@
+import { clientTitle } from "@/lib/titles";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -11,7 +12,9 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { QuestionnaireForm, ResearchForm, StrategistButton } from "@/components/agents/forms";
 import { FindingsView, StrategyView } from "@/components/agents/views";
 
-export const metadata: Metadata = { title: "Brand & strategy" };
+export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
+  return clientTitle((await params).clientId, "Brand & strategy", " · Brand & strategy");
+}
 
 const STATUS = {
   queued: { label: "Queued", tone: "neutral" },

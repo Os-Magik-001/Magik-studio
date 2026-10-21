@@ -44,18 +44,6 @@ export async function requireRole(...roles: Role[]): Promise<Viewer> {
 
 export const isStaff = (role: Role) => role !== "client";
 
-export function homeFor(role: Role) {
-  switch (role) {
-    case "admin":
-    case "editor":
-      return "/pipeline";
-    case "videographer":
-      return "/shoots";
-    case "client":
-      return "/review";
-  }
-}
-
 export function displayName(p: { full_name?: string | null; fullName?: string | null; email: string }) {
   return p.full_name ?? p.fullName ?? p.email.split("@")[0];
 }

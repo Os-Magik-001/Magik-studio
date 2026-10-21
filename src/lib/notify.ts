@@ -48,3 +48,19 @@ export async function notify(
     })),
   );
 }
+
+// Onboarding news (an account opened, a contract signed, a setup finished) for the client's
+// seller and the studio managers. Not tied to a video.
+export async function notifySales(clientId: string, message: { kind: string; title: string; body?: string }) {
+  const admin = createAdminClient();
+  const [{ data: client }, { data: admins }] = await Promise.all([
+    admin.from("clients").select("seller_id").eq("id", clientId).maybeSingle(),
+    admin.from("profiles").select("id").eq("role", "admin"),
+  ]);
+  const ids = new Set((admins ?? []).map((a) => a.id));
+  if (client?.seller_id) ids.add(client.seller_id);
+  if (ids.size === 0) return;
+  await admin.from("notifications").insert(
+    [...ids].map((user_id) => ({ user_id, video_id: null, kind: message.kind, title: message.title, body: message.body ?? null })),
+  );
+}

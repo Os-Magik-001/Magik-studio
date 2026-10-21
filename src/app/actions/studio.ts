@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ASPECTS, FORMAT_LABEL, type VideoFormat } from "@/lib/workflow";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
+import { passwordProblem } from "@/lib/passwords";
 import type { Role } from "@/lib/auth";
 import type { Database } from "@/lib/database.types";
 
@@ -106,17 +107,7 @@ export async function setBrandLogo(input: { clientId: string; path: string }): P
 
 // ---------------------------------------------------------------- team
 
-const ROLES: Role[] = ["admin", "editor", "videographer", "client"];
-
-const MIN_PASSWORD = 8;
-
-function passwordProblem(password: unknown) {
-  if (typeof password !== "string" || password.length < MIN_PASSWORD) {
-    return `Passwords need at least ${MIN_PASSWORD} characters.`;
-  }
-  if (password.length > 72) return "Passwords can be at most 72 characters.";
-  return null;
-}
+const ROLES: Role[] = ["admin", "editor", "videographer", "client", "seller"];
 
 export async function addTeamMember(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin");
