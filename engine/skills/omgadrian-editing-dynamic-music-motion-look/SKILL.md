@@ -19,7 +19,7 @@ This covers sound and picture treatment for dynamic reels. The clean style keeps
    - Cinematic montage: 2.7-3.5 s shots.
    - Observational montage: about 5 s shots, letting people and cars move through a static frame.
    - The first spoken line after a montage brings in the automatic music dip.
-5. **Sound effects: less is more.** Put a `hit` or `riser` only at the story's peaks, a `whoosh` on a scene-change transition, and a `pop` when a card or keyword enters. Use no more than 3-4 per 30 s, and never one on every text pop. For The Boyz, office-comedy-reels' limit is stricter: a `whoosh` into `character_intro` and a `hit` on the freeze, nothing else.
+5. **Sound effects: one per graphic, soft.** Put a `hit` or `riser` only at the story's peaks, a `whoosh` on every scene-change transition, and a soft `pop`, `click` or `whoosh` on every card, keyword or title entrance (the studio's clients ask for a sound on each graphic). Never one on a punchline or on every caption. For The Boyz, office-comedy-reels' limit is stricter: a `whoosh` into `character_intro` and a `hit` on the freeze, nothing else.
 6. **Transitions carry location changes, not lines.** Between two places, use `slide_left` or `zoom_in` with a `whoosh`, the closest equivalent to a whip pan. Use `glitch` into lo-fi or VHS-style inserts. Everything else is a `cut`. Use one kind of transition per reel. In skits, office-comedy-reels keeps scene changes as cuts.
 7. **Speed with a purpose.**
    - Process footage (printing, writing, assembling): 2-4x.

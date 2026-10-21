@@ -70,7 +70,7 @@ Use this when the brief or the editor's notes ask for a "creator reel", a "reel 
 - **Show what you say** with `cutaway` overlays: the B-roll plays while the voice continues. Use `card` overlays for proof, such as screenshots, earlier reels or results, tilted a few degrees above or beside the head.
 - **Call to action:** a `comment_cta` bubble with the keyword, plus a `boxed` title, held to the end. Add a `follow_pill` in the last 2s for organic reels.
 - **Proof numbers** get a `counter`: raw length against final length, views.
-- **Sound:** a music bed at `low` under talking (upbeat or hip-hop for energy, chill for lifestyle). Add a `whoosh` on whips, a `pop` on hero words, and a `hit` on the hook payoff and the proof line.
+- **Sound:** a music bed at `medium` under talking (it dips under speech by itself; `low` disappears under the voice), upbeat or hip-hop for energy, chill for lifestyle. A soft effect on every graphic that appears (a `pop` on hero words and cards, a `whoosh` on whips and titles), and a `hit` on the hook payoff and the proof line.
 
 **Flag what we can't make yet** (in `open_questions`, briefly)
 - Fully animated graphics: logo stings, 3D scenes, animated app mock-ups.

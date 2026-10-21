@@ -98,18 +98,18 @@ LOOK AND COLOR
 - Make comedic asides and top-down 'but don't get me wrong' interjections black and white (saturation 0 on those shots) so they read as a recurring narrator device. The look itself is one per reel.
 
 TRANSITIONS
-- Default to cut.
-- Allowed sparingly, at most 2 per reel:
-  - zoom_in or slide_up into a new numbered section or location change.
+- Default to cut inside a scene.
+- One per change of place or section, never on a line:
+  - zoom_in (a push-through with a whoosh) or slide_up into a new numbered section or location change; or the camera's own whip pan, a door or body crossing the lens, a speed-up of a camera move (see transitions).
   - dip_to_black before the outro.
   - One glitch only when revealing a screen or software UI.
 - Never use circle_open, wipes or dip_to_white.
 
 MUSIC AND SOUND
 - Run a soft, warm music bed (lo-fi, jazzy or chill hip-hop) under the whole reel, starting at frame 1.
-- Duck the bed under speech so the voice clearly leads, roughly 18 to 22 dB below dialogue.
+- Duck the bed under speech so the voice clearly leads, about 10 dB below dialogue (volume `medium`, duck `light`). The studio's clients heard his 18 to 22 dB as no music.
 - Let the bed come up slightly in speechless B-roll montages.
-- Sound effects are sparse: about 4 to 8 per minute.
+- Sound effects: one soft effect on every title, numeral, card or pill entrance and on every transition (the studio's clients ask for it), never on a punchline:
   - pop on title and numeral entrances.
   - whoosh on section transitions.
   - click on freeze-frame 'photos' and UI taps.

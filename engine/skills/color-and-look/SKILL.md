@@ -1,32 +1,38 @@
 ---
 name: color-and-look
-description: Choosing the video's look and fixing exposure and color shot by shot
+description: Correcting and matching every shot first, then choosing the video's one look, in a colorist's order
 formats: all
 ---
 
-**Pick one look for the whole video**
-- Derive it from the brand and the content, not from a trend:
-  - **`natural`:** the default. Use it for talking heads, education, food accuracy, clinical or technical brands, and whenever the footage already looks good.
-  - **`warm`:** food, coffee, hospitality, family, lifestyle, stories, golden-hour footage.
-  - **`cool`:** tech, clean products, wellness, winter, night.
-  - **`punchy`:** sport, fitness, energetic social, colorful products. It adds contrast, saturation and sharpening, so avoid it on faces.
-  - **`cinematic`:** premium brands, fashion, storytelling ads and montage. It gives teal shadows, warm highlights and gentle contrast.
-  - **`black_and_white`:** only when the brief or brand asks for it.
-  - **`vintage`:** nostalgia, retro products, throwback content.
-- When the brand style rules mention a mood like warm, moody or clean, follow them.
-- On overcast or flat outdoor light, `punchy` overshoots: asphalt turns blue-green and leaves go fluorescent. Use `natural` with a little contrast instead.
+**Work in a colorist's order**
+1. Correct each shot with `adjust` until the shots of a scene match: same face brightness, blacks black, whites not blown.
+2. Only then choose one `look` for the whole video. A look on uncorrected footage multiplies its problems, and two looks never stack.
+3. Judge on the contact sheets: compare each shot with its neighbors and with the best-looking shot of the scene, which is the reference.
+
+**Correct each shot** (steps of about 0.05; good shots stay neutral: brightness 0, contrast 1, saturation 1)
+- **Underexposed:** brightness +0.05 to +0.12 together with contrast 1.05 to 1.1. Brightness alone lifts the blacks too and the shot goes milky.
+- **Overexposed (bright sky, white walls, blown faces):** brightness -0.05 to -0.1, contrast at or under 1.04 so highlights don't clip further.
+- **Flat, washed out, re-compressed or log-looking:** contrast 1.1 to 1.2, saturation 1.05 to 1.15.
+- **Oversaturated (neon skin, garish signs, glowing grass):** saturation 0.8 to 0.9.
+- **Matching:** a shot visibly brighter, darker or a different color from its neighbors is a defect. Faces should sit at about the same brightness in every shot of a scene.
+- **Color casts** (blue shade, orange tungsten, green fluorescent) can't be fixed shot by shot. If the whole video shares one, counter it with the look (`warm` for a blue cast, `cool` for an orange one). If only some shots have it, say so in `open_questions`.
+- Stay gentle: compression damage can be softened, not undone, and pushing hard brings out noise and banding.
+
+**Pick one look** (the brand's style rules and the client's notes win)
+- **`natural`:** the default. Talking heads, education, food accuracy, clinical or technical brands, and whenever the footage already looks good. A client who asked for a natural grade keeps it.
+- **`warm`:** food, coffee, hospitality, family, lifestyle, stories, golden-hour footage.
+- **`cool`:** tech, clean products, wellness, winter, night.
+- **`punchy`:** sport, fitness, energetic social, colorful products. It adds contrast, saturation and sharpening, so avoid it on faces.
+- **`cinematic`:** premium brands, real estate, fashion, storytelling ads and montage: teal shadows, warm highlights, gentle contrast.
+- **`black_and_white`:** only when the brief or brand asks for it.
+- **`vintage`:** nostalgia, retro products, throwback content.
+- On overcast or flat outdoor light, `punchy` overshoots (asphalt turns blue-green, leaves go fluorescent): use `natural` with contrast 1.05 to 1.1 instead.
 
 **Protect skin tones**
-- When people are on screen, keep skin natural above everything else. Strong looks push faces red, orange or grey. For talking heads, see the limits in talking-head.
+- Keep skin natural above everything. Strong looks push faces red, orange or grey. For talking heads, see the limits in talking-head.
 - Keep saturation at or below about 1.2 on any shot with people.
-- Dark is fine as a mood, as long as the person stays lit. Lift them with `adjust` rather than darkening everything.
+- Dark is fine as a mood as long as the person stays lit: lift them with `adjust` rather than darkening everything.
 
-**Make the shots match**
-- A shot that is visibly brighter, darker or a different color from its neighbors is a defect. Fix it with `adjust`, in small steps of about 0.05:
-  - **Underexposed:** brightness +0.05 to +0.12. Add contrast 1.05 if it also looks flat.
-  - **Overexposed or blown out:** brightness -0.05 to -0.1, and keep contrast at or under 1.04 so highlights don't clip further.
-  - **Flat, re-compressed or log-looking:** contrast 1.1 to 1.2, saturation 1.1 to 1.2.
-  - **Oversaturated, like neon skin or garish signs:** saturation 0.8 to 0.9.
-- Corrections should be gentle. Compression damage can be softened but not undone, and pushing hard makes noise and banding worse.
-- Leave correct shots neutral: brightness 0, contrast 1, saturation 1.
+**Check before you finish**
+- Blacks still black, skies and white shirts not clipped, faces at a similar brightness everywhere, no shot that jumps out in color.
 - If a shot can't be saved, say so in `open_questions` rather than over-correcting it.

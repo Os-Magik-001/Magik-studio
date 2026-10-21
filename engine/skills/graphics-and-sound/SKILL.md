@@ -51,16 +51,16 @@ agents: editor, sound
   - chill or lo-fi for lifestyle and talking heads
   - inspiring or corporate for brand pieces
   - cinematic for montage and premium ads
-- `volume`: `low` under continuous speech, `medium` for mixed, `high` for montage with little speech. It dips under speech by itself.
+- `volume`: `medium` under continuous speech (it dips under speech by itself and stays audible, about 10 dB under the voices), `high` for mixed talk and wordless moments and for montage. `low` buries it under talk; keep that for a quiet voice over a busy track.
 - `start` on a strong section of the track: use its first beat.
 - For montage, place cuts on beats: beat times are `start + firstBeat + n × 60 / bpm`, measured in the track and shifted to the video timeline.
 - No music on podcast clips unless asked, or when the voice is hard to hear.
 
-**Sound effects** (subtle: 3–8 per 30s)
-- `whoosh` on slides, zoom transitions and big reframes.
-- `pop` when a hero word or graphic appears (not on every caption).
-- `hit` on the punchline or the biggest reveal, once or twice.
+**Sound effects** (one soft effect per graphic that appears)
+- `pop` when a hero word, pill, card or graphic appears (not on every caption).
+- `whoosh` on slides, zoom transitions, whips and big reframes, and when a title or bar leaves.
+- `click` on typed text, ticks, counters and UI.
+- `ding` on a positive result or something ticked off.
 - `riser` into a drop or reveal.
-- `click` on typed text and UI.
-- `ding` on a positive result.
-- Never put an effect on every cut.
+- `hit` on the biggest reveal, once or twice.
+- Never on a punchline or its laugh, never on a plain cut.

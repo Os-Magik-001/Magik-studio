@@ -18,6 +18,8 @@ formats: all
 - A **slow push** over a held shot is 1.00 to 1.05 when calm, and up to 1.10–1.12 for a standard push over 2–3s. Never more than about 1.15.
   - A pull-out (for example 1.10 to 1.00) reveals context or ends a section.
 - A **second camera size** on a talking head is a close framing of about 1.3–1.6, if the clip's sharp-zoom limit allows. Alternate it with the wide framing at phrase changes (see talking-head).
+- **Cutting inside one continuous shot** (a jump cut that drops a pause or a line): change the size by at least 0.3 between the two pieces (1.0 to 1.3–1.6, or back), so it reads as a second camera. A change of only 0.1–0.2 between two cuts of the same shot reads as a glitch. Small 1.08–1.15 punch-ins belong to pushes inside a shot, not to the size change at a cut.
+  - Better still, cut while the camera or the subject moves (a step, a turn, a pan), and never in the middle of a camera swing that then continues.
 
 **How far: details and screens**
 - To make something legible, zoom only as far as needed:

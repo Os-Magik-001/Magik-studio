@@ -27,4 +27,4 @@ See retention for the first frame, hooks and keeping viewers watching. See edit-
 **Look and text**
 - Captions on, one line, sized for a phone.
 - Look: from the brand. `punchy` or `warm` suit energetic B-roll; stay `natural` on talking heads.
-- Transitions: hard cuts, with at most 2 eye-catching transitions on the biggest energy changes.
+- Transitions: hard cuts inside a scene, one designed transition per change of place (see transitions).

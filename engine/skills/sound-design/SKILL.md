@@ -25,17 +25,22 @@ agents: sound
 - `end`: back-time the track so its last hit lands on the last frame. This is the strongest ending for brand pieces and end cards.
 - `start`: begin on the first downbeat or a strong section when nothing needs to hit.
 - A riser 1.5-2 s before a drop sells it. Never two drops within 15 s.
+- The strongest shape for an ad with a reveal: the beat drops on the first big moment after the hook, the track's own stop or break sits under the last line before the reveal, and its drop lands on the reveal.
 
 **Levels and ducking**
-- Under continuous talk: volume `low`, duck `normal` (`deep` for soft voices or a busy track). Talk and visuals mixed: `medium`. Wordless montage: `high`, duck `light`.
+- The music must be heard. Under talk it sits about 10 dB under the voices: volume `medium` with duck `light`. Talk mixed with wordless moments: `high` with duck `normal`. Wordless montage and reveals: `high` with duck `light`.
+- Volume `low` with duck `normal` or `deep` puts the bed about 20 dB under the voices, where clients hear "no music". Keep it for a soft or quiet voice over a busy track.
 - Music can sit out (leave a gap between sections) under a key line or before a punchline: the silence makes it land. Bring it back on the next beat.
-- Comedy skits and clean edits: dialogue alone. Music only under the cold open or the series intro, as a section that ends when the first line starts.
+- Comedy: under every punchline and its laugh, leave a gap between sections, and bring the music back on the next line or cut.
+- Clean edits, and skits whose brief asks for dialogue alone: music only under the cold open or the series intro, as a section that ends when the first line starts.
 
 **Sound effects**
-- Dynamic edits: 3-6 per 30 s, each with a reason. Clean edits: none.
-- whoosh or swoosh on slides, zooms and whip transitions; pop on a hero word or a card entering (never on every caption); impact or hit on the reveal or punchline, once or twice; a riser into a drop; click or typing on screen recordings and typed text; ding or coin on a positive result or a price; glitch or rewind for a jump in time; a record scratch for a comic stop.
+- Designed edits (titles, pills, cards, counters, 3D type): every graphic that appears gets its own soft effect, and so does every transition. Pop when a word, pill or card lands; whoosh when a title or bar slides in or out, and on each zoom or whip; click on a tick, a counter or a typed word; ding or chime when something is confirmed or ticked off; a deep whoosh under a 3D title dropping in; impact or hit on the reveal.
+- Never on a punchline or its laugh, never on every caption, never on a plain cut.
+- Other dynamic edits: 3-6 per 30 s, each with a reason. Clean edits: none.
+- More: a riser into a drop; ding or coin on a positive result or a price; glitch or rewind for a jump in time; a record scratch for a comic stop.
 - Recorded effects from the libraries sound richer than the built-in ones. Prefer short ones: under 2 s, risers up to 3 s. The engine lands each effect's peak on its time.
-- Gain `soft` under speech, `normal` by default, `loud` only on a wordless reveal.
+- Gain `soft` under speech and on graphics, `normal` on transitions without speech, `loud` only on a wordless reveal.
 
 **Trending audio** (from the researcher)
 - The researcher lists the sounds the top reels in the niche use, how many reels use each, and their tempo when measured.
@@ -45,4 +50,4 @@ agents: sound
 - Trends fade in weeks: prefer sounds that several of the top reels use.
 
 **Revisions**
-- Change what the comments ask and keep the rest. "Music too loud": a lower volume or a deeper duck. "Change the music": a different track that does the same job. "No music here": end the section before that moment.
+- Change what the comments ask and keep the rest. "Music too loud", or "we can't hear them talk": one step down (`high` to `medium`, or duck `light` to `normal`) and keep the gaps for punchlines. "There is no music" or "I can't hear the music": one step up (`low` to `medium`, or duck `deep` or `normal` to `light`). "Change the music": a different track that does the same job. "No music here": end the section before that moment.
