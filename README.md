@@ -4,11 +4,12 @@ The workspace that runs Magik Studio: sellers onboard clients, videographers bri
 
 ## The desktop
 
-Magik OS looks and works like a Mac (dark Liquid Glass): a lock screen to sign in, then a desktop with a menu bar, a Dock, widgets and Spotlight (⌘K). Every feature is an app that opens in its own window; windows move, resize, tile to half the screen (drag to an edge), minimize to the Dock and come back where they were. Videos open as their own document windows. On phones the desktop becomes a home screen and apps open full screen.
+Magik OS looks and works like a Mac in black and gold (dark Liquid Glass): a lock screen to sign in, a menu bar with search (⌘K), and a Dock of big 3D app icons. Home is the command center: a greeting, today's schedule, and panels for the role (studio overview, production, onboarding, invoices; a client's videos, brand and documents). One click on an icon opens that app as one big screen; red and yellow go back to Home, green fills the whole screen. Screens zoom up out of the Dock and crossfade between apps (React `<ViewTransition>`). On phones the Dock scrolls and apps open full screen.
 
-- `src/app/page.tsx` + `src/components/desktop/`: the desktop and the window manager.
-- `src/lib/apps.ts`: which apps each role gets and which window a path opens in.
-- Each window is a same-origin iframe of a page in `src/app/(app)/`, so every page works as it did on its own; `embed-bridge.tsx` keeps the window and the desktop in step. A desktop page opened on its own (a bookmark, an email link) opens the desktop with that page in a window (`src/lib/supabase/proxy.ts`).
+- `src/app/(app)/layout.tsx` + `src/components/shell/`: the menu bar, the Dock and Spotlight around every page.
+- `src/app/(app)/page.tsx` + `src/components/home/`: Home; `src/lib/home.ts` gathers its data per role.
+- `src/app/(app)/(screens)/`: every app; their layout puts each page in the screen (`shell/screen.tsx`).
+- `src/lib/apps.ts`: which apps each role gets and which app a path belongs to. Icons are `public/icons/<icon>.webp` (3D renders).
 
 ## Who sees what
 

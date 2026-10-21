@@ -11,7 +11,7 @@ import { formatBytes, parseShotList, FORMAT_LABEL } from "@/lib/workflow";
 import { Card, CardHeader, EmptyState, PageHeader, cx } from "@/components/ui";
 import { toggleShot } from "@/app/actions/workflow";
 import { LocalDate } from "@/components/local-date";
-import { FootageCompleteForm, FootageDrop } from "@/app/(app)/videos/[videoId]/forms";
+import { FootageCompleteForm, FootageDrop } from "@/app/(app)/(screens)/videos/[videoId]/forms";
 import { ShootPlanView } from "@/components/agents/views";
 import { asShootPlan } from "@/lib/agent-types";
 

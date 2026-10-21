@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, Plus } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { onboardingFacts } from "@/lib/desktop";
+import { onboardingFacts } from "@/lib/home";
 import { stepByKey } from "@/lib/onboarding";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Avatar, Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, Select, cx } from "@/components/ui";

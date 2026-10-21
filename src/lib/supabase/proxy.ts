@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isWindowPath } from "@/lib/apps";
 
 // /join/<token> is the link a seller sends a new client: it opens before they have an account.
 const PUBLIC_PATHS = ["/login", "/auth", "/join"];
@@ -39,23 +38,6 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/login";
     url.search = path === "/" ? "" : `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
     return NextResponse.redirect(url);
-  }
-
-  // A desktop page loaded on its own (a bookmark, a new tab, a link in an email): open the
-  // desktop with the page in a window. Windows load their pages as iframes and pass through.
-  if (
-    data?.claims &&
-    request.method === "GET" &&
-    request.headers.get("sec-fetch-dest") === "document" &&
-    isWindowPath(path)
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    url.search = `?open=${encodeURIComponent(path + request.nextUrl.search)}`;
-    const redirect = NextResponse.redirect(url);
-    // Keep a session the check above just refreshed.
-    supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c));
-    return redirect;
   }
 
   return supabaseResponse;

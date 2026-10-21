@@ -324,5 +324,5 @@ export async function logoSuggestions(): Promise<LogoSpec[]> {
 export async function completeSetup() {
   const viewer = await setupClient();
   await createAdminClient().from("onboardings").update({ completed_at: now() }).eq("client_id", viewer.clientId).is("completed_at", null);
-  redirect("/?welcome=1");
+  redirect("/");
 }

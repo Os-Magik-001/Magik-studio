@@ -1,12 +1,14 @@
 import type { Database } from "@/lib/database.types";
 
-// The desktop's apps: every feature of Magik OS opens as an app in its own window.
-// Shared by the server (which apps a role gets, which paths belong to the desktop) and the
-// browser (the dock, Spotlight, and which window a link opens in).
+// The desktop's apps: every feature of Magik OS is an app in the Dock, and opens as its own
+// screen. Shared by the server (which apps a role gets) and the browser (the Dock, the screen's
+// title, Spotlight).
 
 type Role = Database["public"]["Enums"]["user_role"];
 
 export type AppIconName =
+  | "home"
+  | "finance"
   | "pipeline"
   | "clients"
   | "onboarding"
@@ -28,17 +30,15 @@ export type AppDef = {
   name: string;
   // Where the app opens.
   href: string;
-  // The paths it owns: links to them open in this app's window.
+  // The paths it owns: its screens, and the Dock lights it up there.
   match: string[];
   icon: AppIconName;
   // The icon's gradient, top to bottom, and the glyph color.
   tint: [string, string];
   glyph?: string;
   roles: Role[];
-  // One line for Spotlight and the dock's tooltip.
+  // One line for Spotlight.
   hint: string;
-  // Default window size.
-  size?: [number, number];
 };
 
 const EVERYONE: Role[] = ["admin", "editor", "videographer", "client", "seller"];
@@ -48,13 +48,13 @@ export const APPS: AppDef[] = [
     id: "pipeline",
     name: "Pipeline",
     href: "/pipeline",
-    match: ["/pipeline"],
+    // A video and its review room belong to production for the studio.
+    match: ["/pipeline", "/videos", "/review"],
     icon: "pipeline",
     tint: ["#ffe36e", "#d9a60c"],
     glyph: "#1c1400",
     roles: ["admin", "editor"],
     hint: "Every video, by phase, and what's next",
-    size: [1240, 820],
   },
   {
     id: "clients",
@@ -75,7 +75,6 @@ export const APPS: AppDef[] = [
     tint: ["#5fe38f", "#17a347"],
     roles: ["admin", "seller"],
     hint: "Set up a new client, then send them their link",
-    size: [1180, 800],
   },
   {
     id: "agents",
@@ -86,7 +85,6 @@ export const APPS: AppDef[] = [
     tint: ["#d07bff", "#7a2fd6"],
     roles: ["admin", "editor"],
     hint: "Mission control for the studio's agents",
-    size: [1280, 840],
   },
   {
     id: "library",
@@ -137,7 +135,6 @@ export const APPS: AppDef[] = [
     tint: ["#a1a1aa", "#52525b"],
     roles: ["admin"],
     hint: "People, roles and passwords",
-    size: [980, 720],
   },
   {
     id: "videos",
@@ -149,7 +146,6 @@ export const APPS: AppDef[] = [
     glyph: "#1c1400",
     roles: ["client"],
     hint: "Watch, comment and approve your videos",
-    size: [1240, 820],
   },
   {
     id: "brand",
@@ -170,7 +166,6 @@ export const APPS: AppDef[] = [
     tint: ["#7cc4ff", "#2f6bf0"],
     roles: ["client"],
     hint: "Your invoices and contract",
-    size: [920, 720],
   },
   {
     id: "notifications",
@@ -181,7 +176,6 @@ export const APPS: AppDef[] = [
     tint: ["#ff7066", "#d7261e"],
     roles: EVERYONE,
     hint: "New versions, comments and approvals",
-    size: [760, 720],
   },
   {
     id: "settings",
@@ -192,16 +186,21 @@ export const APPS: AppDef[] = [
     tint: ["#9a9aa2", "#46464c"],
     roles: EVERYONE,
     hint: "Your account, password and wallpaper",
-    size: [820, 720],
   },
 ];
 
-// Pages that open as documents in their own window, one window per document (staff open a
-// video from the pipeline, a client folder or a notification).
-export const DOCUMENTS = [
-  { prefix: "/videos/", name: "Video", icon: "video", tint: ["#ffe36e", "#d9a60c"], glyph: "#1c1400" },
-  { prefix: "/review/", name: "Review", icon: "videos", tint: ["#ffd479", "#e08a0b"], glyph: "#1c1400" },
-] as const satisfies readonly { prefix: string; name: string; icon: AppIconName; tint: [string, string]; glyph?: string }[];
+// Home: the command center, first in the Dock.
+export const HOME: AppDef = {
+  id: "home",
+  name: "Home",
+  href: "/",
+  match: [],
+  icon: "home",
+  tint: ["#2a2620", "#0d0c0a"],
+  glyph: "#f6d43a",
+  roles: EVERYONE,
+  hint: "Your day, your numbers, and what needs you",
+};
 
 export const appsFor = (role: Role) => APPS.filter((a) => a.roles.includes(role));
 
@@ -209,20 +208,10 @@ export const appById = (id: string) => APPS.find((a) => a.id === id) ?? null;
 
 const owns = (prefix: string, path: string) => path === prefix || path.startsWith(prefix + "/");
 
-export type WindowTarget = {
-  // Windows are unique by key: one per app, one per document.
-  key: string;
-  appId: string | null;
-  name: string;
-  icon: AppIconName;
-  tint: [string, string];
-  glyph?: string;
-  size?: [number, number];
-};
-
-// Which window a path opens in, for this role.
-export function windowFor(path: string, role: Role): WindowTarget | null {
+// The app a path belongs to, for this role (the longest matching prefix wins).
+export function appForPath(path: string, role: Role): AppDef | null {
   const pathname = path.split(/[?#]/)[0] || "/";
+  if (pathname === "/") return HOME;
   let best: AppDef | null = null;
   let bestLength = -1;
   for (const app of appsFor(role)) {
@@ -233,25 +222,5 @@ export function windowFor(path: string, role: Role): WindowTarget | null {
       }
     }
   }
-  if (best) {
-    return { key: best.id, appId: best.id, name: best.name, icon: best.icon, tint: best.tint, glyph: best.glyph, size: best.size };
-  }
-  const doc = DOCUMENTS.find((d) => pathname.startsWith(d.prefix));
-  if (doc) {
-    const id = pathname.slice(doc.prefix.length).split("/")[0];
-    return { key: `doc:${doc.prefix}${id}`, appId: null, name: doc.name, icon: doc.icon, tint: [...doc.tint], glyph: doc.glyph, size: [1240, 840] };
-  }
-  return null;
-}
-
-// Every path that belongs on the desktop. Opened on their own (a bookmark, a new tab, a link
-// in an email), they open the desktop with the page in a window.
-export const WINDOW_PREFIXES = [...new Set([...APPS.flatMap((a) => a.match), ...DOCUMENTS.map((d) => d.prefix.slice(0, -1))])];
-
-export const isWindowPath = (path: string) => WINDOW_PREFIXES.some((p) => owns(p, path));
-
-// Only same-origin paths into the desktop may be opened from a URL.
-export function safeOpenPath(raw: string | null | undefined) {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return null;
-  return isWindowPath(raw.split(/[?#]/)[0]) ? raw : null;
+  return best;
 }

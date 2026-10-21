@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { Wallpaper } from "@/components/desktop/wallpaper";
-import { LockClock, LeaveWindow } from "./lock-screen";
+import { Wallpaper } from "@/components/shell/wallpaper";
+import { LockClock } from "./lock-screen";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -19,7 +19,6 @@ export default function LoginPage({
 }) {
   return (
     <main className="relative isolate flex min-h-dvh flex-col items-center justify-between overflow-hidden px-4 pt-[9vh] pb-[7vh] text-white">
-      <LeaveWindow />
       <Wallpaper />
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-black/30" />
 

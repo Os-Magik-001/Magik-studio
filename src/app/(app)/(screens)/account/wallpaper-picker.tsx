@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { cx } from "@/components/ui";
 import { useStoredValue } from "@/components/use-now";
-import { WALLPAPERS, type WallpaperId } from "@/components/desktop/wallpaper";
+import { WALLPAPERS, setWallpaper, type WallpaperId } from "@/components/shell/wallpaper";
 
 const PREVIEW: Record<WallpaperId, string> = {
   magik: "url(/wallpapers/magik.webp), radial-gradient(120% 90% at 18% 8%, rgba(246,212,58,0.4), transparent 55%), #0a0703",
@@ -15,13 +15,7 @@ const PREVIEW: Record<WallpaperId, string> = {
 // The desktop picture: saved in this browser, applied to the desktop at once.
 export function WallpaperPicker() {
   const current = useStoredValue("magik.wallpaper", "magik", "magik:wallpaper");
-  const pick = (id: WallpaperId) => {
-    try {
-      localStorage.setItem("magik.wallpaper", id);
-    } catch {}
-    window.dispatchEvent(new Event("magik:wallpaper"));
-    window.parent.postMessage({ type: "magik:wallpaper", id }, location.origin);
-  };
+  const pick = (id: WallpaperId) => setWallpaper(id);
   return (
     <div role="radiogroup" aria-label="Wallpaper" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {WALLPAPERS.map((w) => (

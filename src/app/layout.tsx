@@ -18,15 +18,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };
 
-// Runs before the first paint: a page inside a desktop window drops its own background, and the
-// desktop shows the wallpaper the person picked.
-const EMBED = `try{if(window.top!==window.self)document.documentElement.classList.add("embedded")}catch(e){document.documentElement.classList.add("embedded")}try{var w=localStorage.getItem("magik.wallpaper");if(w)document.documentElement.dataset.wallpaper=w}catch(e){}`;
+// Runs before the first paint, so the wallpaper the person picked shows at once.
+const WALLPAPER = `try{var w=localStorage.getItem("magik.wallpaper");if(w)document.documentElement.dataset.wallpaper=w}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: EMBED }} />
+        <script dangerouslySetInnerHTML={{ __html: WALLPAPER }} />
       </head>
       <body className={`${inter.variable} ${cormorant.variable} ${geistMono.variable} min-h-dvh antialiased`}>
         {children}

@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { cx } from "@/components/ui";
-import { Wallpaper } from "@/components/desktop/wallpaper";
+import { Wallpaper } from "@/components/shell/wallpaper";
 
 // The client's setup, in the manner of the macOS Setup Assistant: one large glass panel over
 // the wallpaper, the steps along the top.

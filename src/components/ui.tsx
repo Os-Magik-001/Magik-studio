@@ -153,7 +153,7 @@ export function Avatar({ name, size = 28 }: { name: string; size?: number }) {
     .join("");
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full border border-accent/30 bg-accent-soft font-semibold text-accent"
+      className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/[0.09] font-semibold tracking-wide text-white/90 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.24)]"
       style={{ width: size, height: size, fontSize: size * 0.4 }}
       aria-hidden
     >

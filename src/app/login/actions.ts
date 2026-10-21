@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isWindowPath } from "@/lib/apps";
 import { fail, text, type ActionResult } from "@/lib/action-result";
 
 export async function signIn(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -18,7 +17,5 @@ export async function signIn(_: ActionResult, formData: FormData): Promise<Actio
     if (error.status === 429) return fail("Too many attempts. Wait a minute and try again.");
     return fail("Wrong email or password.");
   }
-  // Pages of the desktop open in a window on it.
-  const path = next.startsWith("/") && !next.startsWith("//") ? next : "/";
-  redirect(isWindowPath(path.split(/[?#]/)[0]) ? `/?open=${encodeURIComponent(path)}` : path);
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
 }

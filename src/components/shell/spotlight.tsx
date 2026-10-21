@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ArrowRight, Clapperboard, FolderOpen, Search } from "lucide-react";
 import type { AppDef } from "@/lib/apps";
 import { cx } from "@/components/ui";
-import { AppIcon } from "@/components/desktop/app-icon";
+import { AppIcon } from "@/components/shell/app-icon";
 import { searchDesktop, type SpotlightHit } from "@/app/actions/desktop";
 
 export type QuickAction = { label: string; hint: string; href: string };

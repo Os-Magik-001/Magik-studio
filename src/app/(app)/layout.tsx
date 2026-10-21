@@ -1,18 +1,32 @@
-import { Suspense } from "react";
-import { EmbedBridge } from "@/components/desktop/embed-bridge";
+import { redirect } from "next/navigation";
+import { appsFor } from "@/lib/apps";
+import { displayName, getViewer } from "@/lib/auth";
+import { setupPending } from "@/lib/setup";
+import { createClient } from "@/lib/supabase/server";
+import { ROLE_LABEL } from "@/lib/workflow";
+import { Shell } from "@/components/shell/shell";
+import { Wallpaper } from "@/components/shell/wallpaper";
 
 // Every page here is per-user and checked against the session at request time.
 export const instant = false;
 
-// The pages here are apps: each one runs inside a window on the desktop (src/app/page.tsx),
-// which draws the window, the menu bar and the dock. This layout is only the window's content.
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+// Magik OS: Home and every app, inside the menu bar and the Dock.
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await getViewer();
+  // A new client finishes the setup assistant first.
+  if (viewer.role === "client" && (await setupPending(viewer))) redirect("/setup");
+  const supabase = await createClient();
+  const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null);
   return (
     <>
-      <Suspense fallback={null}>
-        <EmbedBridge />
-      </Suspense>
-      <main className="mx-auto w-full max-w-6xl px-5 pt-6 pb-12 sm:px-8">{children}</main>
+      <Wallpaper />
+      <Shell
+        viewer={{ id: viewer.id, name: displayName(viewer), email: viewer.email, role: viewer.role, roleLabel: ROLE_LABEL[viewer.role] }}
+        apps={appsFor(viewer.role)}
+        unread={count ?? 0}
+      >
+        {children}
+      </Shell>
     </>
   );
 }
