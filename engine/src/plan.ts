@@ -38,8 +38,8 @@ const Segment = z.object({
     .object({ x: z.number(), y: z.number() })
     .describe("Where the subject sits in the source frame, 0 to 1 from the left and from the top (0.5, 0.5 = center). The crop to the target aspect ratio, and any zoom, centers on this point."),
   adjust: z
-    .object({ brightness: z.number(), contrast: z.number(), saturation: z.number() })
-    .describe("Corrections for this shot only. Neutral is brightness 0, contrast 1, saturation 1. Brightness -0.3 to 0.3, contrast 0.7 to 1.4, saturation 0 to 2."),
+    .object({ brightness: z.number(), contrast: z.number(), saturation: z.number(), warmth: z.number().default(0), tint: z.number().default(0) })
+    .describe("Corrections for this shot only. Neutral is brightness 0, contrast 1, saturation 1, warmth 0, tint 0. Brightness -0.3 to 0.3, contrast 0.7 to 1.4, saturation 0 to 2. White balance, -1 to 1 each: warmth above 0 warms a blue or shaded shot, below 0 cools an orange tungsten one; tint above 0 pulls a green (fluorescent) cast toward magenta, below 0 a magenta cast toward green. 0.2 to 0.4 fixes a typical cast."),
   transition_in: Transition.describe("How this shot comes in from the previous one. Ignored on the first shot."),
   beat: z
     .enum(["setup", "punchline", "reaction", "other"])
@@ -59,7 +59,7 @@ export const PLAIN_SHOT = {
   audio: "keep",
   zoom: { start: 1, end: 1 },
   focus: { x: 0.5, y: 0.5 },
-  adjust: { brightness: 0, contrast: 1, saturation: 1 },
+  adjust: { brightness: 0, contrast: 1, saturation: 1, warmth: 0, tint: 0 },
   transition_in: { type: "cut", seconds: 0 },
   beat: "other",
   say: "",
@@ -739,6 +739,8 @@ export function validatePlan(plan: EditPlan, clips: Clip[], tracks: string[] = [
         brightness: round(clamp(seg.adjust.brightness, -0.3, 0.3, 0)),
         contrast: round(clamp(seg.adjust.contrast, 0.7, 1.4, 1)),
         saturation: round(clamp(seg.adjust.saturation, 0, 2, 1)),
+        warmth: round(clamp(seg.adjust.warmth, -1, 1, 0)),
+        tint: round(clamp(seg.adjust.tint, -1, 1, 0)),
       },
     });
     total += length;

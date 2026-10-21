@@ -5,7 +5,7 @@ import path from "node:path";
 import { after, before, test } from "node:test";
 import { contactSheets, probe } from "../src/media.ts";
 import { timelineWords, validatePlan, type Clip, type EditPlan } from "../src/plan.ts";
-import { render } from "../src/render.ts";
+import { render, whiteBalance } from "../src/render.ts";
 import { translatedScreens } from "../src/graphics.ts";
 import { CUT, EXTRAS, makeClip, makeLogo, shot, txt } from "./fixtures.ts";
 
@@ -113,7 +113,7 @@ test("renders every move: transitions, speed, punch-ins, reframing, fixes and a 
     segments: [
       shot("C1", 0, 2, "hook, slow push in", { zoom: { start: 1, end: 1.4 }, focus: { x: 0.3, y: 0.6 } }),
       shot("C2", 0, 2, "slow motion, muted", { speed: 0.5, audio: "mute", transition_in: { type: "crossfade", seconds: 0.5 } }),
-      shot("C3", 0, 3, "sped up, static punch-in", { speed: 2, zoom: { start: 1.3, end: 1.3 }, adjust: { brightness: 0.05, contrast: 1.1, saturation: 1.2 }, transition_in: { type: "slide_left", seconds: 0.3 } }),
+      shot("C3", 0, 3, "sped up, static punch-in", { speed: 2, zoom: { start: 1.3, end: 1.3 }, adjust: { brightness: 0.05, contrast: 1.1, saturation: 1.2, warmth: 0.3, tint: 0.2 }, transition_in: { type: "slide_left", seconds: 0.3 } }),
       shot("C1", 3, 5, "hard cut back"),
     ],
     on_screen_text: [txt("Moves", 0, 2, "title", "center")],
@@ -137,6 +137,26 @@ test("renders every move: transitions, speed, punch-ins, reframing, fixes and a 
   }
 });
 
+test("white balance: warmth trades blue for red, tint trades green for magenta, brightness stays", async () => {
+  assert.equal(whiteBalance(0, 0), "");
+  const gains = (f: string) => Object.fromEntries([...f.matchAll(/(rr|gg|bb)=([\d.]+)/g)].map((m) => [m[1], Number(m[2])]));
+  const luma = (g: Record<string, number>) => 0.2126 * g.rr + 0.7152 * g.gg + 0.0722 * g.bb;
+  const warm = gains(whiteBalance(0.4, 0));
+  assert.ok(warm.rr > 1 && warm.bb < 1, "warmer: more red, less blue");
+  const cool = gains(whiteBalance(-0.4, 0));
+  assert.ok(cool.rr < 1 && cool.bb > 1, "cooler: less red, more blue");
+  const magenta = gains(whiteBalance(0, 0.5));
+  assert.ok(magenta.gg < 1 && magenta.rr > 1 && magenta.rr === magenta.bb, "toward magenta: less green");
+  for (const g of [warm, cool, magenta, gains(whiteBalance(0, -0.5))]) assert.ok(Math.abs(luma(g) - 1) < 0.002, `luma ${luma(g)}`);
+  assert.ok(Math.abs(luma(gains(whiteBalance(1, 1))) - 1) < 0.02);
+  // and through ffmpeg: a grey frame warms (red up, blue down) at the same brightness
+  const { execFileSync } = await import("node:child_process");
+  const px = (vf: string) => [...execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=c=0x808080:s=32x32:d=0.1", "-vf", `format=gbrp,${vf},format=rgb24,scale=1:1:flags=area`, "-frames:v", "1", "-f", "rawvideo", "-"])];
+  const [r, g, b] = px(whiteBalance(0.4, 0));
+  assert.ok(r > g && g > b, `warm grey ${r} ${g} ${b}`);
+  assert.ok(Math.abs(0.2126 * r + 0.7152 * g + 0.0722 * b - 128) <= 2);
+});
+
 test("validatePlan reins in moves", () => {
   const plan: EditPlan = {
     ...EXTRAS,
@@ -144,7 +164,7 @@ test("validatePlan reins in moves", () => {
     summary: "",
     segments: [
       shot("C1", 0, 2, "first shot can't transition in", { transition_in: { type: "crossfade", seconds: 1 } }),
-      shot("C2", 0, 4, "wild values", { speed: 9, zoom: { start: 0.2, end: 7 }, focus: { x: -1, y: 2 }, adjust: { brightness: 1, contrast: 0, saturation: 5 }, transition_in: { type: "crossfade", seconds: 5 } }),
+      shot("C2", 0, 4, "wild values", { speed: 9, zoom: { start: 0.2, end: 7 }, focus: { x: -1, y: 2 }, adjust: { brightness: 1, contrast: 0, saturation: 5, warmth: 3, tint: -2 }, transition_in: { type: "crossfade", seconds: 5 } }),
       shot("C3", 0, 0.5, "too short once slowed? no: 0.5s at 0.25x is 2s", { speed: 0.1 }),
     ],
     on_screen_text: [],
@@ -157,7 +177,7 @@ test("validatePlan reins in moves", () => {
   assert.equal(b.speed, 4);
   assert.deepEqual(b.zoom, { start: 1, end: 2.5 });
   assert.deepEqual(b.focus, { x: 0, y: 1 });
-  assert.deepEqual(b.adjust, { brightness: 0.3, contrast: 0.7, saturation: 2 });
+  assert.deepEqual(b.adjust, { brightness: 0.3, contrast: 0.7, saturation: 2, warmth: 1, tint: -1 });
   // Capped at 40% of the shorter neighbour: shot 2 lasts 4s / 4 = 1s.
   assert.deepEqual(b.transition_in, { type: "crossfade", seconds: 0.4 });
   assert.equal(c.speed, 0.25);

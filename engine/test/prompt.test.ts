@@ -90,6 +90,9 @@ test("older saved plans read as plain hard cuts", () => {
   assert.equal(parsed?.look, "natural");
   assert.equal(parsed?.segments[0].speed, 1);
   assert.deepEqual(parsed?.end_card.transition, CUT);
+  // plans saved before white balance existed keep a neutral one
+  const fixed = parseStoredPlan({ ...old, segments: [{ ...old.segments[0], adjust: { brightness: 0.05, contrast: 1, saturation: 1 } }] });
+  assert.deepEqual(fixed?.segments[0].adjust, { brightness: 0.05, contrast: 1, saturation: 1, warmth: 0, tint: 0 });
   assert.equal(parseStoredPlan({ nonsense: true }), null);
 });
 

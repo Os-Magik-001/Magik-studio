@@ -77,6 +77,9 @@ function shotVideo(seg: Shot, clip: Clip, W: number, H: number, look: EditPlan["
     "setsar=1",
   ];
   const { brightness, contrast, saturation } = seg.adjust;
+  // White balance first, as a colorist would: neutrals neutral, then exposure.
+  const balance = whiteBalance(seg.adjust.warmth ?? 0, seg.adjust.tint ?? 0);
+  if (balance) steps.push(balance);
   if (brightness !== 0 || contrast !== 1 || saturation !== 1) {
     steps.push(`eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}`);
   }
@@ -85,6 +88,21 @@ function shotVideo(seg: Shot, clip: Clip, W: number, H: number, look: EditPlan["
   // retiming, and that used to add up into picture lagging behind the sound.
   steps.push(`tpad=stop_mode=clone:stop=2,trim=end_frame=${frameCount},setpts=PTS-STARTPTS`, "format=yuv420p");
   return steps.join(",");
+}
+
+// A shot's white balance as red, green and blue gains, keeping its brightness (Rec.709
+// luma) where it was. Warmth trades blue for red; tint trades green for red and blue
+// (magenta). At 1, warmth moves red and blue 15% and tint moves green 6%.
+export function whiteBalance(warmth: number, tint: number) {
+  if (!warmth && !tint) return "";
+  const [kr, kg, kb] = [0.2126, 0.7152, 0.0722];
+  const w = 0.15 * warmth;
+  const t = 0.06 * tint;
+  const rb = (kg * t) / (kr + kb);
+  const r = (1 + w) * (1 + rb);
+  const g = (1 - ((kr - kb) * w) / kg) * (1 - t);
+  const b = (1 - w) * (1 + rb);
+  return `colorchannelmixer=rr=${r.toFixed(4)}:gg=${g.toFixed(4)}:bb=${b.toFixed(4)}`;
 }
 
 // atempo handles 0.5x to 100x per instance, so slower speeds chain several.

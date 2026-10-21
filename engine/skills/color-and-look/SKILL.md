@@ -5,17 +5,20 @@ formats: all
 ---
 
 **Work in a colorist's order**
-1. Correct each shot with `adjust` until the shots of a scene match: same face brightness, blacks black, whites not blown.
+1. Correct each shot with `adjust`, white balance first, until the shots of a scene match: neutral whites, natural skin, same face brightness, blacks black, whites not blown.
 2. Only then choose one `look` for the whole video. A look on uncorrected footage multiplies its problems, and two looks never stack.
 3. Judge on the contact sheets: compare each shot with its neighbors and with the best-looking shot of the scene, which is the reference.
 
-**Correct each shot** (steps of about 0.05; good shots stay neutral: brightness 0, contrast 1, saturation 1)
+**Correct each shot** (steps of about 0.05; good shots stay neutral: brightness 0, contrast 1, saturation 1, warmth 0, tint 0)
+- **White balance** (`warmth`, `tint`, -1 to 1): white walls, shirts, grey cars and overcast skies should look neutral, and skin natural.
+  - Blue or shaded shot: warmth +0.2 to +0.4. Orange tungsten shot: warmth -0.2 to -0.4.
+  - Green fluorescent cast: tint +0.2 to +0.3. Magenta cast: tint -0.2.
+  - Match every shot's warmth to the scene's reference shot. Leave a neutral shot at 0, and don't use white balance to create a mood: that's the look's job.
 - **Underexposed:** brightness +0.05 to +0.12 together with contrast 1.05 to 1.1. Brightness alone lifts the blacks too and the shot goes milky.
 - **Overexposed (bright sky, white walls, blown faces):** brightness -0.05 to -0.1, contrast at or under 1.04 so highlights don't clip further.
 - **Flat, washed out, re-compressed or log-looking:** contrast 1.1 to 1.2, saturation 1.05 to 1.15.
 - **Oversaturated (neon skin, garish signs, glowing grass):** saturation 0.8 to 0.9.
 - **Matching:** a shot visibly brighter, darker or a different color from its neighbors is a defect. Faces should sit at about the same brightness in every shot of a scene.
-- **Color casts** (blue shade, orange tungsten, green fluorescent) can't be fixed shot by shot. If the whole video shares one, counter it with the look (`warm` for a blue cast, `cool` for an orange one). If only some shots have it, say so in `open_questions`.
 - Stay gentle: compression damage can be softened, not undone, and pushing hard brings out noise and banding.
 
 **Pick one look** (the brand's style rules and the client's notes win)
