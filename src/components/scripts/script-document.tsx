@@ -11,7 +11,7 @@ import { ShootPlanView } from "@/components/agents/views";
 function Beat({ beat, n }: { beat: ScriptBeat; n: number }) {
   const lines = speakerLines(beat.voice);
   return (
-    <li className="grid grid-cols-[44px_1fr] gap-x-4 border-t border-white/[0.07] py-4 first:border-t-0 first:pt-1 sm:grid-cols-[56px_1fr]">
+    <li className="grid grid-cols-[44px_1fr] gap-x-4 border-t border-white/[0.07] py-4 first:border-t-0 first:pt-1 @min-[40rem]:grid-cols-[56px_1fr]">
       <div className="flex flex-col items-start gap-1 pt-0.5">
         <span className="font-mono text-[22px] leading-none font-semibold text-accent tabular-nums">{String(n).padStart(2, "0")}</span>
       </div>
@@ -93,7 +93,7 @@ export function ScriptDocument({
         </header>
       )}
       {beats.length ? (
-        <ol className="rounded-[16px] border border-white/[0.07] bg-white/[0.025] px-4 py-2 sm:px-5">
+        <ol className="rounded-[16px] border border-white/[0.07] bg-white/[0.025] px-4 py-2 @min-[40rem]:px-5">
           {beats.map((b, i) => (
             <Beat key={i} beat={b} n={i + 1} />
           ))}
@@ -106,7 +106,7 @@ export function ScriptDocument({
           <h3 className="kicker mb-2 flex items-center gap-1.5">
             <Clapperboard size={13} aria-hidden /> What we&apos;ll film
           </h3>
-          <ol className="grid list-decimal gap-x-8 gap-y-1 pl-5 text-[13.5px] text-ink-2 sm:grid-cols-2">
+          <ol className="grid list-decimal gap-x-8 gap-y-1 pl-5 text-[13.5px] text-ink-2 @min-[40rem]:grid-cols-2">
             {shots.map((s, i) => (
               <li key={i}>{s}</li>
             ))}

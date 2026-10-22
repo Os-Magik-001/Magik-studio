@@ -14,6 +14,7 @@ import { VideoStatusBadge } from "@/components/status";
 import { ReviewRoom, type ReviewComment, type ReviewVersion } from "@/components/review/review-room";
 import { ScriptReview } from "@/components/review/script-review";
 import { ScriptDocument } from "@/components/scripts/script-document";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Review", "Review · ");
@@ -91,7 +92,7 @@ export default async function ReviewPage({
   const scriptFirst = script?.status === "client_review" || !selected;
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={
           isClient ? (
@@ -135,6 +136,6 @@ export default async function ReviewPage({
         />
       )}
       {scriptCard && !scriptFirst && <div className="mt-6">{scriptCard}</div>}
-    </>
+    </WindowPage>
   );
 }

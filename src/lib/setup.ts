@@ -2,11 +2,12 @@ import "server-only";
 import type { Viewer } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-// Clients set up through onboarding finish the setup assistant (/setup) before the desktop.
-// Clients from before onboarding existed have no onboarding row and go straight in.
+// A client uses Magik OS once onboarded: their onboarding exists and is finished. Until then
+// they see the setup assistant (/setup), or, without an onboarding yet, a "being prepared" note.
 export async function setupPending(viewer: Viewer) {
-  if (viewer.role !== "client" || !viewer.clientId) return false;
+  if (viewer.role !== "client") return false;
+  if (!viewer.clientId) return true;
   const supabase = await createClient();
   const { data } = await supabase.from("onboardings").select("completed_at").eq("client_id", viewer.clientId).maybeSingle();
-  return !!data && !data.completed_at;
+  return !data?.completed_at;
 }

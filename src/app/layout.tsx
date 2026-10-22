@@ -18,8 +18,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };
 
-// Runs before the first paint, so the wallpaper the person picked shows at once.
-const WALLPAPER = `try{var w=localStorage.getItem("magik.wallpaper");if(w)document.documentElement.dataset.wallpaper=w}catch(e){}`;
+// Runs before the first paint, so the look the person picked (Settings > Appearance: wallpaper,
+// dimming, Dock, windows) shows at once. components/shell/look.ts writes what it reads.
+const WALLPAPER = `try{var h=document.documentElement,s=JSON.parse(localStorage.getItem("magik.look")||"null");if(s){var r=s.r||{};if(r.id)h.dataset.wallpaper=r.id;if(r.url)h.style.setProperty("--wall-url",r.url);if(r.base)h.style.setProperty("--wall-base",r.base);if(r.glow)h.style.setProperty("--wall-glow",r.glow);h.style.setProperty("--wall-dim",String((s.dim||0)/100));h.dataset.dock=s.dock||"large";h.dataset.labels=s.labels===false?"off":"on";h.dataset.solid=s.solid?"1":"0"}else{var w=localStorage.getItem("magik.wallpaper");if(w)h.dataset.wallpaper=w}}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

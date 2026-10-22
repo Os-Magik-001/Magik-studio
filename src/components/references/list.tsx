@@ -49,7 +49,7 @@ export function ReferenceList({ items, sheetUrls, scoped = false }: { items: Ref
               href={r.url}
               target="_blank"
               rel="noreferrer"
-              className="relative block h-[76px] w-[58px] shrink-0 overflow-hidden rounded-xl bg-surface-2 sm:h-[104px] sm:w-[78px]"
+              className="relative block h-[76px] w-[58px] shrink-0 overflow-hidden rounded-xl bg-surface-2 @min-[40rem]:h-[104px] @min-[40rem]:w-[78px]"
               aria-label={`Open the reference on ${PLATFORM_LABEL[r.platform as ReferencePlatform] ?? "its site"}`}
             >
               {sheet ? (

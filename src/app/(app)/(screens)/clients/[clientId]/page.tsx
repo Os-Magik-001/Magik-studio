@@ -19,6 +19,8 @@ import {
 } from "./forms";
 import { ResetPasswordButton } from "@/components/password-tools";
 import { ProductionPanel } from "@/components/production/panel";
+import { WindowPage } from "@/components/desktop/window-page";
+import { AccessActions, WebsiteForm } from "./access-forms";
 
 export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
   return clientTitle((await params).clientId, "Client");
@@ -32,12 +34,12 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
   const supabase = await createClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, name, revision_limit")
+    .select("id, name, revision_limit, site_status, site_url, site_admin_url")
     .eq("id", clientId)
     .maybeSingle();
   if (!client) notFound();
 
-  const [{ data: videos }, { data: kit }, { data: people }, { data: team }, { data: references }] = await Promise.all([
+  const [{ data: videos }, { data: kit }, { data: people }, { data: team }, { data: references }, { data: onboarding }] = await Promise.all([
     supabase
       .from("videos")
       .select("id, title, status, format, due_on, editor:profiles!videos_editor_id_fkey(full_name, email)")
@@ -53,6 +55,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
       .eq("client_id", clientId)
       .is("video_id", null)
       .order("created_at", { ascending: false }),
+    supabase.from("onboardings").select("completed_at").eq("client_id", clientId).maybeSingle(),
   ]);
 
   const editors = (people ?? []).filter((p) => p.role === "editor");
@@ -64,7 +67,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
   const watching = (references ?? []).some((r) => r.status === "queued" || r.status === "running");
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={
           <Link href="/clients" className="hover:text-ink">
@@ -82,7 +85,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-6">
           <ProductionPanel clientId={client.id} viewer={viewer} />
 
@@ -228,8 +231,37 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
               </ul>
             )}
           </Card>
+
+          {viewer.role === "admin" && (
+            <Card>
+              <CardHeader
+                title="Access to Magik OS"
+                description={
+                  onboarding?.completed_at
+                    ? "Onboarded: their people use Magik OS."
+                    : onboarding
+                      ? "Setting up: their people finish the setup assistant before using Magik OS."
+                      : "Not onboarded yet: their people can't use Magik OS until you open their setup or mark them onboarded."
+                }
+              />
+              {!onboarding?.completed_at && (
+                <div className="p-5">
+                  <AccessActions clientId={client.id} hasSetup={!!onboarding} />
+                </div>
+              )}
+            </Card>
+          )}
+
+          {viewer.role === "admin" && (
+            <Card>
+              <CardHeader title="Website" description="The website Magik made for them, shown in their Website app." />
+              <div className="p-5">
+                <WebsiteForm clientId={client.id} status={client.site_status} url={client.site_url ?? ""} adminUrl={client.site_admin_url ?? ""} />
+              </div>
+            </Card>
+          )}
         </div>
       </div>
-    </>
+    </WindowPage>
   );
 }

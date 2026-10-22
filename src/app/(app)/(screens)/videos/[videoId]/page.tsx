@@ -40,6 +40,8 @@ import {
   ScriptEditor,
   VideoDetailsForm,
 } from "./forms";
+import { WindowPage } from "@/components/desktop/window-page";
+import { PostingDate } from "./posting";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Video");
@@ -161,7 +163,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
   const reviewHref = latest ? `/review/${video.id}?v=${latest.id}` : null;
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={
           <span>
@@ -190,7 +192,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
       <StepNav states={states} />
       {(openJobs.length > 0 || watching || !!writing) && <AutoRefresh seconds={6} />}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-6">
           {/* 1. Brief & references */}
           <StepCard
@@ -350,7 +352,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
             title="Shoot & footage"
             description={`${footage?.length ?? 0} footage ${footage?.length === 1 ? "file" : "files"}${video.footage_complete_at ? " · marked complete" : ""}`}
           >
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 @min-[48rem]:grid-cols-2">
               <div className="flex flex-col gap-3">
                 <h3 className="text-[13px] font-medium text-ink-2">Shoot</h3>
                 {shoots?.map((s) => (
@@ -515,7 +517,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         </div>
 
         <div className="flex flex-col gap-6">
-          <section className="frost rounded-[22px] lg:sticky lg:top-20">
+          <section className="frost rounded-[22px] @min-[64rem]:sticky @min-[64rem]:top-20">
             <div className="border-b border-white/[0.07] px-5 py-4">
               <h2 className="text-[15px] font-semibold text-ink">Details</h2>
             </div>
@@ -538,6 +540,8 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
             </div>
           </section>
 
+          <PostingDate videoId={video.id} postAt={video.post_at} platforms={video.post_platforms ?? []} />
+
           {viewer.role === "admin" && (
             <form action={deleteVideo} className="text-right">
               <input type="hidden" name="videoId" value={video.id} />
@@ -546,7 +550,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
           )}
         </div>
       </div>
-    </>
+    </WindowPage>
   );
 }
 

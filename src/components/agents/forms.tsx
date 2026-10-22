@@ -9,14 +9,14 @@ import { requestTrendResearch, runBrandStrategist, saveQuestionnaire } from "@/a
 
 export function QuestionnaireForm({ clientId, answers, submitLabel = "Save answers" }: { clientId?: string; answers: Answers; submitLabel?: string }) {
   return (
-    <ActionForm action={saveQuestionnaire} className="grid gap-4 sm:grid-cols-2">
+    <ActionForm action={saveQuestionnaire} className="grid gap-4 @min-[40rem]:grid-cols-2">
       {clientId && <input type="hidden" name="clientId" value={clientId} />}
       {QUESTIONS.map((q) => (
-        <Field key={q.key} label={q.label} hint={q.hint} className={q.rows > 1 ? "sm:col-span-2" : undefined}>
+        <Field key={q.key} label={q.label} hint={q.hint} className={q.rows > 1 ? "@min-[40rem]:col-span-2" : undefined}>
           {q.rows > 1 ? <Textarea name={q.key} rows={q.rows} defaultValue={answers[q.key] ?? ""} /> : <Input name={q.key} defaultValue={answers[q.key] ?? ""} />}
         </Field>
       ))}
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <SubmitButton pendingText="Saving…">{submitLabel}</SubmitButton>
       </div>
     </ActionForm>
@@ -38,7 +38,7 @@ export function ResearchForm({ clientId, hashtags, accounts, disabled }: { clien
   return (
     <ActionForm action={requestTrendResearch} className="flex flex-col gap-3">
       <input type="hidden" name="clientId" value={clientId} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @min-[40rem]:grid-cols-2">
         <Field label="Hashtags" hint="Up to 4, separated by spaces.">
           <Input name="hashtags" defaultValue={hashtags} placeholder="barbershop fade barberlife" />
         </Field>

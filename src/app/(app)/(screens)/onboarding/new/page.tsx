@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { Card, PageHeader } from "@/components/ui";
 import { ClientInfosForm } from "../forms";
 import { StepRail } from "../progress";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "New client" };
 
@@ -12,14 +13,14 @@ const EMPTY = { hasInfos: false, packId: null, invoice: null, contract: null, in
 export default async function NewClientPage() {
   await requireRole("admin", "seller");
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={<Link href="/onboarding">Onboarding</Link>}
         title="New client"
         description="Step 1: who they are. Next come the pack, the invoice, the contract and their link."
       />
-      <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
-        <aside className="hidden lg:block">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[250px_1fr]">
+        <aside className="hidden @min-[64rem]:block">
           <StepRail clientId={null} facts={EMPTY} active="infos" current="infos" />
         </aside>
         <Card className="p-6">
@@ -27,6 +28,6 @@ export default async function NewClientPage() {
           <ClientInfosForm />
         </Card>
       </div>
-    </>
+    </WindowPage>
   );
 }

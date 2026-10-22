@@ -2,6 +2,7 @@ import "server-only";
 import type { Viewer } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
+import { notificationHref } from "@/lib/notification-links";
 import { PHASES, phaseOf } from "@/lib/pipeline";
 import { currentStep, stepByKey, stepsDone, waitingOn, STEPS, type OnboardingFacts } from "@/lib/onboarding";
 import { videoStatusIndex, videoStatusLabel, VIDEO_STATUSES, type VideoStatus } from "@/lib/workflow";
@@ -95,13 +96,7 @@ export async function homeData(viewer: Viewer): Promise<HomeData> {
   const open = allVideos.filter((v) => v.status !== "delivered");
 
   // ------------------------------------------------------------ activity
-  const activityHref = (n: { video_id: string | null; client_id: string | null; kind: string }) => {
-    if (!n.video_id && n.client_id) return role === "client" ? "/review" : role === "videographer" ? "/shoots" : staff ? `/clients/${n.client_id}#production` : sales ? "/onboarding" : "/notifications";
-    if (!n.video_id) return sales && n.kind.startsWith("onboarding") ? "/onboarding" : "/notifications";
-    if (role === "client") return `/review/${n.video_id}`;
-    if (role === "videographer") return `/shoots/${n.video_id}`;
-    return ["comment", "version_ready", "version_sent", "approved", "changes_requested"].includes(n.kind) ? `/review/${n.video_id}` : `/videos/${n.video_id}`;
-  };
+  const activityHref = (n: { video_id: string | null; client_id: string | null; kind: string }) => notificationHref(role, n) ?? "/notifications";
   const activity = (notes.data ?? []).map((n) => ({ id: n.id, title: n.title, body: n.body, at: n.created_at, href: activityHref(n), unread: !n.read_at }));
 
   // ------------------------------------------------------------ today
@@ -132,6 +127,20 @@ export async function homeData(viewer: Viewer): Promise<HomeData> {
         tone: inv.due_on < today ? "danger" : "neutral",
       });
     }
+  }
+  // The person's own events and the posting dates of the week (the Calendar's, through RLS).
+  const weekEnd = iso(new Date(Date.now() + 7 * DAY));
+  const [{ data: events }, { data: posts }] = await Promise.all([
+    supabase.from("calendar_events").select("id, title, starts_at, all_day, location").gte("ends_at", iso(new Date(Date.now() - 3600_000))).lt("starts_at", weekEnd).order("starts_at").limit(8),
+    role === "seller"
+      ? Promise.resolve({ data: [] as { id: string; title: string; post_at: string | null; clients: { name: string } | null }[] })
+      : supabase.from("videos").select("id, title, post_at, clients(name)").gte("post_at", iso(new Date(Date.now() - 3600_000))).lt("post_at", weekEnd).order("post_at").limit(6),
+  ]);
+  for (const e of events ?? []) {
+    items.push({ at: e.starts_at, allDay: e.all_day, title: e.title, detail: e.location ?? "Calendar", href: `/calendar?date=${e.starts_at.slice(0, 10)}&event=${e.id}`, tone: "neutral" });
+  }
+  for (const v of posts ?? []) {
+    if (v.post_at) items.push({ at: v.post_at, allDay: false, title: `Posting · ${v.title}`, detail: v.clients?.name ?? "", href: videoHref(v.id), tone: "accent" });
   }
   items.sort((a, b) => a.at.localeCompare(b.at));
 

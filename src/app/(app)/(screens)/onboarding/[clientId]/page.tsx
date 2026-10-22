@@ -13,6 +13,7 @@ import { LocalDate } from "@/components/local-date";
 import { markContractSigned, removeContract, setInvoiceStatus } from "@/app/actions/onboarding";
 import { ClientInfosForm, ContractUploadForm, GenerateInvoiceForm, LinkPanel, PackChooser } from "../forms";
 import { LaneProgress, StepRail } from "../progress";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
   const { clientId } = await params;
@@ -78,7 +79,7 @@ export default async function ClientOnboardingPage({
   const link = linkState(invite);
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={<Link href="/onboarding">Onboarding</Link>}
         title={client.name}
@@ -93,7 +94,7 @@ export default async function ClientOnboardingPage({
       {!progress && (
         <p className="mb-5 rounded-[14px] bg-warning-soft px-4 py-3 text-[13px] text-warning">This client isn&apos;t in onboarding: start it from the Onboarding list.</p>
       )}
-      <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[250px_1fr]">
         <aside>
           <StepRail clientId={client.id} facts={facts} active={active} current={current} />
         </aside>
@@ -367,7 +368,7 @@ export default async function ClientOnboardingPage({
           )}
         </Card>
       </div>
-    </>
+    </WindowPage>
   );
 }
 

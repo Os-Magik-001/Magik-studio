@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { ArrowRight, Clapperboard, FolderOpen, Search } from "lucide-react";
+import { ArrowRight, CalendarDays, Clapperboard, FolderOpen, Search } from "lucide-react";
 import type { AppDef } from "@/lib/apps";
 import { cx } from "@/components/ui";
 import { AppIcon } from "@/components/shell/app-icon";
 import { searchDesktop, type SpotlightHit } from "@/app/actions/desktop";
+import { useDesktop } from "@/components/desktop/context";
 
 export type QuickAction = { label: string; hint: string; href: string };
 
@@ -14,20 +15,25 @@ type Row =
   | { kind: "action"; action: QuickAction }
   | { kind: "hit"; hit: SpotlightHit };
 
-// ⌘K: find an app, a quick action, a client or a video, and open it.
+// ⌘K: find an app, a quick action, a client, a video or an event, and open it.
 export function Spotlight({
   apps,
   actions,
-  onOpenApp,
   onOpenHref,
   onClose,
 }: {
   apps: AppDef[];
   actions: QuickAction[];
-  onOpenApp: (app: AppDef) => void;
   onOpenHref: (href: string) => void;
   onClose: () => void;
 }) {
+  const d = useDesktop();
+  // An app: its window comes forward, or opens.
+  const onOpenApp = (app: AppDef) => {
+    const main = d.wins.filter((w) => w.appId === app.id && !w.doc).sort((a, b) => b.z - a.z)[0];
+    if (main) d.focus(main.id);
+    else onOpenHref(app.href);
+  };
   const [query, setQuery] = useState("");
   // Search results, for the query they answer.
   const [found, setFound] = useState<{ q: string; hits: SpotlightHit[] }>({ q: "", hits: [] });
@@ -97,8 +103,8 @@ export function Spotlight({
                 choose(rows[active]);
               }
             }}
-            placeholder="Search apps, clients and videos"
-            aria-label="Search apps, clients and videos"
+            placeholder="Search apps, clients, videos and events"
+            aria-label="Search apps, clients, videos and events"
             className="h-[58px] flex-1 bg-transparent text-[20px] font-light text-ink placeholder:text-muted/70 focus:outline-none"
           />
           {pending && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-white/80" aria-hidden />}
@@ -116,7 +122,7 @@ export function Spotlight({
                         row.hit.title,
                         row.hit.subtitle,
                         <span key="i" className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-white/10">
-                          {row.hit.kind === "client" ? <FolderOpen size={16} aria-hidden /> : <Clapperboard size={16} aria-hidden />}
+                          {row.hit.kind === "client" ? <FolderOpen size={16} aria-hidden /> : row.hit.kind === "event" ? <CalendarDays size={16} aria-hidden /> : <Clapperboard size={16} aria-hidden />}
                         </span>,
                       ];
               return (

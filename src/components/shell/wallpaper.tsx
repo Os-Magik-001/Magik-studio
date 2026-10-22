@@ -2,35 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { Matrix } from "@/components/matrix";
+import { LOOK_EVENT, applyLook, readLocalLook } from "@/components/shell/look";
 
-export const WALLPAPERS = [
-  { id: "magik", name: "Magik Gold" },
-  { id: "midnight", name: "Midnight" },
-  { id: "ember", name: "Ember" },
-  { id: "matrix", name: "Matrix (live)" },
-] as const;
-
-export type WallpaperId = (typeof WALLPAPERS)[number]["id"];
-
-const KEY = "magik.wallpaper";
-
-export function setWallpaper(id: WallpaperId) {
-  document.documentElement.dataset.wallpaper = id;
-  try {
-    localStorage.setItem(KEY, id);
-  } catch {}
-  window.dispatchEvent(new CustomEvent("magik:wallpaper", { detail: id }));
-}
-
-// The desktop picture. The root layout's script sets data-wallpaper before the first paint,
-// so the right picture shows at once; the CSS picks the image.
+// The desktop picture. The root layout's script applies the look before the first paint, so the
+// right picture shows at once; the CSS (.wallpaper) draws it from the variables it set. The live
+// Matrix is drawn here, and "Dynamic" changes picture with the hour.
 export function Wallpaper() {
   const [live, setLive] = useState(false);
   useEffect(() => {
     const sync = () => setLive(document.documentElement.dataset.wallpaper === "matrix");
     sync();
-    window.addEventListener("magik:wallpaper", sync);
-    return () => window.removeEventListener("magik:wallpaper", sync);
+    window.addEventListener(LOOK_EVENT, sync);
+    // Dynamic: look again every ten minutes.
+    const id = setInterval(() => {
+      const look = readLocalLook();
+      if (look?.wallpaper === "dynamic") applyLook(look);
+    }, 10 * 60_000);
+    return () => {
+      window.removeEventListener(LOOK_EVENT, sync);
+      clearInterval(id);
+    };
   }, []);
   return (
     <div aria-hidden className="wallpaper pointer-events-none fixed inset-0 -z-10">

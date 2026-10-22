@@ -171,6 +171,72 @@ export async function resetMemberPassword(_: ActionResult, formData: FormData): 
   return done(`New password set for ${profile.email}. Share it with them privately.`);
 }
 
+// Pausing keeps the account and everything it made, but its person can't sign in or use
+// Magik OS until it's resumed (the profile is flagged, and the auth user banned).
+export async function setMemberPaused(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const viewer = await requireRole("admin");
+  const userId = text(formData, "userId");
+  const pause = text(formData, "pause") === "1";
+  if (userId === viewer.id) return fail("You can't pause your own account.");
+  const admin = createAdminClient();
+  const { data: profile } = await admin.from("profiles").select("email, full_name, role").eq("id", userId).maybeSingle();
+  if (!profile) return fail("Unknown person.");
+  if (pause && profile.role === "admin") {
+    const { count } = await admin.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin").is("paused_at", null);
+    if ((count ?? 0) <= 1) return fail("Keep at least one studio manager active.");
+  }
+  const { error: banError } = await admin.auth.admin.updateUserById(userId, { ban_duration: pause ? "876000h" : "none" });
+  if (banError) return fail(pause ? "Couldn't pause the account." : "Couldn't resume the account.");
+  const { error } = await admin.from("profiles").update({ paused_at: pause ? new Date().toISOString() : null }).eq("id", userId);
+  if (error) return fail(pause ? "Couldn't pause the account." : "Couldn't resume the account.");
+  refresh();
+  const who = profile.full_name ?? profile.email;
+  return done(pause ? `${who} is paused: they can't sign in until you resume them.` : `${who} can sign in again.`);
+}
+
+// Deleting removes the person's sign-in and profile for good. What they made stays: videos and
+// files lose their author, their comments stay on the videos without a name.
+export async function deleteMember(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const viewer = await requireRole("admin");
+  const userId = text(formData, "userId");
+  if (userId === viewer.id) return fail("You can't delete your own account.");
+  const admin = createAdminClient();
+  const { data: profile } = await admin.from("profiles").select("email, full_name, role").eq("id", userId).maybeSingle();
+  if (!profile) return fail("Unknown person.");
+  if (text(formData, "confirm").toLowerCase() !== profile.email.toLowerCase()) return fail("Type their email to confirm.");
+  if (profile.role === "admin") {
+    const { count } = await admin.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin");
+    if ((count ?? 0) <= 1) return fail("Keep at least one studio manager.");
+  }
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) return fail("Couldn't delete the account.");
+  refresh();
+  return done(`${profile.full_name ?? profile.email}'s account is deleted.`);
+}
+
+// A client's people use Magik OS once onboarded. For a client that started before onboarding
+// existed: open their setup assistant, or mark them onboarded straight away.
+export async function setClientAccess(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireRole("admin");
+  const clientId = text(formData, "clientId");
+  const mode = text(formData, "mode");
+  if (!/^[0-9a-f-]{36}$/i.test(clientId) || !["setup", "done"].includes(mode)) return fail("Pick what to do.");
+  const admin = createAdminClient();
+  const { data: row } = await admin.from("onboardings").select("client_id, completed_at").eq("client_id", clientId).maybeSingle();
+  const now = new Date().toISOString();
+  const { error } =
+    mode === "done"
+      ? row
+        ? await admin.from("onboardings").update({ completed_at: row.completed_at ?? now }).eq("client_id", clientId)
+        : await admin.from("onboardings").insert({ client_id: clientId, completed_at: now })
+      : row
+        ? { error: null }
+        : await admin.from("onboardings").insert({ client_id: clientId });
+  if (error) return fail("Couldn't save.");
+  refresh();
+  return done(mode === "done" ? "Onboarded: their people can use Magik OS." : "Their setup is open: they'll go through it when they sign in.");
+}
+
 // ---------------------------------------------------------------- videos
 
 export async function createVideo(_: ActionResult, formData: FormData): Promise<ActionResult> {

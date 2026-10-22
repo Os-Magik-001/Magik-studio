@@ -26,9 +26,9 @@ export function NewVideoForm({
   videographers: Person[];
 }) {
   return (
-    <ActionForm action={createVideo} className="grid gap-4 sm:grid-cols-2">
+    <ActionForm action={createVideo} className="grid gap-4 @min-[40rem]:grid-cols-2">
       <input type="hidden" name="clientId" value={clientId} />
-      <Field label="Title" className="sm:col-span-2">
+      <Field label="Title" className="@min-[40rem]:col-span-2">
         <Input name="title" required placeholder="Fall menu launch" />
       </Field>
       <Field label="Format">
@@ -75,11 +75,11 @@ export function NewVideoForm({
       <Field
         label="Client brief"
         hint="What the client wants. The scriptwriter writes the script from this."
-        className="sm:col-span-2"
+        className="@min-[40rem]:col-span-2"
       >
         <Textarea name="brief" rows={4} placeholder="Goal, audience, key message, must-have shots, call to action…" />
       </Field>
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <SubmitButton pendingText="Creating…">Create video</SubmitButton>
       </div>
     </ActionForm>
@@ -122,7 +122,7 @@ export function BrandKitForm({
           />
         </div>
       </div>
-      <ActionForm action={saveBrandKit} className="grid gap-4 sm:grid-cols-2">
+      <ActionForm action={saveBrandKit} className="grid gap-4 @min-[40rem]:grid-cols-2">
         <input type="hidden" name="clientId" value={clientId} />
         <Field label="Colors" hint="Comma-separated, e.g. #1E1D1B, #F2C14E">
           <Input name="colors" defaultValue={kit.colors} />
@@ -133,7 +133,7 @@ export function BrandKitForm({
         <Field
           label="Editing style"
           hint="Clean: cuts, reframing and subtitles only, like Cluely's skits. Dynamic: 3D intros, motion graphics, stickers and sound effects."
-          className="sm:col-span-2"
+          className="@min-[40rem]:col-span-2"
         >
           <Select name="editStyle" defaultValue={kit.editStyle}>
             <option value="dynamic">Dynamic: motion graphics and effects</option>
@@ -143,17 +143,17 @@ export function BrandKitForm({
         <Field
           label="Graphics"
           hint="Designed: the motion director writes a design prompt for every scene and the engine's motion designer codes the graphics for each video (slower, costs more per edit). A video can also be designed on its own by choosing design templates on its script."
-          className="sm:col-span-2"
+          className="@min-[40rem]:col-span-2"
         >
           <Select name="graphics" defaultValue={kit.graphics}>
             <option value="templates">The engine&apos;s motion templates</option>
             <option value="designed">Designed for each video by the motion director</option>
           </Select>
         </Field>
-        <Field label="Music mood" className="sm:col-span-2">
+        <Field label="Music mood" className="@min-[40rem]:col-span-2">
           <Input name="musicMood" defaultValue={kit.musicMood} placeholder="Warm acoustic, upbeat, no vocals" />
         </Field>
-        <Field label="Style rules" className="sm:col-span-2">
+        <Field label="Style rules" className="@min-[40rem]:col-span-2">
           <Textarea
             name="styleRules"
             rows={5}
@@ -161,7 +161,7 @@ export function BrandKitForm({
             placeholder="Open on the product. Captions always on, bottom third. No jump cuts on faces. Logo end card for 2 seconds."
           />
         </Field>
-        <div className="sm:col-span-2">
+        <div className="@min-[40rem]:col-span-2">
           <SubmitButton>Save brand kit</SubmitButton>
         </div>
       </ActionForm>

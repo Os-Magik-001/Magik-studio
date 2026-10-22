@@ -14,6 +14,7 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { EmptyState, LinkButton, PageHeader, cx } from "@/components/ui";
 import { AgentHud, type HudEvent, type HudLink, type HudNode, type NodeId, type NodeState } from "@/components/agents/hud";
 import { DesignBriefView, FindingsView, ShootPlanView, SoundView, StrategyView } from "@/components/agents/views";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Agents" };
 
@@ -32,10 +33,10 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const { data: clients } = await supabase.from("clients").select("id, name").order("name");
   if (!clients?.length) {
     return (
-      <>
+      <WindowPage>
         <PageHeader title="Agents" />
         <EmptyState title="No clients yet">Add a client to see their agents at work.</EmptyState>
-      </>
+      </WindowPage>
     );
   }
   const client = clients.find((c) => c.id === clientParam) ?? clients[0];
@@ -540,7 +541,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const live = nodes.some((n) => n.state === "busy");
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow="Mission control"
         title="Agents"
@@ -570,6 +571,6 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
         </nav>
       )}
       <AgentHud nodes={nodes} links={links} events={events} panels={panels} meters={meters} now={now} swatches={(charte?.palette ?? []).map((c) => c.hex)} />
-    </>
+    </WindowPage>
   );
 }

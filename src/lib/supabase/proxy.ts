@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // /join/<token> is the link a seller sends a new client: it opens before they have an account.
 // /api/agents/work is the agents' worker, called by the app itself with its own signed token.
-const PUBLIC_PATHS = ["/login", "/auth", "/join", "/api/agents/work"];
+// /api/calendar/<token>.ics is a person's calendar feed, fetched by Google or Apple Calendar.
+// /r/<code> is someone's referral page, for the people they refer.
+const PUBLIC_PATHS = ["/login", "/auth", "/join", "/api/agents/work", "/api/calendar/", "/r/"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

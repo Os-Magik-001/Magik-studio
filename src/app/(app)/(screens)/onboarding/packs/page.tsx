@@ -6,6 +6,7 @@ import { Badge, Button, Card, CardHeader, EmptyState, PageHeader } from "@/compo
 import { setPackActive } from "@/app/actions/onboarding";
 import { PackForm } from "../forms";
 import { OnboardingTabs } from "../progress";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Packs" };
 
@@ -23,10 +24,10 @@ export default async function PacksPage() {
   const editable = viewer.role === "admin";
 
   return (
-    <>
+    <WindowPage>
       <PageHeader eyebrow="Sales" title="Onboarding" description="The packs the studio sells. A pack sets the price on the invoice and the client's revision rounds." />
       <OnboardingTabs active="packs" />
-      <div className="grid gap-6 xl:grid-cols-[1fr_400px]">
+      <div className="grid gap-6 @min-[80rem]:grid-cols-[minmax(0,1fr)_400px]">
         <div className="flex flex-col gap-3">
           {!packs?.length ? (
             <EmptyState title="No packs yet">{editable ? "Add the first one: name, price and what's included." : "The studio manager adds them."}</EmptyState>
@@ -77,6 +78,6 @@ export default async function PacksPage() {
           </Card>
         )}
       </div>
-    </>
+    </WindowPage>
   );
 }

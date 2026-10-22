@@ -7,7 +7,7 @@ export async function visibleVideo(videoId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("videos")
-    .select("id, client_id, title, status, format, aspect, brief, editor_id, videographer_id, due_on, footage_complete_at")
+    .select("id, client_id, title, status, format, aspect, brief, editor_id, videographer_id, due_on, footage_complete_at, post_at, post_platforms")
     .eq("id", videoId)
     .maybeSingle();
   return data;

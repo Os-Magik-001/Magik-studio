@@ -1,7 +1,12 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/auth";
+import { feedToken } from "@/lib/calendar-feed";
+import type { Json } from "@/lib/database.types";
+import { readPreferences, type Preferences } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { done, fail, optionalText, type ActionResult } from "@/lib/action-result";
@@ -42,4 +47,31 @@ export async function changeMyPassword(_: ActionResult, formData: FormData): Pro
     );
   }
   return done("Password changed.");
+}
+
+// Saves some of the person's settings (the rest stay as they were). Returns all of them.
+export async function savePreferences(patch: Preferences): Promise<Preferences> {
+  const viewer = await getViewer();
+  const next = readPreferences({ ...viewer.preferences, ...readPreferences(patch) });
+  await createAdminClient().from("profiles").update({ preferences: next as unknown as Json }).eq("id", viewer.id);
+  return next;
+}
+
+// Signs the person out on every computer and phone, this one included.
+export async function signOutEverywhere() {
+  await getViewer();
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "global" });
+  redirect("/login");
+}
+
+// The person's private calendar link (a new one replaces the old one when asked).
+export async function calendarLink(fresh = false): Promise<{ https: string; webcal: string }> {
+  const viewer = await getViewer();
+  const token = await feedToken(viewer.id, fresh);
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const path = `/api/calendar/${token}.ics`;
+  return { https: `${proto}://${host}${path}`, webcal: `webcal://${host}${path}` };
 }

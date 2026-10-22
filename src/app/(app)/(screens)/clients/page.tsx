@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { NewClientForm } from "./new-client-form";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Clients" };
 
@@ -17,19 +18,19 @@ export default async function ClientsPage() {
     .order("name");
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         title="Clients"
         description="Each client has a folder: their videos, scripts, footage, every version and their brand kit."
       />
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_320px]">
         <div>
           {!clients?.length ? (
             <EmptyState title="No clients yet">
               {viewer.role === "admin" ? "Add your first client to get started." : "You haven't been assigned to a client yet."}
             </EmptyState>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid gap-3 @min-[40rem]:grid-cols-2">
               {clients.map((c) => {
                 const open = c.videos.filter((v) => v.status !== "delivered").length;
                 const review = c.videos.filter((v) => v.status === "client_review").length;
@@ -63,6 +64,6 @@ export default async function ClientsPage() {
           </Card>
         )}
       </div>
-    </>
+    </WindowPage>
   );
 }

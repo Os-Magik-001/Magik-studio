@@ -10,6 +10,7 @@ import { LocalDate } from "@/components/local-date";
 import { SegmentedNav } from "@/components/segmented";
 import { startOnboarding } from "@/app/actions/onboarding";
 import { LaneProgress, OnboardingTabs } from "./progress";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Onboarding" };
 
@@ -35,7 +36,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const legacy = (clients ?? []).filter((c) => !c.onboardings);
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow="Sales"
         title="Onboarding"
@@ -85,7 +86,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
                       {sellerName(o.client.seller_id) && ` · sold by ${sellerName(o.client.seller_id)}`}
                     </p>
                   </div>
-                  <div className="hidden flex-col items-end gap-1.5 sm:flex">
+                  <div className="hidden flex-col items-end gap-1.5 @min-[40rem]:flex">
                     <LaneProgress facts={o.facts} current={o.step} />
                     <span className={cx("text-[12px]", step?.lane === "seller" ? "text-accent" : "text-muted")}>
                       {step ? (step.lane === "seller" ? `Your turn: ${step.label}` : `The client: ${step.label}`) : <LocalDate value={o.createdAt} preset="date" prefix="Started " />}
@@ -117,6 +118,6 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           </form>
         </Card>
       )}
-    </>
+    </WindowPage>
   );
 }

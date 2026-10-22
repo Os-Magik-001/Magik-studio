@@ -1,5 +1,21 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/lib/database.types";
+import { categoryOf, readPreferences } from "@/lib/preferences";
+
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Insert"];
+
+// Sends notifications, except to the people who muted that kind in their settings.
+export async function deliver(rows: NotificationRow[]) {
+  if (!rows.length) return;
+  const admin = createAdminClient();
+  const ids = [...new Set(rows.map((r) => r.user_id))];
+  const { data: people } = await admin.from("profiles").select("id, preferences, paused_at").in("id", ids);
+  const muted = new Map((people ?? []).map((p) => [p.id, new Set(readPreferences(p.preferences).muted ?? [])]));
+  const paused = new Set((people ?? []).filter((p) => p.paused_at).map((p) => p.id));
+  const keep = rows.filter((r) => !paused.has(r.user_id) && !muted.get(r.user_id)?.has(categoryOf(r.kind)));
+  if (keep.length) await admin.from("notifications").insert(keep);
+}
 
 type Audience = {
   videoId: string;
@@ -38,7 +54,7 @@ export async function notify(
   if (audience.exclude) ids.delete(audience.exclude);
   if (ids.size === 0) return;
 
-  await admin.from("notifications").insert(
+  await deliver(
     [...ids].map((user_id) => ({
       user_id,
       video_id: video.id,
@@ -60,7 +76,5 @@ export async function notifySales(clientId: string, message: { kind: string; tit
   const ids = new Set((admins ?? []).map((a) => a.id));
   if (client?.seller_id) ids.add(client.seller_id);
   if (ids.size === 0) return;
-  await admin.from("notifications").insert(
-    [...ids].map((user_id) => ({ user_id, video_id: null, kind: message.kind, title: message.title, body: message.body ?? null })),
-  );
+  await deliver([...ids].map((user_id) => ({ user_id, video_id: null, client_id: clientId, kind: message.kind, title: message.title, body: message.body ?? null })));
 }

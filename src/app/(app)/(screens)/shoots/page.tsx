@@ -4,6 +4,7 @@ import { requireRole, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { ShootList, type ShootRow } from "./shoot-list";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Shoots" };
 
@@ -44,7 +45,7 @@ export default async function ShootsPage() {
   );
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         title="Shoot calendar"
         description={
@@ -72,7 +73,7 @@ export default async function ShootsPage() {
           </ul>
         </section>
       )}
-    </>
+    </WindowPage>
   );
 }
 

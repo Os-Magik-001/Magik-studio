@@ -8,6 +8,7 @@ import { LocalDate } from "@/components/local-date";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { removeSoundLibrary, syncSoundLibrary } from "@/app/actions/sounds";
 import { AddLibraryForm } from "./forms";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Sound" };
 
@@ -28,13 +29,13 @@ export default async function SoundsPage() {
   const busy = all.some((l) => l.source === "drive" && (l.status === "queued" || l.status === "running"));
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         title="Sound"
         description="The libraries the sound designer (agent 4) searches on every edit. It picks the music, lines it up with the cut, adds the sound effects, and matches the trending sounds the researcher finds."
       />
       {busy && <AutoRefresh seconds={8} />}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-6">
           <Libraries title="Music" items={all.filter((l) => l.kind === "music")} canRemove={viewer.role === "admin"} />
           <Libraries title="Sound effects" items={all.filter((l) => l.kind === "sfx")} canRemove={viewer.role === "admin"} />
@@ -66,7 +67,7 @@ export default async function SoundsPage() {
           </Card>
         </div>
       </div>
-    </>
+    </WindowPage>
   );
 }
 

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/database.types";
+import { readPreferences, type Preferences } from "@/lib/preferences";
 
 export type Role = Database["public"]["Enums"]["user_role"];
 
@@ -12,6 +13,8 @@ export type Viewer = {
   fullName: string | null;
   role: Role;
   clientId: string | null;
+  preferences: Preferences;
+  referralCode: string;
 };
 
 export const getViewer = cache(async (): Promise<Viewer> => {
@@ -22,10 +25,12 @@ export const getViewer = cache(async (): Promise<Viewer> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role, client_id")
+    .select("id, email, full_name, role, client_id, paused_at, preferences, referral_code")
     .eq("id", userId)
     .maybeSingle();
   if (!profile) redirect("/login?error=no-profile");
+  // A paused account can't use Magik OS until a studio manager resumes it.
+  if (profile.paused_at) redirect("/paused");
 
   return {
     id: profile.id,
@@ -33,6 +38,8 @@ export const getViewer = cache(async (): Promise<Viewer> => {
     fullName: profile.full_name,
     role: profile.role,
     clientId: profile.client_id,
+    preferences: readPreferences(profile.preferences),
+    referralCode: profile.referral_code,
   };
 });
 

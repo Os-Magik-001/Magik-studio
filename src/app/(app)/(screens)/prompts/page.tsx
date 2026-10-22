@@ -6,6 +6,7 @@ import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui
 import { LocalDate } from "@/components/local-date";
 import { deleteMotionPrompt } from "@/app/actions/prompts";
 import { AddPromptForm } from "./forms";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Motion prompts" };
 
@@ -17,12 +18,12 @@ export default async function PromptsPage() {
   const { data: prompts } = await supabase.from("motion_prompts").select("*").order("created_at", { ascending: false });
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         title="Motion prompts"
         description="Prompts that made great motion videos with Claude. The scriptwriter adapts the ones that fit each video into its edit prompt for the engine, on the engine's motion templates."
       />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_380px]">
         <Card>
           <CardHeader title="The library" description={prompts?.length ? `${prompts.length} saved` : undefined} />
           {!prompts?.length ? (
@@ -93,6 +94,6 @@ export default async function PromptsPage() {
           </Card>
         </div>
       </div>
-    </>
+    </WindowPage>
   );
 }

@@ -6,6 +6,7 @@ import { claudeConfigured } from "@/lib/claude";
 import { asPlan, type PlanIdea } from "@/lib/agent-types";
 import { answeredCount, readAnswers } from "@/lib/questionnaire";
 import { queueRuns, startProduction, startWorkers } from "@/lib/production";
+import { deliver } from "@/lib/notify";
 import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -112,13 +113,15 @@ export async function createPlannedVideos(_: ActionResult, formData: FormData): 
   await admin.from("agent_runs").update({ output: { ...plan, ideas: ideasOut } as unknown as Json }).eq("id", run.id);
 
   if (editorId && editorId !== viewer.id) {
-    await admin.from("notifications").insert({
-      user_id: editorId,
-      client_id: client.id,
-      kind: "production",
-      title: `${client.name}: ${plural(created.length, "new video")} for you`,
-      body: created.map((v) => v.title).join(" · "),
-    });
+    await deliver([
+      {
+        user_id: editorId,
+        client_id: client.id,
+        kind: "production",
+        title: `${client.name}: ${plural(created.length, "new video")} for you`,
+        body: created.map((v) => v.title).join(" · "),
+      },
+    ]);
   }
   if (writeNow) {
     await queueRuns(created.map((v) => ({ agent: "scriptwriter" as const, client_id: client.id, video_id: v.id, requested_by: viewer.id })));
@@ -172,7 +175,7 @@ export async function sendScripts(_: ActionResult, formData: FormData): Promise<
   const { data: people } = await admin.from("profiles").select("id").eq("client_id", client.id).eq("role", "client");
   const others = (people ?? []).filter((p) => p.id !== viewer.id);
   if (others.length) {
-    await admin.from("notifications").insert(
+    await deliver(
       others.map((p) => ({
         user_id: p.id,
         client_id: client.id,
@@ -234,7 +237,7 @@ export async function scheduleShootDay(_: ActionResult, formData: FormData): Pro
   }
   // The wall-clock time as it was picked, for the message.
   const when = new Date(startsAt + "Z").toLocaleString("en-CA", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  await admin.from("notifications").insert(
+  await deliver(
     [...crew].filter(([id]) => id !== viewer.id).map(([user_id, titles]) => ({
       user_id,
       client_id: client.id,

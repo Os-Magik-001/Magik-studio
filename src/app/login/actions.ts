@@ -15,6 +15,7 @@ export async function signIn(_: ActionResult, formData: FormData): Promise<Actio
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     if (error.status === 429) return fail("Too many attempts. Wait a minute and try again.");
+    if (error.code === "user_banned") return fail("This account is paused. Ask your studio manager to resume it.");
     return fail("Wrong email or password.");
   }
   redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useWindowState } from "@/components/desktop/context";
 import { Columns2, MessageSquareReply, Pause, PenLine, Play, Trash2, X } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Badge, Button, Card, Textarea, cx } from "@/components/ui";
@@ -99,7 +100,11 @@ export function ReviewRoom(props: Props) {
     setTime(seconds);
   };
 
+  // Space plays and pauses, in the window in front only (several review rooms can be open).
+  const win = useWindowState();
+  const inFront = !win || win.focused;
   useEffect(() => {
+    if (!inFront) return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.closest("input, textarea, select, [contenteditable]")) return;
@@ -110,7 +115,7 @@ export function ReviewRoom(props: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay]);
+  }, [togglePlay, inFront]);
 
   const topLevel = useMemo(
     () =>
@@ -154,7 +159,7 @@ export function ReviewRoom(props: Props) {
   const openCount = topLevel.filter((c) => !c.resolved).length;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-w-0 flex-col gap-3">
         {/* Version stack */}
         <div className="flex flex-wrap items-center gap-2">
@@ -180,7 +185,7 @@ export function ReviewRoom(props: Props) {
           {others.length > 0 && (
             <label className="ml-auto flex items-center gap-2 text-[13px] text-ink-2">
               <Columns2 size={14} aria-hidden />
-              <span className="sr-only sm:not-sr-only">Compare with</span>
+              <span className="sr-only @min-[40rem]:not-sr-only">Compare with</span>
               <select
                 value={compareId ?? ""}
                 onChange={(e) => {
@@ -201,8 +206,8 @@ export function ReviewRoom(props: Props) {
         </div>
 
         {/* Stage */}
-        <div className="frost rounded-[26px] p-3 sm:p-4">
-          <div className={cx("grid gap-3", compare && "sm:grid-cols-2")}>
+        <div className="frost rounded-[26px] p-3 @min-[40rem]:p-4">
+          <div className={cx("grid gap-3", compare && "@min-[40rem]:grid-cols-2")}>
             <Stage
               label={compare ? `v${version.number}` : undefined}
               url={version.url}

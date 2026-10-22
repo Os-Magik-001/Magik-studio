@@ -142,7 +142,7 @@ export function ScriptEditor({
     <div className="flex flex-col gap-5">
       <ActionForm action={draftScriptWithClaude} onSuccess={() => setKey((k) => k + 1)} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
         <input type="hidden" name="videoId" value={videoId} />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 @min-[40rem]:flex-row @min-[40rem]:items-end">
           <Field label="Notes for the scriptwriter (optional)" className="flex-1">
             <Input name="notes" placeholder="Keep it under 45 seconds, open on the product" />
           </Field>
@@ -310,7 +310,7 @@ export function DraftUpload({ videoId }: { videoId: string }) {
   const [notes, setNotes] = useState("");
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+      <div className="grid gap-3 @min-[40rem]:grid-cols-[160px_1fr]">
         <Field label="Made by">
           <Select value={madeBy} onChange={(e) => setMadeBy(e.target.value as "claude" | "editor")}>
             <option value="claude">Claude</option>
@@ -441,13 +441,13 @@ export function DesignTemplatesForm({ videoId, templates, saved, chosen }: { vid
       {categories.map((c) => (
         <fieldset key={c} className="flex flex-col gap-2">
           <legend className="kicker mb-1">{c}</legend>
-          <div className="grid gap-2 sm:grid-cols-2">{templates.filter((t) => t.category === c).map(option)}</div>
+          <div className="grid gap-2 @min-[40rem]:grid-cols-2">{templates.filter((t) => t.category === c).map(option)}</div>
         </fieldset>
       ))}
       {saved.length > 0 && (
         <fieldset className="flex flex-col gap-2">
           <legend className="kicker mb-1">Your saved motion prompts</legend>
-          <div className="grid gap-2 sm:grid-cols-2">{saved.map(option)}</div>
+          <div className="grid gap-2 @min-[40rem]:grid-cols-2">{saved.map(option)}</div>
         </fieldset>
       )}
       <div className="flex flex-wrap items-center gap-3">

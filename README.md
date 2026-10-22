@@ -4,24 +4,32 @@ The workspace that runs Magik Studio: sellers onboard clients, videographers bri
 
 ## The desktop
 
-Magik OS looks and works like a Mac in black and gold (dark Liquid Glass): a lock screen to sign in, a menu bar with search (⌘K), and a Dock of big 3D app icons. Home is the command center: a greeting, today's schedule, and panels for the role (studio overview, production, onboarding, invoices; a client's videos, brand and documents). One click on an icon opens that app as one big screen; red and yellow go back to Home, green fills the whole screen. Screens zoom up out of the Dock and crossfade between apps (React `<ViewTransition>`). On phones the Dock scrolls and apps open full screen.
+Magik OS looks and works like a Mac in black and gold (dark Liquid Glass): a lock screen to sign in, a menu bar (the focused app on the left; search ⌘K, Mission Control, Help, the notification center, the clock and the person's menu on the right), and a Dock of big 3D app icons. Home is the desktop under the windows: a greeting, today's schedule (events, shoots, deadlines, posting dates) and panels for the role; each panel is a widget whose red light hides it, yellow folds it and green opens its app.
 
-- `src/app/(app)/layout.tsx` + `src/components/shell/`: the menu bar, the Dock and Spotlight around every page.
-- `src/app/(app)/page.tsx` + `src/components/home/`: Home; `src/lib/home.ts` gathers its data per role.
-- `src/app/(app)/(screens)/`: every app; their layout puts each page in the screen (`shell/screen.tsx`).
-- `src/lib/apps.ts`: which apps each role gets and which app a path belongs to. Icons are `public/icons/<icon>.webp` (3D renders).
+Every app opens in its own window, and many stay open at once: drag a window by its title bar, resize it from any edge, double-click the bar to fill the screen, drag it to an edge to fill half of it. Yellow puts it in the Dock (minimized windows wait on the Dock's right), red closes it, ⌘-click opens a link in a new window. A video, a client folder or a client's onboarding opens in a window of its own. Mission Control (the grid button, F3 or Ctrl ↑) spreads every window out; a right-click on a Dock icon lists the app's windows. Windows reopen minimized after a reload. On phones apps open full screen.
+
+How the windows work (`src/components/desktop/`): the router renders one page at a time into a hidden slot; every app page wraps its content in `<WindowPage>`, which hands it to the window showing that address (`content.ts`), so windows keep their pages alive while the router moves on. The router's page is always the focused window's: clicking a window brings its page back, so its forms, refreshes and server actions act on it. Pages lay out with container queries (`@min-[…]` classes), so they follow their window's width, not the screen's. Nothing drawn by a layout under `(screens)` would show: put shared chrome in the page.
+
+- `src/app/(app)/layout.tsx`: the desktop (`desktop/desktop.tsx`), with Home (`components/home/dashboard.tsx`, data in `src/lib/home.ts`) under the windows.
+- `src/app/(app)/(screens)/`: every app; `not-found.tsx` and `error.tsx` show in the window too.
+- `src/lib/apps.ts`: which apps each role gets, which app and which window a path opens in. Icons are `public/icons/<icon>.webp` (3D renders); the Calendar icon shows today's date.
+- Settings (`/account`) has a sidebar: General, Appearance (wallpaper, dimming, Dock size and names, glass or solid windows, saved to the person's account), Notifications (what to be told about), Calendar (week start, the Google/Apple link), Password & security (sign out everywhere), Documents (clients' invoices and contract), Referrals & credits, Studio (admin), About.
 
 ## Who sees what
 
 | Role | Apps | What they can do |
 |---|---|---|
-| Studio manager (`admin`) | Pipeline, Clients, Onboarding, Agents, Library, Sound, Motion, Shoots, Team | Everything: onboards clients, sets packs and invoice details, creates videos, adds people, assigns editors and videographers |
-| Seller (`seller`) | Onboarding | Sets new clients up (details, pack, invoice, contract) and sends them their link. Doesn't see production. |
-| Editor | Pipeline, Clients, Agents, Library, Sound, Motion | Their clients' videos: brief → script (Claude drafts) → shoot → launch the edit → draft check → send to client |
-| Videographer | Shoots | Their shoot calendar, the approved script and shot list, footage drop |
-| Client | Your videos, Your brand, Documents | Only their own videos, only once the editor sends them: approve the script, review cuts Frame.io-style, approve or request changes; their brand, invoices and contract |
+| Studio manager (`admin`) | Pipeline, Clients, Onboarding, Sales, Calendar, Agents, Library, Sound, Motion, Shoots, Team, Referrals | Everything: onboards clients, sets packs and invoice details, creates videos, adds, pauses and deletes people, assigns editors and videographers, answers Help, follows referrals up and gives credits |
+| Seller (`seller`) | Onboarding, Sales, Calendar, Referrals | Sets new clients up (details, pack, invoice, contract) and sends them their link; follows referrals up. Doesn't see production. |
+| Editor | Pipeline, Clients, Calendar, Agents, Library, Sound, Motion, Referrals | Their clients' videos: brief → script (Claude drafts) → shoot → launch the edit → draft check → send to client; posting dates |
+| Videographer | Shoots, Calendar, Referrals | Their shoot calendar, the approved script and shot list, footage drop |
+| Client | Pipeline, Your videos, Calendar, Your brand, Website, Referrals | Only their own videos, only once the editor sends them: where each one is (Pipeline), the gallery of cuts to watch and download (Your videos), approve the script, review cuts Frame.io-style, approve or request changes; posting dates and shoots in their calendar; their website made with Magik; their brand; invoices and contract in Settings |
 
-Everyone also has Notifications and Settings (name, password, wallpaper).
+Everyone also has Settings, Help (menu bar) and the notification center (the bell). A client uses Magik OS once their onboarding is finished; before that they see the setup assistant, or, with no onboarding yet, a "being prepared" page (the studio manager opens their setup or marks them onboarded in their client folder). A paused account can't sign in (`/paused`).
+
+**Calendar** (`/calendar`, `src/lib/calendar-data.ts`): everyone's own events (invite teammates, share with a client), plus shoots, posting dates (`videos.post_at`), deadlines and invoices due, for whoever they concern. Day, week, month and list views; events move by dragging. Each person can subscribe from Google or Apple Calendar with a private link (`/api/calendar/<token>.ics`, an HMAC of their id and a nonce; Settings › Calendar makes a new one).
+
+**Referrals** (`/referrals`): each person's link (`/r/<code>`, public) lets the businesses they refer leave their details; sales mark a referral signed, which gives the referrer the credits set in Settings › Studio (`credit_ledger`).
 
 ## Client onboarding
 

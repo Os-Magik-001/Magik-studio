@@ -8,6 +8,7 @@ import { QUESTIONS, readAnswers } from "@/lib/questionnaire";
 import { REQUIRED_SETUP_QUESTIONS, SETUP_QUESTION_KEYS } from "@/lib/onboarding";
 import { cleanSpec } from "@/lib/logo-templates";
 import { SetupFrame } from "@/components/setup/setup-frame";
+import { Button } from "@/components/ui";
 import { BrandStep, ContractStep, DoneStep, QuestionsStep, ReferencesStep } from "./steps";
 
 export const instant = false;
@@ -20,7 +21,8 @@ type Step = "contract" | "questions" | "references" | "brand" | "done";
 // resumes at the first step not done; earlier steps can be reopened with ?step=.
 export default async function SetupPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
   const viewer = await getViewer();
-  if (viewer.role !== "client" || !viewer.clientId) redirect("/");
+  if (viewer.role !== "client") redirect("/");
+  if (!viewer.clientId) return <BeingPrepared name={displayName(viewer)} />;
   const clientId = viewer.clientId;
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -35,7 +37,9 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
     admin.from("reference_videos").select("id, url, platform, title, note, library_id").eq("client_id", clientId).is("video_id", null).order("created_at"),
     supabase.from("brand_kits").select("logo_path, logo_spec").eq("client_id", clientId).maybeSingle(),
   ]);
-  if (!progress || !client) redirect("/");
+  // No onboarding yet: the studio hasn't opened this client's setup. Magik OS waits for it.
+  if (!progress || !client) return <BeingPrepared name={displayName(viewer)} />;
+  if (progress.completed_at) redirect("/");
 
   const contract = contracts?.[0] ?? null;
   const steps: { key: Step; label: string; done: boolean }[] = [
@@ -74,6 +78,28 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
       )}
       {step === "brand" && <BrandStep brandName={client.name} initial={kit?.logo_spec ? cleanSpec(kit.logo_spec as never, client.name) : null} />}
       {step === "done" && <DoneStep name={displayName(viewer)} clientName={client.name} logo={logo} />}
+    </SetupFrame>
+  );
+}
+
+// A client account the studio hasn't onboarded yet: nothing to use until it's set up.
+function BeingPrepared({ name }: { name: string }) {
+  return (
+    <SetupFrame>
+      <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+        <span className="app-icon h-20 w-20" style={{ background: "linear-gradient(180deg,#ffe36e,#d9a60c)" }}>
+          <span className="text-[34px]" aria-hidden>
+            ✦
+          </span>
+        </span>
+        <h1 className="mt-8 font-display text-[32px] leading-tight font-bold tracking-tight text-ink">Your space is being prepared, {name.split(/\s+/)[0]}.</h1>
+        <p className="mt-3 max-w-lg text-[15px] text-ink-2">
+          Your Magik contact is finishing your onboarding. As soon as it&apos;s ready, you&apos;ll find your videos, your brand and your documents here.
+        </p>
+        <form action="/auth/signout" method="post" className="mt-9">
+          <Button variant="secondary">Sign out</Button>
+        </form>
+      </div>
     </SetupFrame>
   );
 }

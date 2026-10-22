@@ -38,7 +38,7 @@ export function ResearchForm({ clientId, hashtags, accounts, label }: { clientId
   return (
     <ActionForm action={requestTrendResearch} className="flex flex-col gap-3">
       <input type="hidden" name="clientId" value={clientId} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @min-[40rem]:grid-cols-2">
         <Label text="Hashtags">
           <Input name="hashtags" defaultValue={hashtags.slice(0, 4).join(" ")} placeholder="boulangerie montrealfood" />
         </Label>
@@ -102,7 +102,7 @@ export function CreateVideosForm({
   return (
     <ActionForm action={createPlannedVideos} className="flex flex-col gap-4">
       <input type="hidden" name="runId" value={runId} />
-      <ul className="grid gap-3 md:grid-cols-2">
+      <ul className="grid gap-3 @min-[48rem]:grid-cols-2">
         {ideas.map((idea) => {
           const made = !!idea.video_id;
           const on = picked.has(idea.index);
@@ -250,7 +250,7 @@ export function ShootDayForm({
           </label>
         ))}
       </fieldset>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @min-[40rem]:grid-cols-2">
         <Label text="Starts">
           <Input name="startsAt" type="datetime-local" required />
         </Label>

@@ -306,7 +306,7 @@ export function AgentHud({
         </div>
       </section>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 @min-[64rem]:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <aside className="hud-frame flex min-w-0 flex-col" aria-live="polite">
           <div className="flex items-start gap-3 border-b border-[rgba(84,214,255,0.22)] px-5 py-4">
             <span className="hud-icon mt-0.5 h-9 w-9 shrink-0" data-state={sel.state} aria-hidden>
@@ -323,7 +323,7 @@ export function AgentHud({
           </div>
           <div className="flex max-h-[640px] flex-col gap-5 overflow-y-auto px-5 py-4">
             {(gets.length > 0 || gives.length > 0) && (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 @min-[40rem]:grid-cols-2">
                 {[
                   { title: "Gets", list: gets, other: (l: HudLink) => ROUTES[l.id].a, arrow: "←" },
                   { title: "Hands over", list: gives, other: (l: HudLink) => ROUTES[l.id].b, arrow: "→" },
@@ -393,7 +393,7 @@ export function AgentHud({
 
       <section className="hud-frame px-5 py-4" aria-label="Telemetry">
         <div className="hud-label mb-3">Telemetry</div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 @min-[40rem]:grid-cols-3 @min-[64rem]:grid-cols-6">
           {meters.map((m) => (
             <div key={m.label} className="flex flex-col gap-1.5">
               <span className="hud-label">{m.label}</span>

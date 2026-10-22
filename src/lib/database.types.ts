@@ -226,6 +226,132 @@ export type Database = {
           },
         ]
       }
+      calendar_attendees: {
+        Row: {
+          event_id: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_attendees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          client_id: string | null
+          color: string
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          location: string | null
+          owner_id: string
+          starts_at: string
+          title: string
+          updated_at: string
+          video_id: string | null
+        }
+        Insert: {
+          all_day?: boolean
+          client_id?: string | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          location?: string | null
+          owner_id: string
+          starts_at: string
+          title: string
+          updated_at?: string
+          video_id?: string | null
+        }
+        Update: {
+          all_day?: boolean
+          client_id?: string | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          location?: string | null
+          owner_id?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_feeds: {
+        Row: {
+          created_at: string
+          nonce: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          nonce: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          nonce?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_feeds_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_invites: {
         Row: {
           client_id: string
@@ -341,6 +467,9 @@ export type Database = {
           phone: string | null
           revision_limit: number
           seller_id: string | null
+          site_admin_url: string | null
+          site_status: string
+          site_url: string | null
           website: string | null
         }
         Insert: {
@@ -357,6 +486,9 @@ export type Database = {
           phone?: string | null
           revision_limit?: number
           seller_id?: string | null
+          site_admin_url?: string | null
+          site_status?: string
+          site_url?: string | null
           website?: string | null
         }
         Update: {
@@ -373,6 +505,9 @@ export type Database = {
           phone?: string | null
           revision_limit?: number
           seller_id?: string | null
+          site_admin_url?: string | null
+          site_status?: string
+          site_url?: string | null
           website?: string | null
         }
         Relationships: [
@@ -394,7 +529,7 @@ export type Database = {
       }
       comments: {
         Row: {
-          author_id: string
+          author_id: string | null
           body: string
           created_at: string
           drawing: Json | null
@@ -406,7 +541,7 @@ export type Database = {
           version_id: string
         }
         Insert: {
-          author_id: string
+          author_id?: string | null
           body: string
           created_at?: string
           drawing?: Json | null
@@ -418,7 +553,7 @@ export type Database = {
           version_id: string
         }
         Update: {
-          author_id?: string
+          author_id?: string | null
           body?: string
           created_at?: string
           drawing?: Json | null
@@ -514,6 +649,58 @@ export type Database = {
           {
             foreignKeyName: "contracts_signed_by_fkey"
             columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string
+          referral_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason: string
+          referral_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string
+          referral_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -653,6 +840,44 @@ export type Database = {
             columns: ["video_id"]
             isOneToOne: false
             referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_requests: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          page: string | null
+          status: string
+          topic: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          page?: string | null
+          status?: string
+          topic?: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          page?: string | null
+          status?: string
+          topic?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -949,6 +1174,9 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          paused_at: string | null
+          preferences: Json
+          referral_code: string
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
@@ -957,6 +1185,9 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          paused_at?: string | null
+          preferences?: Json
+          referral_code?: string
           role: Database["public"]["Enums"]["user_role"]
         }
         Update: {
@@ -965,6 +1196,9 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          paused_at?: string | null
+          preferences?: Json
+          referral_code?: string
           role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: [
@@ -1130,6 +1364,66 @@ export type Database = {
             columns: ["video_id"]
             isOneToOne: false
             referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          client_id: string | null
+          company: string | null
+          created_at: string
+          credits: number
+          email: string | null
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          referrer_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          company?: string | null
+          created_at?: string
+          credits?: number
+          email?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          referrer_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          company?: string | null
+          created_at?: string
+          credits?: number
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          referrer_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1433,6 +1727,7 @@ export type Database = {
           payment_instructions: string | null
           payment_terms_days: number
           phone: string | null
+          referral_reward: number
           taxes: Json
           updated_at: string
           website: string | null
@@ -1448,6 +1743,7 @@ export type Database = {
           payment_instructions?: string | null
           payment_terms_days?: number
           phone?: string | null
+          referral_reward?: number
           taxes?: Json
           updated_at?: string
           website?: string | null
@@ -1463,6 +1759,7 @@ export type Database = {
           payment_instructions?: string | null
           payment_terms_days?: number
           phone?: string | null
+          referral_reward?: number
           taxes?: Json
           updated_at?: string
           website?: string | null
@@ -1619,6 +1916,8 @@ export type Database = {
           footage_complete_at: string | null
           format: Database["public"]["Enums"]["video_format"]
           id: string
+          post_at: string | null
+          post_platforms: string[]
           status: Database["public"]["Enums"]["video_status"]
           title: string
           updated_at: string
@@ -1635,6 +1934,8 @@ export type Database = {
           footage_complete_at?: string | null
           format?: Database["public"]["Enums"]["video_format"]
           id?: string
+          post_at?: string | null
+          post_platforms?: string[]
           status?: Database["public"]["Enums"]["video_status"]
           title: string
           updated_at?: string
@@ -1651,6 +1952,8 @@ export type Database = {
           footage_complete_at?: string | null
           format?: Database["public"]["Enums"]["video_format"]
           id?: string
+          post_at?: string | null
+          post_platforms?: string[]
           status?: Database["public"]["Enums"]["video_status"]
           title?: string
           updated_at?: string

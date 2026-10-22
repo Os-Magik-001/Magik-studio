@@ -11,6 +11,7 @@ import { LocalDate } from "@/components/local-date";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { QuestionnaireForm, ResearchForm, StrategistButton } from "@/components/agents/forms";
 import { FindingsView, StrategyView } from "@/components/agents/views";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
   return clientTitle((await params).clientId, "Brand & strategy", " · Brand & strategy");
@@ -49,7 +50,7 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
   const findings = asFindings(latest?.findings);
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={
           <>
@@ -143,6 +144,6 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
           </div>
         </Card>
       </div>
-    </>
+    </WindowPage>
   );
 }

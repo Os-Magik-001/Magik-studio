@@ -36,9 +36,9 @@ type ClientInfos = {
 export function ClientInfosForm({ client }: { client?: ClientInfos }) {
   const [language, setLanguage] = useState(client?.language ?? "fr");
   return (
-    <ActionForm action={client ? saveClientInfos : createOnboardingClient} className="grid gap-4 sm:grid-cols-2">
+    <ActionForm action={client ? saveClientInfos : createOnboardingClient} className="grid gap-4 @min-[40rem]:grid-cols-2">
       {client && <input type="hidden" name="clientId" value={client.id} />}
-      <Field label="Business name" className="sm:col-span-2">
+      <Field label="Business name" className="@min-[40rem]:col-span-2">
         <Input name="name" required defaultValue={client?.name} placeholder="Kapsalon MTL" autoFocus={!client} />
       </Field>
       <Field label="Contact person">
@@ -78,13 +78,13 @@ export function ClientInfosForm({ client }: { client?: ClientInfos }) {
         </div>
         <p className="text-xs text-muted">Their invoice and messages use it.</p>
       </div>
-      <Field label="Billing address" className="sm:col-span-2">
+      <Field label="Billing address" className="@min-[40rem]:col-span-2">
         <Textarea name="address" rows={2} defaultValue={client?.address ?? ""} placeholder={"1234 rue Saint-Denis\nMontréal, QC  H2X 3K8"} />
       </Field>
-      <Field label="Notes for the studio" className="sm:col-span-2">
+      <Field label="Notes for the studio" className="@min-[40rem]:col-span-2">
         <Textarea name="notes" rows={2} defaultValue={client?.notes ?? ""} placeholder="What they want, how they found us, anything to know." />
       </Field>
-      <div className="flex justify-end sm:col-span-2">
+      <div className="flex justify-end @min-[40rem]:col-span-2">
         <SubmitButton pendingText={client ? "Saving…" : "Creating…"}>{client ? "Save details" : "Create client and continue"}</SubmitButton>
       </div>
     </ActionForm>
@@ -107,7 +107,7 @@ type Pack = {
 
 export function PackChooser({ clientId, packs, currentPackId, currency }: { clientId: string; packs: Pack[]; currentPackId: string | null; currency: string }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 @min-[48rem]:grid-cols-2 @min-[80rem]:grid-cols-3">
       {packs.map((p) => {
         const chosen = p.id === currentPackId;
         return (
@@ -161,7 +161,7 @@ export function PackChooser({ clientId, packs, currentPackId, currency }: { clie
 
 export function PackForm({ pack, onDone }: { pack?: Pack; onDone?: () => void }) {
   return (
-    <ActionForm action={savePack} resetOnSuccess={!pack} onSuccess={onDone} className="grid gap-4 sm:grid-cols-2">
+    <ActionForm action={savePack} resetOnSuccess={!pack} onSuccess={onDone} className="grid gap-4 @min-[40rem]:grid-cols-2">
       {pack && <input type="hidden" name="packId" value={pack.id} />}
       <Field label="Name">
         <Input name="name" required defaultValue={pack?.name} placeholder="Growth" />
@@ -184,10 +184,10 @@ export function PackForm({ pack, onDone }: { pack?: Pack; onDone?: () => void })
       <Field label="Short description">
         <Input name="description" defaultValue={pack?.description ?? ""} placeholder="For brands posting every week" />
       </Field>
-      <Field label="What's included" hint="One per line." className="sm:col-span-2">
+      <Field label="What's included" hint="One per line." className="@min-[40rem]:col-span-2">
         <Textarea name="features" rows={4} defaultValue={pack?.features.join("\n") ?? ""} placeholder={"Script writing\nOne shoot a month\nCaptions and motion design"} />
       </Field>
-      <div className="flex justify-end sm:col-span-2">
+      <div className="flex justify-end @min-[40rem]:col-span-2">
         <SubmitButton pendingText="Saving…">{pack ? "Save pack" : "Add pack"}</SubmitButton>
       </div>
     </ActionForm>
@@ -389,7 +389,7 @@ type Settings = {
 export function StudioSettingsForm({ settings }: { settings: Settings }) {
   const taxes = [...settings.taxes, { name: "", rate: 0, number: "" }, { name: "", rate: 0, number: "" }].slice(0, 3);
   return (
-    <ActionForm action={saveStudioSettings} className="grid gap-4 sm:grid-cols-2">
+    <ActionForm action={saveStudioSettings} className="grid gap-4 @min-[40rem]:grid-cols-2">
       <Field label="Business name">
         <Input name="businessName" defaultValue={settings.business_name} />
       </Field>
@@ -402,10 +402,10 @@ export function StudioSettingsForm({ settings }: { settings: Settings }) {
       <Field label="Website">
         <Input name="website" defaultValue={settings.website ?? ""} />
       </Field>
-      <Field label="Address" className="sm:col-span-2">
+      <Field label="Address" className="@min-[40rem]:col-span-2">
         <Textarea name="address" rows={2} defaultValue={settings.address ?? ""} />
       </Field>
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <p className="mb-1.5 text-[13px] font-medium text-ink-2">Taxes</p>
         <div className="flex flex-col gap-2">
           {taxes.map((t, i) => (
@@ -430,10 +430,10 @@ export function StudioSettingsForm({ settings }: { settings: Settings }) {
       <Field label="Invoice number prefix">
         <Input name="invoicePrefix" defaultValue={settings.invoice_prefix} />
       </Field>
-      <Field label="How to pay" hint="Printed on every invoice (Interac e-transfer, bank details…)." className="sm:col-span-2">
+      <Field label="How to pay" hint="Printed on every invoice (Interac e-transfer, bank details…)." className="@min-[40rem]:col-span-2">
         <Textarea name="paymentInstructions" rows={3} defaultValue={settings.payment_instructions ?? ""} />
       </Field>
-      <div className="flex justify-end sm:col-span-2">
+      <div className="flex justify-end @min-[40rem]:col-span-2">
         <SubmitButton pendingText="Saving…">Save invoice details</SubmitButton>
       </div>
     </ActionForm>

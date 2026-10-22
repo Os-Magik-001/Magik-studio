@@ -1,8 +1,8 @@
 import type { Database } from "@/lib/database.types";
 
-// The desktop's apps: every feature of Magik OS is an app in the Dock, and opens as its own
-// screen. Shared by the server (which apps a role gets) and the browser (the Dock, the screen's
-// title, Spotlight).
+// The desktop's apps: every feature of Magik OS is an app in the Dock, and opens in its own
+// window. Shared by the server (which apps a role gets) and the browser (the Dock, the windows'
+// titles, Spotlight).
 
 type Role = Database["public"]["Enums"]["user_role"];
 
@@ -23,22 +23,31 @@ export type AppIconName =
   | "videos"
   | "brand"
   | "documents"
-  | "video";
+  | "video"
+  | "calendar"
+  | "website"
+  | "sales"
+  | "referral"
+  | "help";
 
 export type AppDef = {
   id: string;
   name: string;
   // Where the app opens.
   href: string;
-  // The paths it owns: its screens, and the Dock lights it up there.
+  // The paths it owns: its pages open in its window, and the Dock lights it up there.
   match: string[];
   icon: AppIconName;
-  // The icon's gradient, top to bottom, and the glyph color.
+  // The icon's gradient, top to bottom, and the glyph color (when the 3D render is missing).
   tint: [string, string];
   glyph?: string;
   roles: Role[];
   // One line for Spotlight.
   hint: string;
+  // The window's size when it first opens, in pixels.
+  size: [number, number];
+  // Opened from the menu bar instead of the Dock.
+  dock?: false;
 };
 
 const EVERYONE: Role[] = ["admin", "editor", "videographer", "client", "seller"];
@@ -55,86 +64,19 @@ export const APPS: AppDef[] = [
     glyph: "#1c1400",
     roles: ["admin", "editor"],
     hint: "Every video, by phase, and what's next",
+    size: [1320, 860],
   },
   {
-    id: "clients",
-    name: "Clients",
-    href: "/clients",
-    match: ["/clients"],
-    icon: "clients",
-    tint: ["#5ac8fa", "#0a6fe0"],
-    roles: ["admin", "editor"],
-    hint: "Client folders, brand kits and references",
-  },
-  {
-    id: "onboarding",
-    name: "Onboarding",
-    href: "/onboarding",
-    match: ["/onboarding"],
-    icon: "onboarding",
-    tint: ["#5fe38f", "#17a347"],
-    roles: ["admin", "seller"],
-    hint: "Set up a new client, then send them their link",
-  },
-  {
-    id: "agents",
-    name: "Agents",
-    href: "/agents",
-    match: ["/agents"],
-    icon: "agents",
-    tint: ["#d07bff", "#7a2fd6"],
-    roles: ["admin", "editor"],
-    hint: "Mission control for the studio's agents",
-  },
-  {
-    id: "library",
-    name: "Library",
-    href: "/library",
-    match: ["/library"],
-    icon: "library",
-    tint: ["#6ee7f9", "#0e8fb0"],
-    roles: ["admin", "editor"],
-    hint: "Reference videos clients pick from",
-  },
-  {
-    id: "sounds",
-    name: "Sound",
-    href: "/sounds",
-    match: ["/sounds"],
-    icon: "sound",
-    tint: ["#ff7a93", "#e0244c"],
-    roles: ["admin", "editor"],
-    hint: "Music and sound-effect libraries",
-  },
-  {
-    id: "prompts",
-    name: "Motion",
-    href: "/prompts",
-    match: ["/prompts"],
-    icon: "prompts",
-    tint: ["#ffbf5a", "#f2690c"],
-    roles: ["admin", "editor"],
-    hint: "Motion prompt library",
-  },
-  {
-    id: "shoots",
-    name: "Shoots",
-    href: "/shoots",
-    match: ["/shoots"],
-    icon: "shoots",
-    tint: ["#ff8a7a", "#e3301f"],
-    roles: ["admin", "videographer"],
-    hint: "Shoot calendar, shot lists and footage",
-  },
-  {
-    id: "team",
-    name: "Team",
-    href: "/team",
-    match: ["/team"],
-    icon: "team",
-    tint: ["#a1a1aa", "#52525b"],
-    roles: ["admin"],
-    hint: "People, roles and passwords",
+    id: "client-pipeline",
+    name: "Pipeline",
+    href: "/pipeline",
+    match: ["/pipeline"],
+    icon: "pipeline",
+    tint: ["#ffe36e", "#d9a60c"],
+    glyph: "#1c1400",
+    roles: ["client"],
+    hint: "Where each of your videos is: script, shoot, edit, review",
+    size: [1240, 840],
   },
   {
     id: "videos",
@@ -145,7 +87,107 @@ export const APPS: AppDef[] = [
     tint: ["#ffe36e", "#d9a60c"],
     glyph: "#1c1400",
     roles: ["client"],
-    hint: "Watch, comment and approve your videos",
+    hint: "Watch, download, comment and approve your videos",
+    size: [1240, 840],
+  },
+  {
+    id: "clients",
+    name: "Clients",
+    href: "/clients",
+    match: ["/clients"],
+    icon: "clients",
+    tint: ["#5ac8fa", "#0a6fe0"],
+    roles: ["admin", "editor"],
+    hint: "Client folders, brand kits and references",
+    size: [1180, 820],
+  },
+  {
+    id: "onboarding",
+    name: "Onboarding",
+    href: "/onboarding",
+    match: ["/onboarding"],
+    icon: "onboarding",
+    tint: ["#5fe38f", "#17a347"],
+    roles: ["admin", "seller"],
+    hint: "Set up a new client, then send them their link",
+    size: [1180, 840],
+  },
+  {
+    id: "sales",
+    name: "Sales",
+    href: "/sales",
+    match: ["/sales"],
+    icon: "sales",
+    tint: ["#7ee08a", "#1f8f4a"],
+    roles: ["admin", "seller"],
+    hint: "The sales workspace",
+    size: [1100, 760],
+  },
+  {
+    id: "calendar",
+    name: "Calendar",
+    href: "/calendar",
+    match: ["/calendar"],
+    icon: "calendar",
+    tint: ["#ff6b5e", "#d7261e"],
+    roles: EVERYONE,
+    hint: "Your events, shoots, deadlines and posting dates",
+    size: [1280, 860],
+  },
+  {
+    id: "agents",
+    name: "Agents",
+    href: "/agents",
+    match: ["/agents"],
+    icon: "agents",
+    tint: ["#d07bff", "#7a2fd6"],
+    roles: ["admin", "editor"],
+    hint: "Mission control for the studio's agents",
+    size: [1320, 880],
+  },
+  {
+    id: "library",
+    name: "Library",
+    href: "/library",
+    match: ["/library"],
+    icon: "library",
+    tint: ["#6ee7f9", "#0e8fb0"],
+    roles: ["admin", "editor"],
+    hint: "Reference videos clients pick from",
+    size: [1120, 800],
+  },
+  {
+    id: "sounds",
+    name: "Sound",
+    href: "/sounds",
+    match: ["/sounds"],
+    icon: "sound",
+    tint: ["#ff7a93", "#e0244c"],
+    roles: ["admin", "editor"],
+    hint: "Music and sound-effect libraries",
+    size: [1100, 780],
+  },
+  {
+    id: "prompts",
+    name: "Motion",
+    href: "/prompts",
+    match: ["/prompts"],
+    icon: "prompts",
+    tint: ["#ffbf5a", "#f2690c"],
+    roles: ["admin", "editor"],
+    hint: "Motion prompt library",
+    size: [1120, 800],
+  },
+  {
+    id: "shoots",
+    name: "Shoots",
+    href: "/shoots",
+    match: ["/shoots"],
+    icon: "shoots",
+    tint: ["#ff8a7a", "#e3301f"],
+    roles: ["admin", "videographer"],
+    hint: "Shoot calendar, shot lists and footage",
+    size: [1120, 800],
   },
   {
     id: "brand",
@@ -156,16 +198,52 @@ export const APPS: AppDef[] = [
     tint: ["#ff9ad5", "#a93df0"],
     roles: ["client"],
     hint: "Your logo, colors and brand questions",
+    size: [1040, 800],
   },
   {
-    id: "documents",
-    name: "Documents",
-    href: "/documents",
-    match: ["/documents"],
-    icon: "documents",
+    id: "website",
+    name: "Website",
+    href: "/website",
+    match: ["/website"],
+    icon: "website",
     tint: ["#7cc4ff", "#2f6bf0"],
     roles: ["client"],
-    hint: "Your invoices and contract",
+    hint: "Your website made with Magik",
+    size: [1220, 840],
+  },
+  {
+    id: "team",
+    name: "Team",
+    href: "/team",
+    match: ["/team"],
+    icon: "team",
+    tint: ["#a1a1aa", "#52525b"],
+    roles: ["admin"],
+    hint: "People, roles, passwords, paused and deleted accounts",
+    size: [1080, 760],
+  },
+  {
+    id: "referrals",
+    name: "Referrals",
+    href: "/referrals",
+    match: ["/referrals"],
+    icon: "referral",
+    tint: ["#ffd479", "#e08e0b"],
+    glyph: "#1c1400",
+    roles: EVERYONE,
+    hint: "Your referral link and your credits",
+    size: [1060, 780],
+  },
+  {
+    id: "settings",
+    name: "Settings",
+    href: "/account",
+    match: ["/account"],
+    icon: "settings",
+    tint: ["#9a9aa2", "#46464c"],
+    roles: EVERYONE,
+    hint: "Account, appearance, notifications, calendar, security and documents",
+    size: [1080, 760],
   },
   {
     id: "notifications",
@@ -176,20 +254,24 @@ export const APPS: AppDef[] = [
     tint: ["#ff7066", "#d7261e"],
     roles: EVERYONE,
     hint: "New versions, comments and approvals",
+    size: [760, 720],
+    dock: false,
   },
   {
-    id: "settings",
-    name: "Settings",
-    href: "/account",
-    match: ["/account"],
-    icon: "settings",
-    tint: ["#9a9aa2", "#46464c"],
+    id: "help",
+    name: "Help",
+    href: "/help",
+    match: ["/help"],
+    icon: "help",
+    tint: ["#8fd3ff", "#2f8ff0"],
     roles: EVERYONE,
-    hint: "Your account, password and wallpaper",
+    hint: "How Magik OS works, and a question for the studio",
+    size: [960, 780],
+    dock: false,
   },
 ];
 
-// Home: the command center, first in the Dock.
+// Home: the desktop itself, first in the Dock.
 export const HOME: AppDef = {
   id: "home",
   name: "Home",
@@ -200,11 +282,12 @@ export const HOME: AppDef = {
   glyph: "#f6d43a",
   roles: EVERYONE,
   hint: "Your day, your numbers, and what needs you",
+  size: [0, 0],
 };
 
 export const appsFor = (role: Role) => APPS.filter((a) => a.roles.includes(role));
 
-export const appById = (id: string) => APPS.find((a) => a.id === id) ?? null;
+export const appById = (id: string) => (id === "home" ? HOME : (APPS.find((a) => a.id === id) ?? null));
 
 const owns = (prefix: string, path: string) => path === prefix || path.startsWith(prefix + "/");
 
@@ -223,4 +306,45 @@ export function appForPath(path: string, role: Role): AppDef | null {
     }
   }
   return best;
+}
+
+// ---------------------------------------------------------------- windows
+
+// The window a page opens in. Each app has one main window for its lists; a video, a client
+// folder or a client's onboarding opens in a window of its own, whichever page of it is shown
+// (a video's page, its review room and its shoot page share one window).
+export type WindowTarget = { key: string; appId: string | null; doc: boolean; size: [number, number] };
+
+const UUID = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})";
+const DOCS: { re: RegExp; kind: string; app: (role: Role) => string; size: [number, number] }[] = [
+  { re: new RegExp(`^/(?:videos|review)/${UUID}(?:/|$)`, "i"), kind: "video", app: (role) => (role === "client" ? "videos" : "pipeline"), size: [1220, 900] },
+  { re: new RegExp(`^/shoots/${UUID}(?:/|$)`, "i"), kind: "video", app: () => "shoots", size: [1120, 860] },
+  { re: new RegExp(`^/clients/${UUID}(?:/|$)`, "i"), kind: "client", app: () => "clients", size: [1200, 880] },
+  { re: new RegExp(`^/onboarding/${UUID}(?:/|$)`, "i"), kind: "onboarding", app: () => "onboarding", size: [1140, 880] },
+];
+
+// Pages that aren't apps: they open in a browser tab of their own, or are reached before the
+// desktop (sign-in, the client's setup, a paused account).
+const OUTSIDE = ["/invoices", "/scripts", "/setup", "/login", "/join", "/auth", "/api", "/r", "/paused"];
+
+export const isDesktopPath = (pathname: string) => !OUTSIDE.some((p) => owns(p, pathname));
+
+export function windowFor(path: string, role: Role): WindowTarget | null {
+  const pathname = path.split(/[?#]/)[0] || "/";
+  if (pathname === "/" || !isDesktopPath(pathname)) return null;
+  for (const d of DOCS) {
+    const m = pathname.match(d.re);
+    if (!m) continue;
+    const app = appById(d.app(role));
+    if (app && app.roles.includes(role)) return { key: `${d.kind}:${m[1].toLowerCase()}`, appId: app.id, doc: true, size: d.size };
+  }
+  const app = appForPath(pathname, role);
+  if (app && app.id !== "home") return { key: `app:${app.id}`, appId: app.id, doc: false, size: app.size };
+  return { key: `page:${pathname}`, appId: null, doc: false, size: [1000, 760] };
+}
+
+// A page's address as the windows know it: path and query, no hash.
+export function pathKey(pathname: string, search: string) {
+  const q = search.startsWith("?") ? search.slice(1) : search;
+  return q ? `${pathname}?${q}` : pathname;
 }

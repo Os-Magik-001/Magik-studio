@@ -5,16 +5,22 @@ import type { ActivityRow, InvoiceRow, OnboardingRow, Overview, TodayItem, Video
 import { cx } from "@/components/ui";
 import { formatCalendarDate } from "@/lib/dates";
 import { Ago, TodayTime } from "@/components/home/time";
+import { PanelLights } from "@/components/home/widget";
 
 // Home's panels: glass windows like the apps', each a summary that opens its app.
 
 export function Panel({
+  id,
+  href,
   title,
   icon,
   action,
   children,
   className,
 }: {
+  // The widget's name for hiding and folding it, and the app its green light opens.
+  id: string;
+  href?: string;
   title: string;
   icon?: ReactNode;
   action?: ReactNode;
@@ -24,11 +30,7 @@ export function Panel({
   return (
     <section className={cx("home-panel material-window flex min-h-0 flex-col overflow-hidden rounded-[24px]", className)}>
       <header className="flex h-[48px] shrink-0 items-center gap-3 border-b border-white/[0.06] px-4">
-        <span aria-hidden className="flex gap-1.5">
-          <span className="h-[10px] w-[10px] rounded-full bg-[#ff5f57]/85" />
-          <span className="h-[10px] w-[10px] rounded-full bg-[#febc2e]/85" />
-          <span className="h-[10px] w-[10px] rounded-full bg-[#28c840]/85" />
-        </span>
+        <PanelLights id={id} href={href} title={title} />
         <h2 className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold text-ink">
           {icon}
           <span className="truncate">{title}</span>
@@ -52,7 +54,7 @@ function SeeAll({ href, label = "See all" }: { href: string; label?: string }) {
 
 export function TodayPanel({ items, href }: { items: TodayItem[]; href: string }) {
   return (
-    <Panel title="Today" action={<SeeAll href={href} />} className="h-full">
+    <Panel id="today" href={href} title="Today" action={<SeeAll href={href} />} className="h-full">
       {items.length === 0 ? (
         <p className="px-5 py-6 text-[13.5px] text-muted">Nothing scheduled this week. Enjoy the calm.</p>
       ) : (
@@ -87,9 +89,9 @@ export function TodayPanel({ items, href }: { items: TodayItem[]; href: string }
 
 // ------------------------------------------------------------------ Overview
 
-export function OverviewPanel({ data }: { data: Overview }) {
+export function OverviewPanel({ data, href }: { data: Overview; href?: string }) {
   return (
-    <Panel title={data.title}>
+    <Panel id="overview" href={href} title={data.title}>
       <div className="px-5 pt-4">
         <p className="text-[12.5px] text-muted">{data.label}</p>
         <div className="mt-1 flex items-baseline gap-2.5">
@@ -230,7 +232,7 @@ export function VideoList({ rows, empty }: { rows: VideoRow[]; empty: string }) 
 
 export function ProductionPanel({ rows, deadlines, href }: { rows: VideoRow[]; deadlines: VideoRow[]; href: string }) {
   return (
-    <Panel title="Production" action={<SeeAll href={href} />}>
+    <Panel id="production" href={href} title="Production" action={<SeeAll href={href} />}>
       <VideoList rows={rows} empty="No video in production right now." />
       {deadlines.length > 0 && (
         <div className="border-t border-white/[0.06] px-4 pt-3 pb-3">
@@ -259,6 +261,8 @@ export function ProductionPanel({ rows, deadlines, href }: { rows: VideoRow[]; d
 export function OnboardingPanel({ rows, open, waiting }: { rows: OnboardingRow[]; open: number; waiting: number }) {
   return (
     <Panel
+      id="onboarding"
+      href="/onboarding"
       title="Onboarding"
       action={
         <Link href="/onboarding/new" className="flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-[12.5px] font-semibold text-black hover:brightness-105">
@@ -311,7 +315,7 @@ const money = (cents: number, currency: string) => new Intl.NumberFormat("en-CA"
 
 export function InvoicesPanel({ rows, outstanding, currency }: { rows: InvoiceRow[]; outstanding: number; currency: string }) {
   return (
-    <Panel title="Invoices" action={<SeeAll href="/onboarding/invoices" />}>
+    <Panel id="invoices" href="/onboarding/invoices" title="Invoices" action={<SeeAll href="/onboarding/invoices" />}>
       <div className="px-5 pt-4">
         <p className="text-[12.5px] text-muted">Outstanding</p>
         <p className="mt-1 font-display text-[30px] leading-none font-bold text-ink tabular-nums">{money(outstanding, currency)}</p>
@@ -345,7 +349,7 @@ export function InvoicesPanel({ rows, outstanding, currency }: { rows: InvoiceRo
 
 export function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
   return (
-    <Panel title="Recent activity" action={<SeeAll href="/notifications" />}>
+    <Panel id="activity" href="/notifications" title="Recent activity" action={<SeeAll href="/notifications" />}>
       {rows.length === 0 ? (
         <p className="px-5 py-6 text-[13.5px] text-muted">You&apos;re all caught up.</p>
       ) : (
@@ -385,7 +389,7 @@ export function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
 
 export function ClientBrandPanel({ logo, colors, fonts }: { logo: string | null; colors: string[]; fonts: string[] }) {
   return (
-    <Panel title="Your brand" action={<SeeAll href="/brand" label="Open" />}>
+    <Panel id="brand" href="/brand" title="Your brand" action={<SeeAll href="/brand" label="Open" />}>
       <div className="flex flex-col gap-4 p-5">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -408,7 +412,7 @@ export function ClientBrandPanel({ logo, colors, fonts }: { logo: string | null;
 
 export function ClientDocumentsPanel({ invoice, contract }: { invoice: InvoiceRow | null; contract: { name: string; signed: boolean } | null }) {
   return (
-    <Panel title="Documents" action={<SeeAll href="/documents" label="Open" />}>
+    <Panel id="documents" href="/account/documents" title="Documents" action={<SeeAll href="/account/documents" label="Open" />}>
       <ul className="flex flex-col gap-1 p-2.5">
         <li>
           {invoice ? (

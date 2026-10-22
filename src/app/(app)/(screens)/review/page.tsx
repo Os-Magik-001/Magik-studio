@@ -1,83 +1,69 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { getViewer } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { Badge, EmptyState, PageHeader } from "@/components/ui";
-import { VideoStatusBadge } from "@/components/status";
-import { FORMAT_LABEL } from "@/lib/workflow";
+import { clientVideos } from "@/lib/client-videos";
+import { EmptyState, PageHeader } from "@/components/ui";
+import { SegmentedNav } from "@/components/segmented";
+import { WindowPage } from "@/components/desktop/window-page";
+import { VideoGallery } from "@/components/videos/gallery";
 
 export const metadata: Metadata = { title: "Your videos" };
 
-export default async function ClientHome() {
-  const viewer = await getViewer();
-  const supabase = await createClient();
-  const [{ data: videos }, { data: client }] = await Promise.all([
-    supabase
-      .from("videos")
-      .select("id, title, status, format, updated_at, scripts(status), versions(id, status, number)")
-      .order("updated_at", { ascending: false }),
-    viewer.clientId
-      ? supabase.from("clients").select("name").eq("id", viewer.clientId).maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+type Show = "all" | "you" | "production" | "done";
 
-  const rows = (videos ?? []).map((v) => {
-    const scriptWaiting = v.scripts?.status === "client_review";
-    const versionWaiting = v.versions.find((x) => x.status === "client_review");
-    return { ...v, needsYou: scriptWaiting || !!versionWaiting, scriptWaiting, versionWaiting };
-  });
-  const needsYou = rows.filter((r) => r.needsYou);
+// The client's videos, as a gallery of frames.
+export default async function YourVideos({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
+  const viewer = await getViewer();
+  if (viewer.role !== "client") redirect("/pipeline");
+  const { show: asked } = await searchParams;
+  const show: Show = asked === "you" || asked === "production" || asked === "done" ? asked : "all";
+  const { client, videos } = await clientVideos(viewer, true);
+  const forYou = videos.filter((v) => v.needsYou);
+  const list = videos.filter((v) =>
+    show === "you" ? v.needsYou : show === "production" ? ["script", "shoot", "edit"].includes(v.stage) && !v.needsYou : show === "done" ? v.stage === "approved" || v.stage === "posted" : true,
+  );
 
   return (
-    <>
-      <PageHeader
-        eyebrow={client?.name}
-        title="Your videos"
-        description="Watch each cut, comment right on the moment you want changed, and approve when it's right."
-      />
-      {rows.length === 0 ? (
+    <WindowPage>
+      <PageHeader eyebrow={client} title="Your videos" description="Watch each cut, comment right on the moment you want changed, approve it, and download it." />
+      {videos.length === 0 ? (
         <EmptyState title="No videos yet">Your projects will show up here as soon as they start.</EmptyState>
       ) : (
-        <div className="flex flex-col gap-8">
-          {needsYou.length > 0 && (
-            <section>
-              <h2 className="kicker mb-3">Waiting for you</h2>
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {needsYou.map((v) => (
-                  <li key={v.id}>
-                    <Link
-                      href={`/review/${v.id}${v.versionWaiting ? `?v=${v.versionWaiting.id}` : ""}`}
-                      className="block rounded-xl border border-accent/40 bg-accent-soft p-4 transition-colors hover:border-accent"
-                    >
-                      <div className="font-medium text-ink">{v.title}</div>
-                      <div className="mt-1 text-[13px] text-ink-2">
-                        {v.versionWaiting
-                          ? `Version ${v.versionWaiting.number} is ready to review`
-                          : "The script is ready for your approval"}
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          <section>
-            <h2 className="kicker mb-3">All videos</h2>
-            <ul className="divide-y divide-line overflow-hidden rounded-xl frost">
-              {rows.map((v) => (
+        <>
+          {forYou.length > 0 && (
+            <ul className="mb-5 grid gap-2 @min-[40rem]:grid-cols-2">
+              {forYou.slice(0, 4).map((v) => (
                 <li key={v.id}>
-                  <Link href={`/review/${v.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5 hover:bg-surface-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{v.title}</span>
-                    <span className="text-[13px] text-muted">{FORMAT_LABEL[v.format]}</span>
-                    {v.needsYou && <Badge tone="accent">Needs you</Badge>}
-                    <VideoStatusBadge status={v.status} />
+                  <Link
+                    href={`/review/${v.id}${v.needsYou === "cut" && v.version ? `?v=${v.version.id}` : ""}`}
+                    className="flex items-center gap-3 rounded-[14px] border border-accent/40 bg-accent-soft px-4 py-3 transition-colors hover:border-accent"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-medium text-ink">{v.title}</span>
+                      <span className="block truncate text-[12.5px] text-ink-2">{v.line}</span>
+                    </span>
+                    <ArrowRight size={16} className="shrink-0 text-accent" aria-hidden />
                   </Link>
                 </li>
               ))}
             </ul>
-          </section>
-        </div>
+          )}
+          <div className="mb-4">
+            <SegmentedNav
+              active={show}
+              items={[
+                { key: "all", label: "All", href: "/review", count: videos.length },
+                { key: "you", label: "For you", href: "/review?show=you", count: forYou.length },
+                { key: "production", label: "In production", href: "/review?show=production" },
+                { key: "done", label: "Approved", href: "/review?show=done" },
+              ]}
+            />
+          </div>
+          {list.length ? <VideoGallery videos={list} client={client} /> : <EmptyState title="Nothing here right now." />}
+        </>
       )}
-    </>
+    </WindowPage>
   );
 }

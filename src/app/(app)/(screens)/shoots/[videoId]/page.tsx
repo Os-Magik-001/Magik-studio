@@ -18,6 +18,7 @@ import { readBeats } from "@/lib/script-view";
 import { ScriptDocument } from "@/components/scripts/script-document";
 import { ScriptPdfLink } from "@/components/scripts/pdf-link";
 import { ScriptStatusBadge } from "@/components/status";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Shoot", "Shoot · ");
@@ -42,7 +43,7 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
   const { data: complete } = await supabase.from("videos").select("footage_complete_at").eq("id", videoId).single();
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={
           <Link href="/shoots" className="hover:text-ink">
@@ -52,7 +53,7 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
         title={video.title}
         description={`${client?.name} · ${FORMAT_LABEL[video.format]} · ${video.aspect}`}
       />
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-6">
           <Card>
             <CardHeader title="Shot list" description={shots.length ? `${doneCount} of ${shots.length} captured` : undefined} />
@@ -152,6 +153,6 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
           </Card>
         </div>
       </div>
-    </>
+    </WindowPage>
   );
 }

@@ -31,7 +31,7 @@ export function NextStepBanner({ next, href, extra }: { next: NextStep; href: st
         </div>
       </div>
       {!done && (
-        <div className="flex items-center gap-4 pl-5.5 sm:pl-0">
+        <div className="flex items-center gap-4 pl-5.5 @min-[40rem]:pl-0">
           <span className="text-xs text-muted">Waiting on {WHO[next.who].label.toLowerCase()}</span>
           {extra}
           <a href={href} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">
@@ -65,7 +65,7 @@ const STATE_LABEL: Record<StepState, string> = { done: "done", current: "current
 // The bar under the header: every step, its state, a jump link.
 export function StepNav({ states }: { states: Record<StepKey, StepState> }) {
   return (
-    <nav aria-label="Steps" className="glass z-20 -mx-1 mb-6 overflow-x-auto rounded-full p-1 md:sticky md:top-3">
+    <nav aria-label="Steps" className="glass z-20 -mx-1 mb-6 overflow-x-auto rounded-full p-1 @min-[48rem]:sticky @min-[48rem]:top-3">
       <ol className="flex min-w-max items-center gap-0.5">
         {STEPS.map((s, i) => (
           <li key={s.key}>

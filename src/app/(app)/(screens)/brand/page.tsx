@@ -8,6 +8,7 @@ import { readAnswers } from "@/lib/questionnaire";
 import { PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { QuestionnaireForm } from "@/components/agents/forms";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Your brand" };
 
@@ -16,10 +17,10 @@ export default async function YourBrand() {
   const viewer = await requireRole("client");
   if (!viewer.clientId) {
     return (
-      <>
+      <WindowPage>
         <PageHeader title="Your brand" />
         <EmptyState title="Your account isn't linked to a brand yet">Ask the studio to link it.</EmptyState>
-      </>
+      </WindowPage>
     );
   }
   const supabase = await createClient();
@@ -32,12 +33,12 @@ export default async function YourBrand() {
   const logo = kit?.logo_path ? (await signedUrls("brand", [kit.logo_path])).get(kit.logo_path) : null;
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         title="Your brand"
         description="Your logo and colors, the videos you love, and what we know about your business. We use it all on every video we make for you."
       />
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 @min-[64rem]:grid-cols-2">
         <Card>
           <CardHeader title="Logo and colors" />
           <div className="flex flex-wrap items-center gap-6 p-5">
@@ -83,6 +84,6 @@ export default async function YourBrand() {
           <QuestionnaireForm answers={readAnswers(form?.answers)} submitLabel={form ? "Update my answers" : "Send my answers"} />
         </div>
       </Card>
-    </>
+    </WindowPage>
   );
 }

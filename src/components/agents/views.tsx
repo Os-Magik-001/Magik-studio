@@ -58,7 +58,7 @@ export function StrategyView({
           ))}
         </div>
       </Section>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 @min-[48rem]:grid-cols-2">
         <Section title="The business">
           <p className="text-sm leading-relaxed text-ink-2">{business}</p>
         </Section>
@@ -84,7 +84,7 @@ export function StrategyView({
               </div>
             ))}
           </div>
-          <dl className="mt-2 grid gap-x-6 gap-y-3 text-sm md:grid-cols-2">
+          <dl className="mt-2 grid gap-x-6 gap-y-3 text-sm @min-[48rem]:grid-cols-2">
             {[
               ["Fonts", `${charte.fonts.headline} / ${charte.fonts.body}${charte.fonts.notes ? ` · ${charte.fonts.notes}` : ""}`],
               ["Captions", `${charte.captions.preset} · highlight ${charte.captions.highlight}${charte.captions.notes ? ` · ${charte.captions.notes}` : ""}`],
@@ -99,7 +99,7 @@ export function StrategyView({
               </div>
             ))}
           </dl>
-          <div className="mt-2 grid gap-4 md:grid-cols-3">
+          <div className="mt-2 grid gap-4 @min-[48rem]:grid-cols-3">
             <div>
               <div className="mb-1 text-xs text-muted">Typography</div>
               <Bullets items={charte.typography} />
@@ -117,7 +117,7 @@ export function StrategyView({
       )}
       {pillars.length > 0 && (
         <Section title="Content pillars">
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 @min-[48rem]:grid-cols-2">
             {pillars.map((p) => (
               <div key={p.name} className="rounded-xl bg-white/[0.04] p-3">
                 <div className="text-sm font-medium text-ink">{p.name}</div>
@@ -150,7 +150,7 @@ export function FindingsView({ findings, reels, audio = [] }: { findings: TrendF
         </ul>
       </Section>
       <Section title="Structures">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 @min-[48rem]:grid-cols-2">
           {findings.structures.map((s, i) => (
             <div key={i} className="rounded-xl bg-white/[0.04] p-3 text-sm">
               <div className="font-medium text-ink">
@@ -165,7 +165,7 @@ export function FindingsView({ findings, reels, audio = [] }: { findings: TrendF
           ))}
         </div>
       </Section>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 @min-[48rem]:grid-cols-2">
         <Section title="Editing">
           <Bullets items={findings.editing} />
         </Section>
@@ -201,7 +201,7 @@ export function FindingsView({ findings, reels, audio = [] }: { findings: TrendF
         </Section>
       )}
       <Section title="Video ideas for this client">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 @min-[48rem]:grid-cols-2">
           {findings.ideas.map((x, i) => (
             <div key={i} className="rounded-xl bg-white/[0.04] p-3 text-sm">
               <div className="font-medium text-ink">{x.title}</div>
@@ -370,7 +370,7 @@ export function ShootPlanView({ plan }: { plan: ShootPlan }) {
                 {s.location} · {Math.round(s.seconds)}s
               </span>
             </div>
-            <dl className="mt-2 grid gap-x-4 gap-y-1.5 text-[13px] sm:grid-cols-[110px_1fr]">
+            <dl className="mt-2 grid gap-x-4 gap-y-1.5 text-[13px] @min-[40rem]:grid-cols-[110px_1fr]">
               <dt className="text-muted">Camera</dt>
               <dd className="text-ink-2">{s.setup}</dd>
               <dt className="text-muted">Action</dt>
@@ -397,7 +397,7 @@ export function ShootPlanView({ plan }: { plan: ShootPlan }) {
           </li>
         ))}
       </ol>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 @min-[40rem]:grid-cols-2">
         <Section title="B-roll">
           <Bullets items={plan.broll} />
         </Section>

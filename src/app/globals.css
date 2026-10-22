@@ -317,36 +317,66 @@ input::-webkit-calendar-picker-indicator {
   filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
 }
 
-/* The desktop picture (src/components/shell/wallpaper.tsx). The gradient underneath shows
-   while the image loads, and is the whole picture for the live Matrix wallpaper. */
+/* The desktop picture (src/components/shell/wallpaper.tsx). The look's variables (set before
+   the first paint) pick the picture, the colour under it while it loads, and a soft light;
+   ::after darkens it as much as the person chose. Before any choice: Magik Gold. */
 .wallpaper {
-  background-color: #050403;
+  background-color: var(--wall-base, #050403);
   background-image:
-    url("/wallpapers/magik.webp"),
-    radial-gradient(120% 90% at 18% 8%, rgba(246, 212, 58, 0.28), transparent 55%),
-    radial-gradient(90% 80% at 85% 90%, rgba(196, 112, 22, 0.32), transparent 60%),
-    radial-gradient(70% 60% at 70% 20%, rgba(40, 70, 90, 0.35), transparent 65%);
+    var(--wall-url, url("/wallpapers/magik.webp")),
+    radial-gradient(120% 90% at 18% 8%, var(--wall-glow, rgba(246, 212, 58, 0.28)), transparent 55%),
+    radial-gradient(90% 80% at 85% 90%, rgba(196, 112, 22, 0.22), transparent 60%);
   background-size: cover;
   background-position: center;
 }
-html[data-wallpaper="midnight"] .wallpaper {
+.wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--wall-dim, 0));
+}
+/* Pictures picked before Appearance kept its variables. */
+html[data-wallpaper="midnight"]:not([style*="--wall-url"]) .wallpaper {
   background-color: #04040c;
   background-image:
     url("/wallpapers/midnight.webp"),
-    radial-gradient(110% 90% at 20% 10%, rgba(94, 92, 230, 0.4), transparent 58%),
-    radial-gradient(90% 80% at 85% 85%, rgba(140, 50, 200, 0.35), transparent 60%);
+    radial-gradient(110% 90% at 20% 10%, rgba(94, 92, 230, 0.4), transparent 58%);
 }
-html[data-wallpaper="ember"] .wallpaper {
+html[data-wallpaper="ember"]:not([style*="--wall-url"]) .wallpaper {
   background-color: #0a0303;
   background-image:
     url("/wallpapers/ember.webp"),
-    radial-gradient(110% 90% at 15% 20%, rgba(255, 69, 58, 0.45), transparent 58%),
-    radial-gradient(90% 80% at 85% 85%, rgba(255, 159, 10, 0.4), transparent 60%);
+    radial-gradient(110% 90% at 15% 20%, rgba(255, 69, 58, 0.45), transparent 58%);
 }
 html[data-wallpaper="matrix"] .wallpaper {
   background-image:
     radial-gradient(80% 70% at 30% 20%, rgba(246, 212, 58, 0.14), transparent 60%),
     radial-gradient(70% 60% at 80% 90%, rgba(200, 140, 30, 0.14), transparent 60%);
+}
+
+/* The Dock's size and labels, and solid windows (Settings > Appearance). */
+html[data-dock="medium"] .dock-icon {
+  width: 52px;
+  height: 52px;
+}
+html[data-dock="medium"] .dock-item {
+  width: 70px;
+}
+html[data-dock="small"] .dock-icon {
+  width: 42px;
+  height: 42px;
+}
+html[data-dock="small"] .dock-item {
+  width: 58px;
+}
+html[data-labels="off"] .dock-label {
+  display: none;
+}
+html[data-solid="1"] .win-inner,
+html[data-solid="1"] .material-window {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgb(28, 28, 31);
 }
 
 /* Text set straight on the wallpaper (menu bar, widgets, icon labels). */
@@ -369,6 +399,14 @@ html[data-wallpaper="matrix"] .wallpaper {
 }
 .traffic-group:hover .traffic > svg {
   opacity: 1;
+}
+.traffic-close { background: #ff5f57; }
+.traffic-min { background: #febc2e; }
+.traffic-zoom { background: #28c840; }
+.traffic-sm { width: 10px; height: 10px; }
+.traffic:disabled { opacity: 0.35; }
+.win:not([data-focused]) .traffic-group:not(:hover) .traffic {
+  background: rgba(255, 255, 255, 0.16);
 }
 
 /* ------------------------------------------------------------------ Shell */
@@ -431,92 +469,250 @@ html[data-wallpaper="matrix"] .wallpaper {
     0 30px 80px -30px rgba(0, 0, 0, 0.85);
 }
 
-/* ------------------------------------------------------------------ Screens
-   Opening an app zooms its screen up out of the Dock; closing it sinks it back down while
-   Home rises; switching apps crossfades the content. The menu bar and the Dock hold still.
-   (src/components/shell/screen.tsx, src/app/(app)/page.tsx) */
-.topbar {
-  view-transition-name: topbar;
+/* ------------------------------------------------------------------ Windows
+   (src/components/desktop): app windows float over Home; they're moved by their title bar,
+   resized from their edges, snapped to a half or the whole screen, and spread out side by
+   side in Mission Control. */
+.desktop {
+  position: relative;
+  min-height: 100dvh;
 }
-.dock-wrap {
-  view-transition-name: dock;
+.home-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-::view-transition {
+
+.win {
+  position: fixed;
+  top: 0;
+  left: 0;
+  contain: layout style;
+}
+.win-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  -webkit-backdrop-filter: blur(36px) saturate(160%);
+  backdrop-filter: blur(36px) saturate(160%);
+  background-color: rgba(27, 27, 30, 0.88);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 22px 60px -18px rgba(0, 0, 0, 0.7);
+  transition: box-shadow 0.2s ease;
+}
+.win[data-focused] .win-inner {
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.26),
+    0 0 0 1px rgba(0, 0, 0, 0.65),
+    0 40px 100px -20px rgba(0, 0, 0, 0.85);
+}
+.win[data-zoomed="max"] .win-inner {
+  border-radius: 14px;
+}
+.win-phone .win-inner {
+  border-radius: 0;
+}
+
+.win-bar {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  height: 46px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  background: rgba(255, 255, 255, 0.035);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.win:not([data-focused]) .win-bar {
+  background: transparent;
+}
+.win:not([data-focused]) .win-bar .text-ink\/90 {
+  color: rgba(235, 235, 245, 0.55);
+}
+.win-tool {
+  display: flex;
+  height: 30px;
+  width: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--muted);
+  transition: background-color 0.15s, color 0.15s;
+}
+.win-tool:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+.win-tool:disabled {
+  opacity: 0.3;
+}
+.win-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent) no-repeat;
+  background-size: 40% 100%;
+  animation: win-progress 1.1s ease-in-out infinite;
+}
+@keyframes win-progress {
+  from { background-position: -50% 0; }
+  to { background-position: 150% 0; }
+}
+.win-body {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+.win-body > .win-page,
+.win-body > * > .win-page {
+  flex: 1;
+}
+.win-page {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1440px;
+  padding: 24px 32px 40px;
+  /* Pages lay out for the width of their window, not of the screen (container queries). */
+  container-type: inline-size;
+}
+@media (max-width: 639px) {
+  .win-page {
+    padding: 18px 16px 120px;
+  }
+}
+/* A page that fills its window edge to edge (Settings, Calendar): no page margins. */
+.win-page:has(> .win-bleed) {
+  max-width: none;
+  padding: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.win-bleed {
+  flex: 1;
+}
+.settings-side {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* Resize handles: a strip along each edge, a square at each corner. */
+.win-edge {
+  position: absolute;
+  z-index: 2;
+}
+.win-edge-n { top: -4px; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+.win-edge-s { bottom: -4px; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+.win-edge-e { right: -4px; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+.win-edge-w { left: -4px; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+.win-edge-ne { right: -5px; top: -5px; width: 18px; height: 18px; cursor: nesw-resize; }
+.win-edge-nw { left: -5px; top: -5px; width: 18px; height: 18px; cursor: nwse-resize; }
+.win-edge-se { right: -5px; bottom: -5px; width: 18px; height: 18px; cursor: nwse-resize; }
+.win-edge-sw { left: -5px; bottom: -5px; width: 18px; height: 18px; cursor: nesw-resize; }
+
+/* Where a window will land when it's let go at an edge. */
+.win-snap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 18px;
+  background: rgba(246, 212, 58, 0.1);
+  box-shadow: inset 0 0 0 1.5px rgba(246, 212, 58, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  animation: fade-in 0.15s ease both;
+}
+
+/* While a window moves, the glass rests: no blur to recompute, nothing to select. */
+html[data-wm-busy] .win-inner {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgba(27, 27, 30, 0.97);
+}
+html[data-wm-busy] .win-body {
   pointer-events: none;
 }
-::view-transition-group(root) {
-  animation: none;
-}
-::view-transition-old(root) {
-  display: none;
-}
-::view-transition-new(root) {
-  animation: none;
-}
-::view-transition-group(topbar),
-::view-transition-group(dock) {
-  animation: none;
-  z-index: 100;
-}
-::view-transition-old(topbar),
-::view-transition-old(dock) {
-  display: none;
-}
-::view-transition-new(topbar),
-::view-transition-new(dock) {
-  animation: none;
+html[data-wm-busy],
+html[data-wm-busy] * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
-::view-transition-new(.screen-open) {
-  transform-origin: 50% 100%;
-  animation: screen-open 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+/* Mission Control: the windows glide into a grid over a dimmed desktop. */
+.desktop[data-mission] .win {
+  transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
 }
-::view-transition-old(.screen-close) {
-  transform-origin: 50% 100%;
-  animation: screen-close 300ms cubic-bezier(0.55, 0, 0.75, 0.3) both;
+.win[data-mission] .win-inner {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgba(27, 27, 30, 0.97);
 }
-::view-transition-old(.home-out) {
-  animation: home-out 260ms ease-in both;
+.win[data-mission] .win-bar,
+.win[data-mission] .win-body {
+  pointer-events: none;
 }
-::view-transition-new(.home-in) {
-  animation: home-in 420ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+.win[data-mission]:hover .win-inner {
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 40px 100px -20px rgba(0, 0, 0, 0.85);
 }
-::view-transition-old(.app-out) {
-  animation: app-out 160ms ease-in both;
+/* App Expose: the windows of the other apps step aside. */
+.win[data-aside] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
 }
-::view-transition-new(.app-in) {
-  animation: app-in 300ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+.win-mission-label {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 0.6em);
+  white-space: nowrap;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+.mission-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.38);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: fade-in 0.3s ease both;
 }
 
-@keyframes screen-open {
-  from { opacity: 0; transform: translateY(70px) scale(0.86); filter: blur(8px); }
-  60% { opacity: 1; filter: blur(0); }
-  to { opacity: 1; transform: none; filter: none; }
+/* Home's widgets: a folded one is only its title bar. */
+.widget[data-folded] {
+  height: auto !important;
 }
-@keyframes screen-close {
-  to { opacity: 0; transform: translateY(80px) scale(0.84); filter: blur(6px); }
-}
-@keyframes home-out {
-  to { opacity: 0; transform: scale(0.97); filter: blur(4px); }
-}
-@keyframes home-in {
-  from { opacity: 0; transform: scale(0.97); filter: blur(4px); }
-  to { opacity: 1; transform: none; filter: none; }
-}
-@keyframes app-out {
-  to { opacity: 0; transform: translateY(-6px); }
-}
-@keyframes app-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
+.widget[data-folded] .home-panel > :not(header) {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(*),
-  ::view-transition-new(*),
-  ::view-transition-group(*) {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
+  .desktop[data-mission] .win {
+    transition: none;
   }
 }
 @keyframes pop-in {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LayoutGrid, List } from "lucide-react";
-import { requireRole, displayName } from "@/lib/auth";
+import { getViewer, requireRole, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { videoStatusLabel, type VersionStatus } from "@/lib/workflow";
 import { PHASES, nextStep, type PipelineFacts } from "@/lib/pipeline";
@@ -9,6 +9,8 @@ import { Avatar, EmptyState, LinkButton, PageHeader, cx } from "@/components/ui"
 import { WhoDot } from "@/components/pipeline";
 import { BoardCard, Chip, Due, Stat, type BoardCardData } from "@/components/pipeline-board";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { WindowPage } from "@/components/desktop/window-page";
+import { ClientPipeline } from "./client-pipeline";
 
 export const metadata: Metadata = { title: "Pipeline" };
 
@@ -20,7 +22,14 @@ const daysFrom = (iso: string, days: number) => new Date(Date.parse(iso) + days 
 
 type Card = BoardCardData;
 
+// Clients see their own videos' journey; the studio sees the board.
 export default async function PipelinePage({ searchParams }: { searchParams: Promise<Filters> }) {
+  const viewer = await getViewer();
+  if (viewer.role === "client") return <ClientPipeline viewer={viewer} />;
+  return <StudioPipeline searchParams={searchParams} />;
+}
+
+async function StudioPipeline({ searchParams }: { searchParams: Promise<Filters> }) {
   const viewer = await requireRole("admin", "editor");
   const filters = await searchParams;
   const supabase = await createClient();
@@ -112,7 +121,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
   const working = open.some((c) => c.next.who === "engine");
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow={viewer.role === "admin" ? "Every client" : "Your clients"}
         title="Pipeline"
@@ -133,7 +142,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       ) : (
         <>
           {/* Who is it waiting on: each count filters the board. */}
-          <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mb-4 grid grid-cols-2 gap-2 @min-[40rem]:grid-cols-3 @min-[64rem]:grid-cols-6">
             <Stat href={href({ who: undefined })} active={!filters.who} label="In progress" value={open.length} />
             <Stat href={href({ who: "studio" })} active={filters.who === "studio"} label="Needs the studio" value={counts.studio} who="studio" />
             <Stat href={href({ who: "client" })} active={filters.who === "client"} label="With the client" value={counts.client} who="client" />
@@ -180,7 +189,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
                     <ul className="divide-y divide-line">
                       {items.map((c) => (
                         <li key={c.id}>
-                          <Link href={`/videos/${c.id}`} className="grid grid-cols-1 gap-x-4 gap-y-1 px-5 py-3 hover:bg-white/[0.03] md:grid-cols-[minmax(0,1.4fr)_120px_minmax(0,1.6fr)_90px_28px] md:items-center">
+                          <Link href={`/videos/${c.id}`} className="grid grid-cols-1 gap-x-4 gap-y-1 px-5 py-3 hover:bg-white/[0.03] @min-[48rem]:grid-cols-[minmax(0,1.4fr)_120px_minmax(0,1.6fr)_90px_28px] @min-[48rem]:items-center">
                             <span className="min-w-0">
                               <span className="block truncate text-xs text-muted">{c.client?.name}</span>
                               <span className="block truncate text-sm font-medium text-ink">{c.title}</span>
@@ -203,7 +212,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
             </div>
           ) : (
             <div className="pb-4">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 @min-[40rem]:grid-cols-2 @min-[80rem]:grid-cols-4">
                 {PHASES.filter((p) => p.key !== "done").map((phase) => {
                   const items = sorted(shown.filter((c) => phase.statuses.includes(c.status)));
                   return (
@@ -255,6 +264,6 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
           </section>
         </>
       )}
-    </>
+    </WindowPage>
   );
 }

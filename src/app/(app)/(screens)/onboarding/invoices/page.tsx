@@ -9,6 +9,7 @@ import { formatCalendarDate } from "@/lib/dates";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { StudioSettingsForm } from "../forms";
 import { OnboardingTabs } from "../progress";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Invoices" };
 
@@ -26,14 +27,14 @@ export default async function InvoicesPage() {
   const currency = settings?.currency ?? "CAD";
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         eyebrow="Sales"
         title="Onboarding"
         description={`Every invoice, newest first. Outstanding: ${formatMoney(outstanding.reduce((s, i) => s + i.total_cents, 0), currency)} on ${outstanding.length} invoice${outstanding.length === 1 ? "" : "s"}.`}
       />
       <OnboardingTabs active="invoices" />
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="grid gap-6 @min-[80rem]:grid-cols-[minmax(0,1fr)_420px]">
         {!invoices?.length ? (
           <EmptyState title="No invoices yet">They&apos;re generated in each client&apos;s onboarding, from the pack.</EmptyState>
         ) : (
@@ -75,6 +76,6 @@ export default async function InvoicesPage() {
           </Card>
         )}
       </div>
-    </>
+    </WindowPage>
   );
 }

@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Button, EmptyState, PageHeader, cx } from "@/components/ui";
 import { markNotificationsRead } from "@/app/actions/workflow";
 import { LocalDate } from "@/components/local-date";
+import { notificationHref } from "@/lib/notification-links";
+import { WindowPage } from "@/components/desktop/window-page";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -18,24 +20,10 @@ export default async function NotificationsPage() {
     .limit(100);
   const unread = (items ?? []).filter((n) => !n.read_at).length;
 
-  const hrefFor = (n: { video_id: string | null; client_id: string | null; kind: string }) => {
-    // News about a client's month (several videos): each role's list of them.
-    if (!n.video_id && n.client_id) {
-      if (viewer.role === "client") return "/review";
-      if (viewer.role === "videographer") return "/shoots";
-      if (viewer.role === "admin" || viewer.role === "editor") return `/clients/${n.client_id}#production`;
-      return viewer.role === "seller" ? "/onboarding" : null;
-    }
-    if (!n.video_id) return n.kind.startsWith("onboarding") && (viewer.role === "admin" || viewer.role === "seller") ? "/onboarding" : null;
-    if (viewer.role === "client") return `/review/${n.video_id}`;
-    if (viewer.role === "videographer") return `/shoots/${n.video_id}`;
-    return ["comment", "version_ready", "version_sent", "approved", "changes_requested"].includes(n.kind)
-      ? `/review/${n.video_id}`
-      : `/videos/${n.video_id}`;
-  };
+  const hrefFor = (n: { video_id: string | null; client_id: string | null; kind: string }) => notificationHref(viewer.role, n);
 
   return (
-    <>
+    <WindowPage>
       <PageHeader
         title="Notifications"
         description="New versions, comments, approvals, footage arrivals and production news."
@@ -84,6 +72,6 @@ export default async function NotificationsPage() {
           })}
         </ul>
       )}
-    </>
+    </WindowPage>
   );
 }

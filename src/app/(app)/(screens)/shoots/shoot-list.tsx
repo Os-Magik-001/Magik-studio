@@ -38,7 +38,7 @@ export function ShootList({ shoots }: { shoots: ShootRow[] }) {
               <li key={s.id}>
                 <Link
                   href={`/shoots/${s.videoId}`}
-                  className="flex flex-col gap-2 rounded-xl frost p-4 transition-colors hover:border-line-strong sm:flex-row sm:items-center sm:gap-6"
+                  className="flex flex-col gap-2 rounded-xl frost p-4 transition-colors hover:border-line-strong @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:gap-6"
                 >
                   <div className="flex w-40 shrink-0 items-center gap-1.5 text-sm font-medium text-ink">
                     <Clock size={14} className="text-muted" aria-hidden />
@@ -55,7 +55,7 @@ export function ShootList({ shoots }: { shoots: ShootRow[] }) {
                     )}
                     {s.needs && <div className="mt-1 text-[13px] text-muted">Bring: {s.needs}</div>}
                   </div>
-                  <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+                  <div className="flex shrink-0 flex-col items-start gap-1 @min-[40rem]:items-end">
                     {s.scriptApproved ? (
                       <Badge tone="success">Script approved</Badge>
                     ) : (
