@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { Db } from "@/lib/supabase/admin";
 import { asShootPlan } from "@/lib/agent-types";
 import { FORMAT_LABEL, videoStatusLabel } from "@/lib/workflow";
 
@@ -72,8 +73,9 @@ export function formatMemory(videos: Remembered[], depth: "full" | "brief"): str
     .join("\n\n");
 }
 
-export async function clientMemory(clientId: string, opts: { except?: string; depth?: "full" | "brief" } = {}) {
-  const supabase = await createClient();
+// `db`: the background worker passes the server's own client (it has no signed-in user).
+export async function clientMemory(clientId: string, opts: { except?: string; depth?: "full" | "brief" } = {}, db?: Db) {
+  const supabase = db ?? (await createClient());
   let query = supabase
     .from("videos")
     .select("id, title, format, status, brief, created_at, scripts(body, edit_prompt, shoot_plan)")

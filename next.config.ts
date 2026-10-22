@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
   },
   // The script file readers are Node libraries; pdf.js loads parts of itself at run time.
   serverExternalPackages: ["unpdf", "mammoth", "word-extractor"],
+  // Read from disk at run time: the agents' skills (@/lib/skills, shared with the edit engine)
+  // and the fonts of the script PDFs (@/lib/script-pdf).
+  outputFileTracingIncludes: {
+    "/*": ["./engine/skills/**/SKILL.md"],
+    "/scripts/*/pdf": ["./src/assets/fonts/*.ttf"],
+  },
   turbopack: {
     rules: {
       "*.css": {

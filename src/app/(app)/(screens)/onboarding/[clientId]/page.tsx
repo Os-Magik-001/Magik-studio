@@ -158,7 +158,7 @@ export default async function ClientOnboardingPage({
                         </Badge>
                         {invoice.written_by_claude && (
                           <span className="flex items-center gap-1 text-[11.5px] text-muted">
-                            <Sparkles size={12} aria-hidden /> Worded by Claude
+                            <Sparkles size={12} aria-hidden /> Worded by the agents
                           </span>
                         )}
                       </div>

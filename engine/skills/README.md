@@ -1,6 +1,6 @@
-# Editing skills
+# Skills
 
-These are the house techniques the edit engine gives Claude on every edit. Each one is a folder holding a `SKILL.md`, in the same layout as Claude's Agent Skills:
+The studio's playbook for every agent: the edit engine's editor, sound designer and trend researcher, and the app's brand strategist, content planner, scriptwriter and motion director. Each one is a folder holding a `SKILL.md`, in the same layout as Claude's Agent Skills:
 
 ```markdown
 ---
@@ -16,7 +16,11 @@ The technique, written the way you would brief a human editor.
 - **`description`** is one line saying what the skill covers. It's required.
 - **`formats`** says which videos the skill applies to: `all` (the default), or a comma-separated list of `social_short`, `ad` and `podcast_clip`.
 - **`enabled`** can be set to `false` to switch a skill off without deleting it.
-- **`agents`** says who reads the skill: `editor` (the default, the agent that plans the cut), `sound` (the sound designer, who scores the cut afterwards), or both (`editor, sound`). sound-design is the sound designer's own skill.
+- **`agents`** says who reads the skill, one or several, comma-separated:
+  - on the edit engine: `editor` (the default, the agent that plans the cut), `sound` (the sound designer, who scores the cut afterwards) and `researcher` (the trend researcher, who studies a niche's top reels);
+  - in the app: `strategist` (the brand strategist), `planner` (the month's content plan), `scriptwriter` and `motion` (the motion director).
+
+  The app reads this same folder, so a skill for an app agent applies after the next deploy; the Agents app lists every agent's skills. Opt-in skills (with `when:`) are for the edit engine only.
 
 Skills are read fresh for every job, so a new or edited skill applies to the next edit with no restart. The Mac background service runs from its own copy of the engine, so after changing skills here, run `engine/scripts/mac-service.sh update`. Alternatively, point `ENGINE_SKILLS_DIR` at a folder of your choice.
 

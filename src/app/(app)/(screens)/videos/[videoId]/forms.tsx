@@ -53,7 +53,7 @@ export function VideoDetailsForm({
       <Field label="Title">
         <Input name="title" defaultValue={video.title} required />
       </Field>
-      <Field label="Client brief" hint="Claude drafts the script from this.">
+      <Field label="Client brief" hint="The scriptwriter writes the script from this.">
         <Textarea name="brief" rows={5} defaultValue={video.brief} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
@@ -118,6 +118,7 @@ export function ScriptEditor({
   hasStrategy,
   version,
   designed,
+  collapsed = false,
 }: {
   videoId: string;
   body: string;
@@ -132,6 +133,8 @@ export function ScriptEditor({
   version: string;
   // The motion director designs the scenes after the scriptwriter.
   designed: boolean;
+  // The script reads above the form: its text fields fold away until someone edits it.
+  collapsed?: boolean;
 }) {
   // Remount the textareas after Claude writes a new draft, or the script changed elsewhere.
   const [key, setKey] = useState(0);
@@ -140,7 +143,7 @@ export function ScriptEditor({
       <ActionForm action={draftScriptWithClaude} onSuccess={() => setKey((k) => k + 1)} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
         <input type="hidden" name="videoId" value={videoId} />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Field label="Notes for Claude (optional)" className="flex-1">
+          <Field label="Notes for the scriptwriter (optional)" className="flex-1">
             <Input name="notes" placeholder="Keep it under 45 seconds, open on the product" />
           </Field>
           <SubmitButton pendingText={designed ? "The scriptwriter, then the motion director, are working (about two minutes)…" : "The scriptwriter is working (about a minute)…"} variant="secondary">
@@ -148,32 +151,37 @@ export function ScriptEditor({
           </SubmitButton>
         </div>
         <p className="mt-2 text-xs text-muted">
-          Agent 3 writes the script, the videographer&apos;s shoot plan and the edit prompt
+          The scriptwriter writes the script, the videographer&apos;s shoot plan and the edit prompt
           {hasStrategy
             ? ", from the brand strategy, the latest viral research, the references, the client's other videos and the studio's motion prompts."
             : ", from the brief and the references. Run the brand strategist on the client's Brand & strategy page for sharper scripts."}
         </p>
         {!hasBrief && <p className="mt-2 text-xs text-muted">Add the client brief in Details first.</p>}
         {!claudeReady && (
-          <p className="mt-2 text-xs text-warning">Claude isn&apos;t connected yet: ANTHROPIC_API_KEY is missing.</p>
+          <p className="mt-2 text-xs text-warning">The agents aren&apos;t connected yet: ANTHROPIC_API_KEY is missing.</p>
         )}
       </ActionForm>
 
-      <ActionForm key={`${key}:${version}`} action={saveScript} className="flex flex-col gap-4">
-        <input type="hidden" name="videoId" value={videoId} />
-        <Field label={draftedByClaude ? "Script (drafted by Claude)" : "Script"}>
-          <ScriptField name="body" rows={14} defaultValue={body} className="font-mono text-[13px]" />
-        </Field>
-        <Field label="Shot list" hint="One shot per line. The videographer ticks these off on set.">
-          <Textarea name="shots" rows={6} defaultValue={shots} />
-        </Field>
-        <Field label="Edit prompt" hint="What the engine is told when it edits this video. It starts by itself once the videographer marks the footage complete.">
-          <Textarea name="editPrompt" rows={6} defaultValue={editPrompt} className="text-[13px]" />
-        </Field>
-        <div className="flex flex-wrap gap-2">
-          <SubmitButton variant="secondary">Save script</SubmitButton>
-        </div>
-      </ActionForm>
+      <details open={!collapsed} className="group rounded-xl border border-white/[0.07] p-4 open:pb-5">
+        <summary className="cursor-pointer text-[13px] font-medium text-ink">
+          {collapsed ? "Edit the script, the shot list and the edit prompt by hand" : "The script, the shot list and the edit prompt"}
+        </summary>
+        <ActionForm key={`${key}:${version}`} action={saveScript} className="mt-4 flex flex-col gap-4">
+          <input type="hidden" name="videoId" value={videoId} />
+          <Field label={draftedByClaude ? "Script (drafted by the scriptwriter)" : "Script"}>
+            <ScriptField name="body" rows={14} defaultValue={body} className="font-mono text-[13px]" />
+          </Field>
+          <Field label="Shot list" hint="One shot per line. The videographer ticks these off on set.">
+            <Textarea name="shots" rows={6} defaultValue={shots} />
+          </Field>
+          <Field label="Edit prompt" hint="What the engine is told when it edits this video. It starts by itself once the videographer marks the footage complete.">
+            <Textarea name="editPrompt" rows={6} defaultValue={editPrompt} className="text-[13px]" />
+          </Field>
+          <div className="flex flex-wrap gap-2">
+            <SubmitButton variant="secondary">Save script</SubmitButton>
+          </div>
+        </ActionForm>
+      </details>
 
       <ActionForm action={sendScriptToClient} className="border-t border-line pt-4">
         <input type="hidden" name="videoId" value={videoId} />
@@ -332,7 +340,7 @@ export function LaunchEditForm({ videoId, disabledReason, prompt }: { videoId: s
   return (
     <ActionForm action={launchEdit} className="flex flex-col gap-3">
       <input type="hidden" name="videoId" value={videoId} />
-      <Field label={prompt ? "Edit prompt (from the scriptwriter)" : "Notes for Claude (optional)"}>
+      <Field label={prompt ? "Edit prompt (from the scriptwriter)" : "Notes for the edit engine (optional)"}>
         <Textarea name="notes" rows={prompt ? 6 : 2} defaultValue={prompt} placeholder={'"Keep it under 60 seconds", "Open on the product"'} />
       </Field>
       <div className="flex flex-wrap items-center gap-3">
@@ -394,7 +402,7 @@ export function FootageCompleteForm({ videoId, completedAt, hasFootage }: { vide
         {completedAt ? "Footage complete ✓ (press again after adding more)" : "All footage is in: start the edit"}
       </SubmitButton>
       <p className="text-xs text-muted">
-        {hasFootage ? "Claude starts editing right away with the scriptwriter's edit prompt." : "Upload or link the footage first."}
+        {hasFootage ? "The edit engine starts right away with the scriptwriter's edit prompt." : "Upload or link the footage first."}
       </p>
     </ActionForm>
   );

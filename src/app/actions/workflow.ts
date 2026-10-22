@@ -7,16 +7,16 @@ import { notify } from "@/lib/notify";
 import { objectExists } from "@/lib/storage";
 import { DriveError, driveConfigured, parseDriveLink, resolveDriveVideos } from "@/lib/drive";
 import { claudeConfigured } from "@/lib/claude";
-import { adaptScript, describeDesigns, describeThread, reviseScript, runMotionDirector, runScriptwriter, type DesignChoice } from "@/lib/agents";
-import { DESIGN_TEMPLATES, templateById } from "@/lib/design-templates";
-import { asFindings, asShootPlan } from "@/lib/agent-types";
+import { adaptScript, describeDesigns } from "@/lib/agents";
+import { templateById } from "@/lib/design-templates";
+import { approvalAfter, designChoices, direct, isDesigned, keepCurrent, record, reviseWithScriptwriter, sameText, sameVersion, withTicks, writeScript, type CurrentScript, type Version } from "@/lib/scripts";
+import { asFindings } from "@/lib/agent-types";
 import { clientMemory } from "@/lib/memory";
 import { motionLibrary } from "@/lib/motion-prompts";
 import { describeReferences, loadReferences } from "@/lib/references";
-import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatTimecode, parseShotList, videoStatusIndex, type RevisionKind, type ScriptStatus, type VideoStatus } from "@/lib/workflow";
+import { formatTimecode, parseShotList, videoStatusIndex, type VideoStatus } from "@/lib/workflow";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // Moves a video forward, never backwards (e.g. a late footage upload doesn't undo "editing").
@@ -31,96 +31,6 @@ async function advance(videoId: string, to: VideoStatus) {
 const setStatus = (videoId: string, status: VideoStatus) =>
   createAdminClient().from("videos").update({ status }).eq("id", videoId);
 
-// ---------------------------------------------------------------- the script's thread
-
-// Every version of a script stays in its thread (script_revisions) with what was asked for it,
-// so the studio can go back to any version and the agents remember what was asked.
-type Version = { body: string; shot_list: Json; shoot_plan: Json | null; edit_prompt: string | null };
-type CurrentScript = Version & { video_id: string; status: ScriptStatus; approved_by: string | null; drafted_by_claude: boolean; updated_at: string };
-
-const sameText = (a: string | null, b: string | null) => (a ?? "").trim() === (b ?? "").trim();
-const shotTexts = (shots: Json) => parseShotList(shots).map((s) => s.text).join("\n");
-const sameVersion = (a: Version, b: Version) =>
-  sameText(a.body, b.body) && sameText(a.edit_prompt, b.edit_prompt) && shotTexts(a.shot_list) === shotTexts(b.shot_list) && JSON.stringify(a.shoot_plan) === JSON.stringify(b.shoot_plan);
-const versionOf = (s: Version): Version => ({ body: s.body, shot_list: s.shot_list, shoot_plan: s.shoot_plan, edit_prompt: s.edit_prompt });
-
-async function record(videoId: string, kind: RevisionKind, by: string | null, entry: { request?: string | null; reply?: string | null; version?: Version; restoredFrom?: string; at?: string } = {}) {
-  await createAdminClient()
-    .from("script_revisions")
-    .insert({
-      video_id: videoId,
-      kind,
-      request: entry.request ?? null,
-      reply: entry.reply ?? null,
-      ...entry.version,
-      restored_from: entry.restoredFrom ?? null,
-      created_by: by,
-      ...(entry.at ? { created_at: entry.at } : {}),
-    });
-}
-
-// The thread starts with the script as it was before its first recorded change, so that
-// version can always come back.
-async function keepCurrent(script: CurrentScript | null) {
-  if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return;
-  const { count } = await createAdminClient()
-    .from("script_revisions")
-    .select("id", { count: "exact", head: true })
-    .eq("video_id", script.video_id)
-    .neq("kind", "client");
-  if (count === 0) await record(script.video_id, script.drafted_by_claude ? "written" : "edited", null, { version: versionOf(script), at: script.updated_at });
-}
-
-// A client's approval covers the script they read: when the script itself changes it goes
-// back to draft. A new shot list or edit prompt, or a script the studio approved itself
-// (fast track), stays approved.
-async function approvalAfter(current: CurrentScript, body: string, viewerId: string): Promise<{ status?: ScriptStatus; approved_by?: string | null; approved_at?: string | null }> {
-  if (sameText(current.body, body)) return {};
-  if (current.status !== "approved") return { status: "draft" };
-  const { data: approver } = current.approved_by
-    ? await createAdminClient().from("profiles").select("role").eq("id", current.approved_by).maybeSingle()
-    : { data: null };
-  if (approver && approver.role !== "client") return { approved_by: viewerId, approved_at: new Date().toISOString() };
-  return { status: "draft", approved_by: null, approved_at: null };
-}
-
-// A shot keeps its tick from the set when the new list still has it.
-function withTicks(shots: string[], before: Json | undefined) {
-  const ticked = new Set(parseShotList(before).filter((s) => s.done).map((s) => s.text));
-  return shots.map((s) => (ticked.has(s) ? { text: s, done: true } : { text: s }));
-}
-
-// ---------------------------------------------------------------- motion design
-
-// The design templates chosen for a video, as the agents read them: the studio's own, and
-// motion prompts the team saved ("prompt:<id>").
-async function designChoices(ids: string[] | null | undefined): Promise<DesignChoice[]> {
-  const saved = (ids ?? []).filter((id) => id.startsWith("prompt:")).map((id) => id.slice(7));
-  const { data: prompts } = saved.length
-    ? await (await createClient()).from("motion_prompts").select("id, title, prompt, creator").in("id", saved)
-    : { data: [] };
-  return (ids ?? []).flatMap((id): DesignChoice[] => {
-    const own = templateById(id);
-    if (own) return [{ id, title: own.title, direction: own.direction }];
-    const p = prompts?.find((x) => `prompt:${x.id}` === id);
-    return p ? [{ id, title: `${p.title}${p.creator ? ` (by ${p.creator})` : ""}`, direction: p.prompt }] : [];
-  });
-}
-
-// Designed graphics: the client's brand kit asks for them, or templates were chosen for the video.
-const isDesigned = (graphics: string | null | undefined, templates: string[] | null | undefined) => graphics === "designed" || !!templates?.length;
-
-const LIBRARY = DESIGN_TEMPLATES.map(({ id, title, category, summary }) => ({ id, title, category, summary }));
-
-// Agent 5 designs the video's motion from its script; the brief is saved on the script for
-// the engine's motion designer.
-async function direct(videoId: string, input: Omit<Parameters<typeof runMotionDirector>[0], "library">) {
-  const brief = await runMotionDirector({ ...input, library: LIBRARY });
-  const { error } = await (await createClient()).from("scripts").update({ design_brief: brief }).eq("video_id", videoId);
-  if (error) throw new Error("The design brief was written but couldn't be saved.");
-  return brief;
-}
-
 export async function saveDesignTemplates(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin", "editor");
   const videoId = text(formData, "videoId");
@@ -134,7 +44,7 @@ export async function saveDesignTemplates(_: ActionResult, formData: FormData): 
 
 export async function directMotion(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin", "editor");
-  if (!claudeConfigured()) return fail("Claude isn't connected yet: ANTHROPIC_API_KEY is missing.");
+  if (!claudeConfigured()) return fail("The agents aren't connected yet: ANTHROPIC_API_KEY is missing.");
   const videoId = text(formData, "videoId");
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
@@ -164,14 +74,14 @@ export async function directMotion(_: ActionResult, formData: FormData): Promise
       script: script.body,
       shots: parseShotList(script.shot_list).map((s) => s.text),
       editPrompt: script.edit_prompt,
-      chosen: await designChoices(script.design_templates),
+      chosen: await designChoices(script.design_templates, supabase),
       strategy,
       findings: asFindings(report?.findings),
       styleRules: kit?.style_rules ?? null,
       memory: memory.text,
       motion: motion.text,
       references: describeReferences(references, "motion"),
-    });
+    }, supabase);
   } catch (e) {
     return fail(e instanceof Error ? e.message : "The motion director couldn't finish.");
   }
@@ -200,12 +110,15 @@ export async function saveScript(_: ActionResult, formData: FormData): Promise<A
     shot_list: withTicks(shots, current?.shot_list),
     shoot_plan: current?.shoot_plan ?? null,
     edit_prompt: optionalText(formData, "editPrompt"),
+    // The beats stay only while the text is still theirs; a hand edit makes the text the script.
+    beats: current && sameText(current.body, text(formData, "body")) ? current.beats : null,
   };
   const { error } = await supabase.from("scripts").upsert({
     video_id: videoId,
     body: version.body,
     shot_list: version.shot_list,
     edit_prompt: version.edit_prompt,
+    beats: version.beats,
     // Editing a script the client asked to change puts it back in draft.
     status: "draft",
   });
@@ -233,102 +146,25 @@ async function recordHandEdit(videoId: string, by: string, before: CurrentScript
   }
 }
 
-// Agent 3: the brand strategy, the latest trend research and the brief become the
-// script, the videographer's shoot plan and the edit prompt for the engine.
+// The scriptwriter: the brand strategy, the latest trend research and the brief become the
+// script, the videographer's shoot plan and the edit prompt (@/lib/scripts writeScript).
 export async function draftScriptWithClaude(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const viewer = await requireRole("admin", "editor");
-  if (!claudeConfigured()) {
-    return fail("Claude isn't connected yet. Add ANTHROPIC_API_KEY to the environment.");
-  }
+  if (!claudeConfigured()) return fail("The agents aren't connected yet: ANTHROPIC_API_KEY is missing.");
   const videoId = text(formData, "videoId");
-  const video = await visibleVideo(videoId);
-  if (!video) return fail("Video not found.");
-  if (!video.brief?.trim()) return fail("Add the client's brief first. Claude writes the script from it.");
+  if (!(await visibleVideo(videoId))) return fail("Video not found.");
 
-  const supabase = await createClient();
-  const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion, references] = await Promise.all([
-    supabase.from("clients").select("name").eq("id", video.client_id).single(),
-    supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", video.client_id).maybeSingle(),
-    supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
-    admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
-    admin
-      .from("trend_reports")
-      .select("id, findings")
-      .eq("client_id", video.client_id)
-      .eq("status", "done")
-      .order("finished_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
-    clientMemory(video.client_id, { except: videoId }),
-    motionLibrary([video.title, video.brief, text(formData, "notes")].filter(Boolean).join(" ")),
-    loadReferences(video.client_id, videoId),
-  ]);
-  if (script?.status === "approved") return fail("This script is already approved.");
-
-  const notes = text(formData, "notes");
-  const chosen = await designChoices(script?.design_templates);
-  let draft;
+  let made;
   try {
-    draft = await runScriptwriter({
-      clientName: client?.name ?? "Client",
-      title: video.title,
-      format: video.format.replace("_", " "),
-      aspect: video.aspect,
-      brief: video.brief,
-      notes: [notes, script?.client_note && `The client asked for: ${script.client_note}`].filter(Boolean).join("\n"),
-      thread: describeThread(thread ?? []),
-      designs: describeDesigns(chosen),
-      references: describeReferences(references, "script"),
-      strategy,
-      findings: asFindings(report?.findings),
-      styleRules: kit?.style_rules ?? null,
-      memory: memory.text,
-      motion: motion.text,
-    });
-    await keepCurrent(script);
-    const version: Version = { body: draft.script, shot_list: draft.shots.map((s) => ({ text: s })), shoot_plan: draft.plan, edit_prompt: draft.edit_prompt };
-    const { error } = await supabase.from("scripts").upsert({
-      video_id: videoId,
-      ...version,
-      trend_report_id: report?.id ?? null,
-      status: "draft",
-      drafted_by_claude: true,
-    });
-    if (error) return fail("Claude wrote a draft but it couldn't be saved.");
-    await record(videoId, "written", viewer.id, { request: notes || null, reply: draft.concept, version });
+    made = await writeScript(videoId, { by: viewer.id, notes: text(formData, "notes"), db: await createClient() });
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "Claude couldn't draft the script.");
-  }
-  // Designed graphics: the motion director designs the new script's scenes right away.
-  let designed = "";
-  if (isDesigned(kit?.graphics, script?.design_templates)) {
-    designed = await direct(videoId, {
-      clientName: client?.name ?? "Client",
-      title: video.title,
-      format: video.format.replace("_", " "),
-      aspect: video.aspect,
-      brief: video.brief,
-      script: draft.script,
-      shots: draft.shots,
-      editPrompt: draft.edit_prompt,
-      chosen,
-      strategy,
-      findings: asFindings(report?.findings),
-      styleRules: kit?.style_rules ?? null,
-      memory: memory.text,
-      motion: motion.text,
-      references: describeReferences(references, "motion"),
-    }).then(
-      (b) => ` The motion director designed ${b.scenes.length} scenes.`,
-      (e) => ` The motion director couldn't design it (${e instanceof Error ? e.message : "error"}): press Design the motion.`,
-    );
+    return fail(e instanceof Error ? e.message : "The scriptwriter couldn't draft the script.");
   }
   refresh();
-  const remembered = memory.count ? ` It remembered the client's ${memory.count} other video${memory.count > 1 ? "s" : ""}.` : "";
+  const designed = made.design === "done" ? " The motion director designed the scenes." : made.design === "failed" ? " The motion director couldn't design it: press Design the motion." : "";
+  const remembered = made.remembered ? ` It remembered the client's ${made.remembered} other video${made.remembered > 1 ? "s" : ""}.` : "";
   return done(
-    strategy
+    made.hasStrategy
       ? `Script, shoot plan and edit prompt are ready.${designed}${remembered} Review them before sending to the client.`
       : `Script ready.${designed}${remembered} Run the brand strategist on the client page for sharper scripts.`,
   );
@@ -338,88 +174,19 @@ export async function draftScriptWithClaude(_: ActionResult, formData: FormData)
 // writers' room. Each round is a new version in the thread, so it can be undone.
 export async function reviseScriptWithClaude(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const viewer = await requireRole("admin", "editor");
-  if (!claudeConfigured()) return fail("Claude isn't connected yet: ANTHROPIC_API_KEY is missing.");
+  if (!claudeConfigured()) return fail("The agents aren't connected yet: ANTHROPIC_API_KEY is missing.");
   const videoId = text(formData, "videoId");
-  const video = await visibleVideo(videoId);
-  if (!video) return fail("Video not found.");
+  if (!(await visibleVideo(videoId))) return fail("Video not found.");
 
-  const supabase = await createClient();
-  const admin = createAdminClient();
-  const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion, references] = await Promise.all([
-    supabase.from("clients").select("name").eq("id", video.client_id).single(),
-    supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", video.client_id).maybeSingle(),
-    supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
-    admin.from("brand_strategies").select("niche, business, audience, needs, pillars, charte").eq("client_id", video.client_id).maybeSingle(),
-    admin.from("trend_reports").select("findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
-    admin.from("script_revisions").select("kind, request, reply").eq("video_id", videoId).order("created_at"),
-    clientMemory(video.client_id, { except: videoId }),
-    motionLibrary([video.title, video.brief, text(formData, "request")].filter(Boolean).join(" ")),
-    loadReferences(video.client_id, videoId),
-  ]);
-  if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return fail("There's no script yet. Write one first.");
-  const asked = text(formData, "request");
-  const request = formData.get("useClientNote") === "1" && script.client_note ? [`The client asked for: ${script.client_note}`, asked].filter(Boolean).join("\n") : asked;
-  if (!request) return fail("Tell the scriptwriter what to change.");
-
-  const chosen = await designChoices(script.design_templates);
-  let revised;
+  let made;
   try {
-    revised = await reviseScript({
-      clientName: client?.name ?? "Client",
-      title: video.title,
-      format: video.format.replace("_", " "),
-      aspect: video.aspect,
-      brief: video.brief,
-      current: { script: script.body, shots: parseShotList(script.shot_list).map((s) => s.text), plan: asShootPlan(script.shoot_plan), editPrompt: script.edit_prompt },
-      thread: describeThread(thread ?? []),
-      request,
-      references: describeReferences(references, "script"),
-      strategy,
-      findings: asFindings(report?.findings),
-      styleRules: kit?.style_rules ?? null,
-      memory: memory.text,
-      motion: motion.text,
-    });
+    made = await reviseWithScriptwriter(videoId, { by: viewer.id, asked: text(formData, "request"), useClientNote: formData.get("useClientNote") === "1", db: await createClient() });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "The scriptwriter couldn't make the changes.");
   }
-
-  await keepCurrent(script);
-  const approval = await approvalAfter(script, revised.script, viewer.id);
-  const version: Version = { body: revised.script, shot_list: withTicks(revised.shots, script.shot_list), shoot_plan: revised.plan, edit_prompt: revised.edit_prompt };
-  const { error } = await supabase.from("scripts").update({ ...version, ...approval }).eq("video_id", videoId);
-  if (error) return fail("The scriptwriter made the changes but they couldn't be saved.");
-  await record(videoId, "revised", viewer.id, { request, reply: revised.reply, version });
-  // The design follows the script: the motion director redesigns from the new version.
-  let designed = "";
-  if (isDesigned(kit?.graphics, script.design_templates)) {
-    designed = await direct(videoId, {
-      clientName: client?.name ?? "Client",
-      title: video.title,
-      format: video.format.replace("_", " "),
-      aspect: video.aspect,
-      brief: video.brief,
-      script: revised.script,
-      shots: revised.shots,
-      editPrompt: revised.edit_prompt,
-      chosen,
-      strategy,
-      findings: asFindings(report?.findings),
-      styleRules: kit?.style_rules ?? null,
-      memory: memory.text,
-      motion: motion.text,
-      references: describeReferences(references, "motion"),
-    }).then(
-      () => " The motion director updated the design.",
-      () => " The design couldn't follow: press Design the motion.",
-    );
-  }
   refresh();
-  return done(
-    script.status === "approved" && approval.status === "draft"
-      ? `Done. The script itself changed, so it needs the client's approval again.${designed}`
-      : `Done. The changes are saved.${designed}`,
-  );
+  const designed = made.design === "done" ? " The motion director updated the design." : made.design === "failed" ? " The design couldn't follow: press Design the motion." : "";
+  return done(made.backToClient ? `Done. The script itself changed, so it needs the client's approval again.${designed}` : `Done. The changes are saved.${designed}`);
 }
 
 export async function restoreScriptRevision(formData: FormData) {
@@ -427,7 +194,7 @@ export async function restoreScriptRevision(formData: FormData) {
   const admin = createAdminClient();
   const { data: earlier } = await admin
     .from("script_revisions")
-    .select("id, video_id, body, shot_list, shoot_plan, edit_prompt")
+    .select("id, video_id, body, shot_list, shoot_plan, edit_prompt, beats")
     .eq("id", text(formData, "revisionId"))
     .neq("kind", "client")
     .maybeSingle();
@@ -442,6 +209,7 @@ export async function restoreScriptRevision(formData: FormData) {
     shot_list: withTicks(parseShotList(earlier.shot_list).map((s) => s.text), script.shot_list),
     shoot_plan: earlier.shoot_plan,
     edit_prompt: earlier.edit_prompt,
+    beats: earlier.beats,
   };
   const { error } = await supabase
     .from("scripts")
@@ -465,7 +233,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
   const writePrompt = formData.get("writePrompt") === "on";
   const skipApproval = formData.get("skipApproval") === "on";
   const startEdit = formData.get("startEdit") === "on";
-  if (writePrompt && !claudeConfigured()) return fail("Claude isn't connected yet: ANTHROPIC_API_KEY is missing.");
+  if (writePrompt && !claudeConfigured()) return fail("The agents aren't connected yet: ANTHROPIC_API_KEY is missing.");
 
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -481,7 +249,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
 
   let editPrompt = optionalText(formData, "editPrompt") ?? current?.edit_prompt ?? null;
   let shots = current?.shot_list ?? [];
-  const chosen = await designChoices(current?.design_templates);
+  const chosen = await designChoices(current?.design_templates, supabase);
   const references = writePrompt ? await loadReferences(video.client_id, videoId) : [];
   const brandInput = {
     clientName: client?.name ?? "Client",
@@ -517,6 +285,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
     body,
     shot_list: shots,
     edit_prompt: editPrompt,
+    beats: null,
     trend_report_id: writePrompt ? report?.id ?? null : null,
     drafted_by_claude: false,
     status: skipApproval ? "approved" : "draft",
@@ -537,12 +306,12 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
       editPrompt,
       chosen,
       references: describeReferences(references, "motion"),
-    }).catch(() => null);
+    }, supabase).catch(() => null);
   }
   await record(videoId, "pasted", viewer.id, {
     request: writePrompt ? optionalText(formData, "editPrompt") : null,
     reply: writePrompt ? "I wrote the edit prompt and the shot list from your script." : null,
-    version: { body, shot_list: shots, shoot_plan: current?.shoot_plan ?? null, edit_prompt: editPrompt },
+    version: { body, shot_list: shots, shoot_plan: current?.shoot_plan ?? null, edit_prompt: editPrompt, beats: null },
   });
   if (skipApproval) await advance(videoId, footageCount ? "footage_in" : "shoot");
 
@@ -757,7 +526,7 @@ export async function launchEdit(_: ActionResult, formData: FormData): Promise<A
   if (error) return fail("Couldn't start the edit.");
   await advance(videoId, "editing");
   refresh();
-  return done("Edit queued for Claude.");
+  return done("Edit queued for the edit engine.");
 }
 
 // The videographer says all the footage is in: the engine starts the edit right away,
@@ -789,10 +558,10 @@ export async function markFootageComplete(_: ActionResult, formData: FormData): 
   await advance(videoId, "editing");
   await notify(
     { videoId, editor: true, admins: true, exclude: viewer.id },
-    { kind: "footage_in", title: `Footage complete: ${video.title}`, body: "Claude started the edit." },
+    { kind: "footage_in", title: `Footage complete: ${video.title}`, body: "The edit engine started the edit." },
   );
   refresh();
-  return done(openJobs ? "Marked complete. An edit is already running." : "Thanks! Claude started the edit.");
+  return done(openJobs ? "Marked complete. An edit is already running." : "Thanks! The edit engine started the edit.");
 }
 
 export async function cancelEditJob(formData: FormData) {
@@ -896,7 +665,7 @@ export async function requestFixes(_: ActionResult, formData: FormData): Promise
   if (!version) return fail("Version not found.");
   if (version.status !== "draft") return fail("Only drafts in editor check can be sent back.");
   const instructions = text(formData, "instructions");
-  if (!instructions) return fail("Tell Claude what to fix.");
+  if (!instructions) return fail("Tell the edit engine what to fix.");
 
   const admin = createAdminClient();
   await admin.from("versions").update({ status: "fixes_requested", decided_at: new Date().toISOString() }).eq("id", version.id);
@@ -909,7 +678,7 @@ export async function requestFixes(_: ActionResult, formData: FormData): Promise
   });
   await setStatus(version.video_id, "editing");
   refresh();
-  return done("Sent back to Claude.");
+  return done("Sent back to the edit engine.");
 }
 
 export async function sendVersionToClient(_: ActionResult, formData: FormData): Promise<ActionResult> {

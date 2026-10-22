@@ -3,6 +3,7 @@ name: captions-and-text
 description: Writing and timing captions, titles and end cards
 formats: all
 style: dynamic
+agents: editor, motion
 ---
 
 **Captions**

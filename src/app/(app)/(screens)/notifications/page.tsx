@@ -13,12 +13,19 @@ export default async function NotificationsPage() {
   const supabase = await createClient();
   const { data: items } = await supabase
     .from("notifications")
-    .select("id, title, body, kind, read_at, created_at, video_id")
+    .select("id, title, body, kind, read_at, created_at, video_id, client_id")
     .order("created_at", { ascending: false })
     .limit(100);
   const unread = (items ?? []).filter((n) => !n.read_at).length;
 
-  const hrefFor = (n: { video_id: string | null; kind: string }) => {
+  const hrefFor = (n: { video_id: string | null; client_id: string | null; kind: string }) => {
+    // News about a client's month (several videos): each role's list of them.
+    if (!n.video_id && n.client_id) {
+      if (viewer.role === "client") return "/review";
+      if (viewer.role === "videographer") return "/shoots";
+      if (viewer.role === "admin" || viewer.role === "editor") return `/clients/${n.client_id}#production`;
+      return viewer.role === "seller" ? "/onboarding" : null;
+    }
     if (!n.video_id) return n.kind.startsWith("onboarding") && (viewer.role === "admin" || viewer.role === "seller") ? "/onboarding" : null;
     if (viewer.role === "client") return `/review/${n.video_id}`;
     if (viewer.role === "videographer") return `/shoots/${n.video_id}`;
@@ -31,7 +38,7 @@ export default async function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="New versions, comments, approvals and footage arrivals."
+        description="New versions, comments, approvals, footage arrivals and production news."
         actions={
           unread > 0 ? (
             <form action={markNotificationsRead}>

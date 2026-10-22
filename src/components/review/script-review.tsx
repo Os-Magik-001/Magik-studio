@@ -1,27 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Button, Card, CardHeader, Textarea } from "@/components/ui";
 import { ScriptStatusBadge } from "@/components/status";
 import { decideScript } from "@/app/actions/workflow";
 import type { ScriptStatus } from "@/lib/workflow";
 import { LocalDate } from "@/components/local-date";
+import { ScriptPdfLink } from "@/components/scripts/pdf-link";
 
+// The script as the client reads it (`children`: the script document, from the page) and their
+// decision on it.
 export function ScriptReview({
   videoId,
   canDecide,
   status,
-  body,
-  shots,
   approvedAt,
+  children,
 }: {
   videoId: string;
   canDecide: boolean;
   status: ScriptStatus;
-  body: string;
-  shots: string[];
   approvedAt: string | null;
+  children: ReactNode;
 }) {
   const [asking, setAsking] = useState(false);
   return (
@@ -35,21 +36,14 @@ export function ScriptReview({
               ? <LocalDate value={approvedAt} preset="date" prefix="Approved " />
               : undefined
         }
-        actions={<ScriptStatusBadge status={status} />}
+        actions={
+          <>
+            <ScriptPdfLink videoId={videoId} />
+            <ScriptStatusBadge status={status} />
+          </>
+        }
       />
-      <div className="grid gap-6 p-5 md:grid-cols-[1fr_280px]">
-        <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{body}</div>
-        {shots.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-[13px] font-medium text-ink-2">What we&apos;ll film</h3>
-            <ol className="list-decimal space-y-1 pl-5 text-[13px] text-ink-2">
-              {shots.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ol>
-          </div>
-        )}
-      </div>
+      <div className="p-5">{children}</div>
       {canDecide && (
         <div className="border-t border-line px-5 py-4">
           {asking ? (

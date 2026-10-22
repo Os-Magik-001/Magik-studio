@@ -11,6 +11,7 @@ import { LOGO_FONTS, cleanSpec, suggestLogos, type LogoSpec } from "@/lib/logo-t
 import { parseReferenceLink } from "@/lib/reference-links";
 import { inviteByToken } from "@/lib/invites";
 import { notifySales } from "@/lib/notify";
+import { startProduction } from "@/lib/production";
 import { passwordProblem } from "@/lib/passwords";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -213,10 +214,13 @@ async function finishBrand(viewer: Viewer & { clientId: string }, hasBrand: bool
     .from("onboardings")
     .update({ has_brand: hasBrand, brand_done_at: at, completed_at: at })
     .eq("client_id", viewer.clientId);
+  // Everything is filled in: production starts by itself (the brand strategist, then the trend
+  // research); the studio plans the month from the client's Production panel.
+  const started = claudeConfigured() && (await startProduction(viewer.clientId, null, { firstTime: true }).catch(() => false));
   await notifySales(viewer.clientId, {
     kind: "onboarding_done",
     title: `${await clientName(viewer.clientId)} finished onboarding`,
-    body: how,
+    body: started ? `${how} Production started: the brand strategist is at work.` : how,
   });
 }
 

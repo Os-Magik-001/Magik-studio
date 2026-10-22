@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // /join/<token> is the link a seller sends a new client: it opens before they have an account.
-const PUBLIC_PATHS = ["/login", "/auth", "/join"];
+// /api/agents/work is the agents' worker, called by the app itself with its own signed token.
+const PUBLIC_PATHS = ["/login", "/auth", "/join", "/api/agents/work"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

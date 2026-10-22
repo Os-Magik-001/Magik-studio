@@ -14,6 +14,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_runs: {
+        Row: {
+          agent: string
+          attempts: number
+          client_id: string
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          input: Json
+          output: Json | null
+          progress: string | null
+          requested_by: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["agent_status"]
+          video_id: string | null
+        }
+        Insert: {
+          agent: string
+          attempts?: number
+          client_id: string
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          progress?: string | null
+          requested_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["agent_status"]
+          video_id?: string | null
+        }
+        Update: {
+          agent?: string
+          attempts?: number
+          client_id?: string
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          progress?: string | null
+          requested_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["agent_status"]
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_runs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_runs_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_runs_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_kits: {
         Row: {
           client_id: string
@@ -728,6 +801,7 @@ export type Database = {
       notifications: {
         Row: {
           body: string | null
+          client_id: string | null
           created_at: string
           id: string
           kind: string
@@ -738,6 +812,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          client_id?: string | null
           created_at?: string
           id?: string
           kind: string
@@ -748,6 +823,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          client_id?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -757,6 +833,13 @@ export type Database = {
           video_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
@@ -1053,6 +1136,7 @@ export type Database = {
       }
       script_revisions: {
         Row: {
+          beats: Json | null
           body: string | null
           created_at: string
           created_by: string | null
@@ -1067,6 +1151,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          beats?: Json | null
           body?: string | null
           created_at?: string
           created_by?: string | null
@@ -1081,6 +1166,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          beats?: Json | null
           body?: string | null
           created_at?: string
           created_by?: string | null
@@ -1120,6 +1206,7 @@ export type Database = {
       }
       scripts: {
         Row: {
+          beats: Json | null
           approved_at: string | null
           approved_by: string | null
           body: string
@@ -1136,6 +1223,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          beats?: Json | null
           approved_at?: string | null
           approved_by?: string | null
           body?: string
@@ -1152,6 +1240,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          beats?: Json | null
           approved_at?: string | null
           approved_by?: string | null
           body?: string
@@ -1603,6 +1692,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_agent_run: {
+        Args: { run?: string }
+        Returns: Database["public"]["Tables"]["agent_runs"]["Row"][]
+      }
       take_invoice_number: { Args: never; Returns: string }
     }
     Enums: {

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: { default: "Magik OS", template: "%s · Magik OS" },
-  description: "The workspace that runs Magik Studio: shoot, edit with Claude, review and approve.",
+  description: "The workspace that runs Magik Studio: plan, script, shoot, edit, review and approve.",
 };
 
 export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };

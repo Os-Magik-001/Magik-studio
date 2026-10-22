@@ -138,7 +138,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
             <Stat href={href({ who: "studio" })} active={filters.who === "studio"} label="Needs the studio" value={counts.studio} who="studio" />
             <Stat href={href({ who: "client" })} active={filters.who === "client"} label="With the client" value={counts.client} who="client" />
             <Stat href={href({ who: "crew" })} active={filters.who === "crew"} label="With the videographer" value={counts.crew} who="crew" />
-            <Stat href={href({ who: "engine" })} active={filters.who === "engine"} label="Claude is working" value={counts.engine} who="engine" />
+            <Stat href={href({ who: "engine" })} active={filters.who === "engine"} label="The engine is working" value={counts.engine} who="engine" />
             <Stat href={href({ who: "overdue" })} active={filters.who === "overdue"} label="Overdue" value={counts.overdue} danger={counts.overdue > 0} />
           </div>
 

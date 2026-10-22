@@ -673,7 +673,7 @@ function DraftCheckPanel({ versionId, openCount }: { versionId: string; openCoun
     <Card className="p-4">
       <h2 className="font-serif text-xl text-ink">Draft check</h2>
       <p className="mt-1 text-[13px] text-muted">
-        The client won&apos;t see this until you send it. Send it back to Claude in plain words if it isn&apos;t right.
+        The client won&apos;t see this until you send it. Send it back to the edit engine in plain words if it isn&apos;t right.
       </p>
       {fixing ? (
         <ActionForm action={requestFixes} className="mt-4 flex flex-col gap-3">
@@ -683,7 +683,7 @@ function DraftCheckPanel({ versionId, openCount }: { versionId: string; openCoun
             <p className="text-xs text-muted">Your {openCount} open timecoded comments are included automatically.</p>
           )}
           <div className="flex gap-2">
-            <SubmitButton pendingText="Sending…">Ask Claude for fixes</SubmitButton>
+            <SubmitButton pendingText="Sending…">Ask the engine for fixes</SubmitButton>
             <Button type="button" variant="ghost" onClick={() => setFixing(false)}>
               Cancel
             </Button>

@@ -2,6 +2,7 @@
 name: platforms
 description: Length limits and screen-safe framing when the brief names a platform
 formats: all
+agents: editor, motion
 ---
 
 Use this when the brief, script or editor's notes name where the video will run. The script's own target length still wins when it fits the platform.

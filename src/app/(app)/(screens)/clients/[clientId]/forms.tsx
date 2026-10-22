@@ -74,7 +74,7 @@ export function NewVideoForm({
       </Field>
       <Field
         label="Client brief"
-        hint="What the client wants. Claude drafts the script from this."
+        hint="What the client wants. The scriptwriter writes the script from this."
         className="sm:col-span-2"
       >
         <Textarea name="brief" rows={4} placeholder="Goal, audience, key message, must-have shots, call to action…" />

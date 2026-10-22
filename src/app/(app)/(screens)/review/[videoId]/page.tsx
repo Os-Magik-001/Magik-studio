@@ -7,10 +7,13 @@ import { visibleVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { parseShotList } from "@/lib/workflow";
+import { asShootPlan } from "@/lib/agent-types";
+import { readBeats } from "@/lib/script-view";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { VideoStatusBadge } from "@/components/status";
 import { ReviewRoom, type ReviewComment, type ReviewVersion } from "@/components/review/review-room";
 import { ScriptReview } from "@/components/review/script-review";
+import { ScriptDocument } from "@/components/scripts/script-document";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Review", "Review · ");
@@ -37,7 +40,7 @@ export default async function ReviewPage({
       .eq("video_id", videoId)
       .order("number", { ascending: true }),
     supabase.from("clients").select("name, revision_limit").eq("id", video.client_id).single(),
-    supabase.from("scripts").select("body, shot_list, status, client_note, approved_at").eq("video_id", videoId).maybeSingle(),
+    supabase.from("scripts").select("body, beats, shot_list, shoot_plan, status, client_note, approved_at").eq("video_id", videoId).maybeSingle(),
   ]);
 
   const list = versions ?? [];
@@ -79,6 +82,13 @@ export default async function ReviewPage({
   const isClient = viewer.role === "client";
   const isStaffEditor = viewer.role === "admin" || viewer.role === "editor";
   const latestId = list[list.length - 1]?.id;
+  // The script waiting for approval comes first; once approved, it stays below the cuts to read.
+  const scriptCard = script?.body.trim() ? (
+    <ScriptReview videoId={video.id} canDecide={(isClient || viewer.role === "admin") && script.status === "client_review"} status={script.status} approvedAt={script.approved_at}>
+      <ScriptDocument beats={readBeats(script.beats, script.body)} body={script.body} plan={asShootPlan(script.shoot_plan)} shots={parseShotList(script.shot_list).map((s) => s.text)} />
+    </ScriptReview>
+  ) : null;
+  const scriptFirst = script?.status === "client_review" || !selected;
 
   return (
     <>
@@ -98,18 +108,7 @@ export default async function ReviewPage({
         actions={<VideoStatusBadge status={video.status} />}
       />
 
-      {script && (script.status === "client_review" || (isClient && !selected)) && (
-        <div className="mb-6">
-          <ScriptReview
-            videoId={video.id}
-            canDecide={(isClient || viewer.role === "admin") && script.status === "client_review"}
-            status={script.status}
-            body={script.body}
-            shots={parseShotList(script.shot_list).map((s) => s.text)}
-            approvedAt={script.approved_at}
-          />
-        </div>
-      )}
+      {scriptCard && scriptFirst && <div className="mb-6">{scriptCard}</div>}
 
       {!selected ? (
         <EmptyState title={isClient ? "Nothing to review yet" : "No versions yet"}>
@@ -135,6 +134,7 @@ export default async function ReviewPage({
           revisions={{ used: changeRounds, included: client?.revision_limit ?? 0 }}
         />
       )}
+      {scriptCard && !scriptFirst && <div className="mt-6">{scriptCard}</div>}
     </>
   );
 }

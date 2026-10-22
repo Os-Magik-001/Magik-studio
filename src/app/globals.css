@@ -582,32 +582,55 @@ html[data-wallpaper="matrix"] .wallpaper {
 .hud-frame::before { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
 .hud-frame::after { bottom: 6px; left: 6px; border-right: 0; border-top: 0; }
 .hud-label { font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #6f9bb3; }
-.hud-node { cursor: pointer; outline: none; }
-.hud-node:focus-visible > circle:nth-of-type(2) { stroke: var(--accent); stroke-width: 3; }
-.hud-node text, .hud-edge { paint-order: stroke; stroke: #02060c; stroke-width: 4px; stroke-linejoin: round; }
-.hud-kind { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; letter-spacing: 0.2em; fill: #6f9bb3; }
-.hud-title { font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: 0.14em; fill: #b8f1ff; }
-.hud-meta { font-family: var(--font-geist-mono), monospace; font-size: 11px; fill: #54d6ff; }
-.hud-edge { font-family: var(--font-geist-mono), monospace; font-size: 10.5px; fill: #54d6ff; letter-spacing: 0.04em; }
-.hud-edge.hot { fill: var(--accent); }
-.hud-edge.off { fill: #3a5a6b; }
-.hud-edge.lit { fill: #c8f4ff; }
-.hud-edge.hot.lit { fill: #ffe680; }
 .hud-stage { font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; fill: #6f9bb3; }
-.hud-status { font-family: var(--font-geist-mono), monospace; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; }
-.hud-dim { opacity: 0.3; }
-.hud-node, .hud-edge, .hud-frame svg g { transition: opacity 0.3s ease; }
-.hud-node:hover .hud-rim { stroke-width: 2.8; }
-/* Motion runs on the compositor: rings spin, orbits turn, tracks flow, busy nodes pulse. */
-.hud-spin { transform-box: fill-box; transform-origin: center; animation: hud-spin var(--hud-spin, 40s) linear infinite; }
-.hud-orbit { transform-box: view-box; animation: hud-spin var(--hud-spin, 60s) linear infinite; }
-.hud-orbit.reverse { animation-direction: reverse; }
-@keyframes hud-spin { to { transform: rotate(360deg); } }
+.hud-dim { opacity: 0.25; }
+.hud-frame svg g { transition: opacity 0.3s ease; }
+/* Motion runs on the compositor: tracks flow, working cards scan, their bar sweeps. */
 .hud-flow { animation: hud-flow 1.6s linear infinite; }
 @keyframes hud-flow { to { stroke-dashoffset: -20; } }
-.hud-pulse { transform-box: fill-box; transform-origin: center; animation: hud-pulse 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
-@keyframes hud-pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.55); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .hud-packet { display: none; } }
+
+/* A card on the graph: glass on the grid, gold while it works, green when done. */
+.hud-card {
+  padding: 11px 12px 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(14, 40, 62, 0.86), rgba(4, 14, 26, 0.92));
+  border: 1px solid rgba(84, 214, 255, 0.26);
+  box-shadow: inset 0 1px 0 rgba(184, 241, 255, 0.12), 0 12px 30px -14px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+  outline: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.25s ease, border-color 0.25s ease, opacity 0.3s ease;
+}
+.hud-card::before,
+.hud-card::after { content: ""; position: absolute; width: 10px; height: 10px; pointer-events: none; opacity: 0.8; }
+.hud-card::before { top: 5px; left: 5px; border-top: 1.5px solid #54d6ff; border-left: 1.5px solid #54d6ff; border-top-left-radius: 5px; }
+.hud-card::after { bottom: 5px; right: 5px; border-bottom: 1.5px solid #54d6ff; border-right: 1.5px solid #54d6ff; border-bottom-right-radius: 5px; }
+.hud-card:hover { transform: translateY(-2px); border-color: rgba(84, 214, 255, 0.6); }
+.hud-card:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.hud-card[data-state="done"] { border-color: rgba(95, 196, 138, 0.42); }
+.hud-card[data-state="failed"] { border-color: rgba(242, 104, 95, 0.65); }
+.hud-card[data-state="busy"] { border-color: rgba(246, 212, 58, 0.75); box-shadow: 0 0 0 1px rgba(246, 212, 58, 0.22), 0 0 30px rgba(246, 212, 58, 0.2), inset 0 1px 0 rgba(255, 240, 180, 0.16); }
+.hud-card[data-state="busy"]::before, .hud-card[data-state="busy"]::after { border-color: var(--accent); }
+.hud-card[data-selected] { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(246, 212, 58, 0.55), 0 0 36px rgba(246, 212, 58, 0.22), inset 0 1px 0 rgba(255, 240, 180, 0.16); }
+.hud-card[data-dim] { opacity: 0.32; }
+.hud-kind-label { font-family: var(--font-geist-mono), monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #6f9bb3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-icon { display: inline-flex; width: 24px; height: 24px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 8px; color: #7fe3ff; background: rgba(84, 214, 255, 0.12); box-shadow: inset 0 0 0 1px rgba(84, 214, 255, 0.3); }
+.hud-card[data-state="busy"] .hud-icon, .hud-icon[data-state="busy"] { color: var(--accent); background: rgba(246, 212, 58, 0.16); box-shadow: inset 0 0 0 1px rgba(246, 212, 58, 0.45); }
+.hud-card[data-state="done"] .hud-icon, .hud-icon[data-state="done"] { color: #7fe0a8; background: rgba(95, 196, 138, 0.14); box-shadow: inset 0 0 0 1px rgba(95, 196, 138, 0.35); }
+.hud-card[data-state="failed"] .hud-icon, .hud-icon[data-state="failed"] { color: #ff9b94; background: rgba(242, 104, 95, 0.14); box-shadow: inset 0 0 0 1px rgba(242, 104, 95, 0.4); }
+.hud-led, .hud-led-idle { display: inline-block; width: 7px; height: 7px; flex-shrink: 0; border-radius: 999px; background: #2b6f88; }
+.hud-led[data-state="busy"] { background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: hud-blink 1.1s ease-in-out infinite; }
+.hud-led[data-state="done"] { background: #5fc48a; box-shadow: 0 0 8px #5fc48a; }
+.hud-led[data-state="failed"] { background: #f2685f; box-shadow: 0 0 8px #f2685f; }
+@keyframes hud-blink { 50% { opacity: 0.35; } }
+.hud-scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 40%, rgba(246, 212, 58, 0.1) 50%, transparent 60%); animation: hud-scan 2.6s linear infinite; }
+@keyframes hud-scan { from { transform: translateY(-60%); } to { transform: translateY(60%); } }
+.hud-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent) no-repeat; background-size: 45% 100%; animation: hud-bar 1.4s linear infinite; }
+@keyframes hud-bar { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+/* What a track carries, shown on the focused card's tracks. */
+.hud-pill { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: max-content; white-space: normal; padding: 2px 6px; border-radius: 9px; pointer-events: none; text-align: center; font: 500 10px/1.2 var(--font-geist-mono), monospace; letter-spacing: 0.01em; color: #d8f6ff; background: rgba(3, 12, 22, 0.94); border: 1px solid rgba(84, 214, 255, 0.5); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6); }
+.hud-pill.hot { color: #ffe680; border-color: rgba(246, 212, 58, 0.6); }
+@media (prefers-reduced-motion: reduce) { .hud-packet, .hud-scan, .hud-bar { display: none; } .hud-led[data-state="busy"] { animation: none; } }
 
 /* The setup assistant's "hello": the outline is drawn, then the letters fill in gold. */
 .hello-word {

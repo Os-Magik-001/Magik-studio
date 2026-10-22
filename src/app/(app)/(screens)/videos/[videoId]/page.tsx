@@ -22,6 +22,9 @@ import { ReferenceList } from "@/components/references/list";
 import { AddReferenceForm } from "@/components/references/add-form";
 import { DESIGN_TEMPLATES } from "@/lib/design-templates";
 import { asDesignBrief, asShootPlan, asSoundReport } from "@/lib/agent-types";
+import { readBeats } from "@/lib/script-view";
+import { ScriptDocument } from "@/components/scripts/script-document";
+import { ScriptPdfLink } from "@/components/scripts/pdf-link";
 import { LocalDate } from "@/components/local-date";
 import { deleteShoot, deleteVideo } from "@/app/actions/studio";
 import {
@@ -44,8 +47,8 @@ export async function generateMetadata({ params }: { params: Promise<{ videoId: 
 
 const JOB_SOURCE = { launch: "First edit", editor_fix: "Editor fixes", client_changes: "Client changes" } as const;
 const JOB_STATUS = {
-  queued: { label: "Waiting for Claude", tone: "accent" },
-  running: { label: "Claude is editing", tone: "accent" },
+  queued: { label: "Waiting for the edit engine", tone: "accent" },
+  running: { label: "The edit engine is editing", tone: "accent" },
   done: { label: "Done", tone: "success" },
   failed: { label: "Failed", tone: "danger" },
   cancelled: { label: "Cancelled", tone: "neutral" },
@@ -74,6 +77,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
     { data: kit },
     { data: savedPrompts },
     { data: references },
+    { data: writingRuns },
   ] = await Promise.all([
       supabase.from("clients").select("id, name, revision_limit").eq("id", video.client_id).single(),
       supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -101,7 +105,9 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         .eq("client_id", video.client_id)
         .or(`video_id.eq.${videoId},video_id.is.null`)
         .order("created_at", { ascending: false }),
-    ]);
+        // The scriptwriter at work on this video from the client's Production panel.
+      supabase.from("agent_runs").select("id, status, progress").eq("video_id", videoId).eq("agent", "scriptwriter").in("status", ["queued", "running"]).limit(1),
+  ]);
 
   const refs = [...(references ?? [])].sort((a, b) => Number(!!b.video_id) - Number(!!a.video_id));
   const [footageUrls, sheetUrls] = await Promise.all([
@@ -117,6 +123,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
     (staff ?? []).filter((p) => p.role === role).map((p) => ({ id: p.id, name: displayName(p) }));
   const scriptStatus = script?.status ?? "draft";
   const shootPlan = asShootPlan(script?.shoot_plan);
+  const writing = writingRuns?.[0] ?? null;
   const designTemplates = script?.design_templates ?? [];
   const designed = kit?.graphics === "designed" || designTemplates.length > 0;
   const designBrief = asDesignBrief(script?.design_brief);
@@ -181,7 +188,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         <NextStepBanner next={next} href={next.step === "review" && reviewHref && video.status === "editor_check" ? reviewHref : `#${next.step}`} />
       </div>
       <StepNav states={states} />
-      {(openJobs.length > 0 || watching) && <AutoRefresh seconds={6} />}
+      {(openJobs.length > 0 || watching || !!writing) && <AutoRefresh seconds={6} />}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="flex min-w-0 flex-col gap-6">
@@ -204,7 +211,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="text-sm font-medium text-ink">References {refs.length > 0 && <span className="text-muted">({refs.length})</span>}</h3>
-                  <span className="text-xs text-muted">The engine watches each one, then Claude breaks it down for the agents.</span>
+                  <span className="text-xs text-muted">The engine watches each one and breaks it down for the agents.</span>
                 </div>
                 {refs.length > 0 ? (
                   <ReferenceList items={refs} sheetUrls={sheetUrls} scoped />
@@ -240,6 +247,17 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 </div>
               </details>
             )}
+            {writing && (
+              <div className="mb-4 flex items-center gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent" role="status">
+                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent" aria-hidden />
+                {writing.status === "queued" ? "The scriptwriter starts on this script in a moment." : `${writing.progress ?? "The scriptwriter is writing it"}…`} This page updates when it&apos;s ready.
+              </div>
+            )}
+            {script?.body.trim() && (
+              <div className="mb-5">
+                <ScriptDocument beats={readBeats(script.beats, script.body)} body={script.body} plan={shootPlan} actions={<ScriptPdfLink videoId={video.id} />} />
+              </div>
+            )}
             {script?.status === "changes_requested" && script.client_note && (
               <div className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
                 <div className="font-medium">The client asked for changes</div>
@@ -252,7 +270,6 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                   Approved by {approvedByClient ? "the client" : "the studio"}
                   {script.approved_at && <LocalDate value={script.approved_at} preset="date" prefix=" on " />}.
                 </p>
-                <div className="whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-sm leading-relaxed text-ink">{script.body}</div>
                 <ShotList shots={parseShotList(script.shot_list)} />
                 {script.edit_prompt && (
                   <div>
@@ -274,6 +291,8 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 hasStrategy={!!strategy}
                 version={changedElsewhere("edited")}
                 designed={designed}
+                // With a script to read above, the text fields fold away.
+                collapsed={!!script?.body.trim()}
               />
             )}
             {(script?.body.trim() || script?.edit_prompt?.trim() || entries.length > 0) && (
@@ -387,7 +406,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
           </StepCard>
 
           {/* 5. Edit */}
-          <StepCard step="edit" state={states.edit} title="Edit with Claude" description="Launch the edit with any notes. Fix requests and client changes go back to Claude the same way.">
+          <StepCard step="edit" state={states.edit} title="Edit with the engine" description="Launch the edit with any notes. Fix requests and client changes go back to the edit engine the same way.">
             <div className="flex flex-col gap-5">
               {openJobs.length === 0 && (
                 <LaunchEditForm key={script?.updated_at} videoId={video.id} prompt={script?.edit_prompt ?? undefined} disabledReason={!footage?.length ? "Add the raw footage first (step 4)." : undefined} />
@@ -431,7 +450,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                 <details className="rounded-xl bg-surface-2 p-4 text-[13px] text-ink-2">
                   <summary className="cursor-pointer font-medium text-ink">Upload a render yourself instead</summary>
                   <p className="mt-2">
-                    Claude is working on this edit; this page updates when the draft is ready. If you&apos;d rather cut it by hand, upload the render here. Either way it goes to editor check, never
+                    The edit engine is working on this edit; this page updates when the draft is ready. If you&apos;d rather cut it by hand, upload the render here. Either way it goes to editor check, never
                     straight to the client.
                   </p>
                   <div className="mt-3">
@@ -484,7 +503,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                     <Link href={`/review/${video.id}?v=${v.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 hover:bg-surface-2">
                       <span className="font-mono text-sm text-ink">v{v.number}</span>
                       <span className="min-w-0 flex-1 truncate text-[13px] text-muted">
-                        {v.made_by === "claude" ? "Claude" : "Editor"} · <LocalDate value={v.created_at} preset="short" />
+                        {v.made_by === "claude" ? "Edit engine" : "Editor"} · <LocalDate value={v.created_at} preset="short" />
                       </span>
                       <VersionStatusBadge status={v.status} />
                     </Link>

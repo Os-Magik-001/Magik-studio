@@ -68,7 +68,7 @@ export async function homeData(viewer: Viewer): Promise<HomeData> {
   const weekAhead = localDay(new Date(Date.now() + 7 * DAY));
 
   const [notes, videos, shoots, invoices] = await Promise.all([
-    supabase.from("notifications").select("id, title, body, kind, read_at, created_at, video_id").order("created_at", { ascending: false }).limit(5),
+    supabase.from("notifications").select("id, title, body, kind, read_at, created_at, video_id, client_id").order("created_at", { ascending: false }).limit(5),
     role === "seller"
       ? Promise.resolve({ data: [] as { id: string; title: string; status: VideoStatus; due_on: string | null; updated_at: string; clients: { name: string } | null }[] })
       : supabase.from("videos").select("id, title, status, due_on, updated_at, clients(name)").order("updated_at", { ascending: false }).limit(200),
@@ -95,7 +95,8 @@ export async function homeData(viewer: Viewer): Promise<HomeData> {
   const open = allVideos.filter((v) => v.status !== "delivered");
 
   // ------------------------------------------------------------ activity
-  const activityHref = (n: { video_id: string | null; kind: string }) => {
+  const activityHref = (n: { video_id: string | null; client_id: string | null; kind: string }) => {
+    if (!n.video_id && n.client_id) return role === "client" ? "/review" : role === "videographer" ? "/shoots" : staff ? `/clients/${n.client_id}#production` : sales ? "/onboarding" : "/notifications";
     if (!n.video_id) return sales && n.kind.startsWith("onboarding") ? "/onboarding" : "/notifications";
     if (role === "client") return `/review/${n.video_id}`;
     if (role === "videographer") return `/shoots/${n.video_id}`;

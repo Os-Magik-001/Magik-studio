@@ -11,14 +11,14 @@ export const WHO: Record<Who, { label: string; tone: "accent" | "neutral" | "suc
   studio: { label: "The studio", tone: "accent" },
   client: { label: "The client", tone: "neutral" },
   crew: { label: "The videographer", tone: "neutral" },
-  engine: { label: "Claude", tone: "warning" },
+  engine: { label: "The edit engine", tone: "warning" },
   done: { label: "Done", tone: "success" },
 };
 
 export const PHASES: { key: string; label: string; hint: string; statuses: VideoStatus[] }[] = [
   { key: "plan", label: "Plan", hint: "Brief, references, script", statuses: ["script"] },
   { key: "shoot", label: "Shoot", hint: "Shoot and footage", statuses: ["shoot", "footage_in"] },
-  { key: "edit", label: "Edit", hint: "Claude edits, the editor checks", statuses: ["editing", "editor_check"] },
+  { key: "edit", label: "Edit", hint: "The edit engine edits, the editor checks", statuses: ["editing", "editor_check"] },
   { key: "review", label: "Review", hint: "The client reviews", statuses: ["client_review", "approved"] },
   { key: "done", label: "Delivered", hint: "Finished videos", statuses: ["delivered"] },
 ];
@@ -59,7 +59,7 @@ export function nextStep(f: PipelineFacts): NextStep {
       return f.footageComplete ? { label: "Launch the edit", who: "studio", step: "edit" } : { label: "Footage is in: start the edit", who: "studio", step: "edit" };
     case "editing":
       if (f.job?.status === "failed") return { label: "The edit failed: retry it", who: "studio", step: "edit" };
-      if (f.job?.status === "running") return { label: f.job.progress ?? "Claude is editing", who: "engine", step: "edit" };
+      if (f.job?.status === "running") return { label: f.job.progress ?? "The edit engine is editing", who: "engine", step: "edit" };
       if (f.job?.status === "queued") return { label: "Waiting for the edit engine", who: "engine", step: "edit" };
       return { label: "Launch the edit", who: "studio", step: "edit" };
     case "editor_check":

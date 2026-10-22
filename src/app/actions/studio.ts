@@ -82,7 +82,7 @@ export async function saveBrandKit(_: ActionResult, formData: FormData): Promise
   });
   if (error) return fail("Couldn't save the brand kit.");
   refresh();
-  return done("Brand kit saved. Claude follows it on every script and edit.");
+  return done("Brand kit saved. The agents and the edit engine follow it on every script and edit.");
 }
 
 export async function setBrandLogo(input: { clientId: string; path: string }): Promise<ActionResult> {

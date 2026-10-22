@@ -4,7 +4,10 @@ import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
-import { asCharte, asDesignBrief, asFindings, asPillars, asReels, asReferenceBreakdown, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
+import { asCharte, asDesignBrief, asFindings, asPillars, asPlan, asReels, asReferenceBreakdown, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
+import { ROSTER } from "@/lib/agent-roster";
+import { allSkills, type AgentKey } from "@/lib/skills";
+import { kickQueue } from "@/lib/production";
 import { PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
 import { parseShotList } from "@/lib/workflow";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -15,11 +18,13 @@ import { DesignBriefView, FindingsView, ShootPlanView, SoundView, StrategyView }
 export const metadata: Metadata = { title: "Agents" };
 
 const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n));
-// Something that happened in the last two minutes fires a burst on its link.
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+// Something that happened in the last two minutes fires a burst on its track.
 const isFresh = (iso: string) => Date.now() - Date.parse(iso) < 120_000;
+const busy = (status?: string | null) => status === "queued" || status === "running";
 
-// Mission control: the five agents, the references, the videographer and the edit engine for
-// one client (and one of their videos), read live from the database.
+// Mission control: the agents, the references, the videographer and the edit engine for one
+// client (and one of their videos), read live from the database.
 export default async function AgentsPage({ searchParams }: { searchParams: Promise<{ client?: string; video?: string }> }) {
   await requireRole("admin", "editor");
   const { client: clientParam, video: videoParam } = await searchParams;
@@ -35,7 +40,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   }
   const client = clients.find((c) => c.id === clientParam) ?? clients[0];
 
-  const [{ data: form }, { data: strategy }, { data: reports }, { data: videos }, { data: kit }, { data: allRefs }] = await Promise.all([
+  const [{ data: form }, { data: strategy }, { data: reports }, { data: videos }, { data: kit }, { data: allRefs }, { data: runs }, library] = await Promise.all([
     supabase.from("brand_questionnaires").select("answers, updated_at").eq("client_id", client.id).maybeSingle(),
     supabase.from("brand_strategies").select("*").eq("client_id", client.id).maybeSingle(),
     supabase
@@ -51,7 +56,10 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       .select("id, video_id, url, platform, focus, note, status, progress, error, watched, title, owner, analysis, created_at, finished_at")
       .eq("client_id", client.id)
       .order("created_at"),
+    supabase.from("agent_runs").select("id, agent, status, progress, error, video_id, output, created_at, started_at, finished_at").eq("client_id", client.id).order("created_at", { ascending: false }).limit(60),
+    allSkills(),
   ]);
+  await kickQueue();
   const video = (videos ?? []).find((v) => v.id === videoParam) ?? videos?.[0] ?? null;
   // The references this video's agents work from: its own and the client's.
   const refs = (allRefs ?? []).filter((r) => !r.video_id || r.video_id === video?.id);
@@ -67,7 +75,8 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       ])
     : [{ data: null }, { data: null }, { data: null }, { data: null }, { data: null }];
 
-  // ------------------------------------------------------------ state of each node
+  // ------------------------------------------------------------ state of each card
+  const skills = (agent: AgentKey) => library.filter((s) => s.agents.includes(agent)).map((s) => ({ name: s.name, description: s.description }));
   const answers = readAnswers(form?.answers);
   const answered = answeredCount(answers);
   const latestReport = reports?.[0] ?? null;
@@ -78,7 +87,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const scored = [...(versions ?? [])].reverse().find((v) => asSoundReport(v.sound));
   const sound = asSoundReport(scored?.sound);
   const charte = asCharte(strategy?.charte);
-  const plan = asShootPlan(script?.shoot_plan);
+  const shootPlan = asShootPlan(script?.shoot_plan);
   const shots = parseShotList(script?.shot_list);
   const openJob = (jobs ?? []).find((j) => j.status === "queued" || j.status === "running");
   const scoring = !!openJob?.progress && /sound designer/i.test(openJob.progress);
@@ -86,84 +95,183 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const designed = kit?.graphics === "designed" || !!script?.design_templates?.length;
   const drawing = !!openJob?.progress && /design|graphics/i.test(openJob.progress);
   const lastJob = jobs?.at(-1);
-  const researching = latestReport && (latestReport.status === "queued" || latestReport.status === "running");
+  const researching = busy(latestReport?.status);
   const plays = reels.reduce((a, r) => a + Math.max(0, r.plays ?? 0), 0);
+  const runsOf = (agent: string) => (runs ?? []).filter((r) => r.agent === agent);
+  const strategistRun = runsOf("strategist")[0] ?? null;
+  const plannerRun = runsOf("planner")[0] ?? null;
+  const planRun = runsOf("planner").find((r) => r.status === "done") ?? null;
+  const monthPlan = asPlan(planRun?.output);
+  const created = monthPlan?.ideas.filter((i) => i.video_id).length ?? 0;
+  const writers = runsOf("scriptwriter");
+  const writing = writers.filter((r) => busy(r.status));
+  const writingNow = writing.find((r) => r.status === "running");
+  const lastWrite = writers[0] ?? null;
 
-  const st = (busy: boolean, done: boolean, failed = false): NodeState => (busy ? "busy" : failed ? "failed" : done ? "done" : "idle");
+  const st = (working: boolean, done: boolean, failed = false): NodeState => (working ? "busy" : failed ? "failed" : done ? "done" : "idle");
   const nodes: HudNode[] = [
-    { id: "client", kind: "INPUT", title: "CLIENT", role: "Brand questionnaire", meta: `${answered}/${QUESTIONS.length} answers`, state: st(false, answered >= 4) },
+    { id: "client", kind: "Input", title: "Client", role: "The brand questionnaire, answered during onboarding.", meta: `${answered} of ${QUESTIONS.length} answers`, state: st(false, answered >= 4) },
     {
       id: "refs",
-      kind: "INPUT",
-      title: "REFERENCES",
-      role: "Reels and videos the studio picked",
-      meta: refs.length ? `${refs.length} reference${refs.length > 1 ? "s" : ""} · ${refsDone.filter((r) => r.watched).length} watched` : "none yet",
+      kind: "Input",
+      title: "References",
+      role: "Reels and videos the studio picked: the look to match.",
+      meta: refs.length ? `${plural(refs.length, "reference")} · ${refsDone.filter((r) => r.watched).length} watched` : "none yet",
       state: st(refsPending.length > 0, refsDone.length > 0, refs.length > 0 && refs.every((r) => r.status === "failed")),
-      progress: refsPending.find((r) => r.status === "running")?.progress ?? (refsPending.length ? "Queued on the engine" : null),
+      progress: refsPending.find((r) => r.status === "running")?.progress ?? (refsPending.length ? "Waiting for the edit engine" : null),
     },
-    { id: "a1", kind: "AGENT 01", title: "STRATEGIST", role: "Niche, charte graphique, business & needs", meta: strategy ? `${strategy.keywords.length} hashtags · ${charte?.palette.length ?? 0} colors` : "waiting", state: st(false, !!strategy) },
-    { id: "apify", kind: "SOURCE", title: "APIFY", role: "Instagram search", meta: latestReport ? [...latestReport.hashtags.map((h) => `#${h}`)].slice(0, 2).join(" ") || "accounts" : "idle", state: st(!!researching && latestReport?.progress?.startsWith("Searching") === true, !!doneReport) },
-    { id: "a2", kind: "AGENT 02", title: "RESEARCHER", role: "Watches the top reels, writes what works", meta: doneReport ? `${reels.length} reels · ${compact(plays)} plays` : "waiting", state: st(!!researching, !!doneReport, latestReport?.status === "failed"), progress: researching ? latestReport?.progress ?? "Queued on the engine" : null },
-    { id: "a3", kind: "AGENT 03", title: "SCRIPTWRITER", role: "Script, shoot plan, edit prompt", meta: plan ? `${plan.scenes.length} scenes · ${Math.round(plan.length_seconds)}s` : script ? "script only" : "waiting", state: st(false, !!script?.edit_prompt) },
-    { id: "a4", kind: "AGENT 04", title: "SOUND DESIGNER", role: "Music, sound effects, trending audio", meta: sound ? (sound.track ? sound.track.title : "dialogue only") : trendAudio.length ? `${trendAudio.length} trending sounds in` : "waiting for a cut", state: st(scoring, !!sound), progress: scoring ? openJob?.progress ?? null : null },
-    { id: "a5", kind: "AGENT 05", title: "MOTION DIRECTOR", role: "Design templates, a design prompt per scene", meta: designBrief ? `${designBrief.scenes.length} scenes designed` : designed ? "waiting for the script" : "engine templates", state: st(drawing, !!designBrief), progress: drawing ? openJob?.progress ?? null : null },
-    { id: "shoot", kind: "HUMAN", title: "VIDEOGRAPHER", role: "Shoots from the plan", meta: footage?.length ? `${footage.length} file${footage.length > 1 ? "s" : ""}` : `${shots.length} shots to get`, state: st(!!footage?.length && !video?.footage_complete_at, !!video?.footage_complete_at) },
-    { id: "engine", kind: "ENGINE", title: "EDIT ENGINE", role: "Cuts, captions, 3D motion, music", meta: openJob ? "editing" : versions?.length ? `v${versions.at(-1)!.number} rendered` : "waiting for footage", state: st(!!openJob, !!versions?.length, !openJob && lastJob?.status === "failed"), progress: openJob ? openJob.progress ?? "Queued" : null },
-    { id: "video", kind: "OUTPUT", title: "VIDEO", role: video?.title ?? "No video yet", meta: versions?.length ? `v${versions.at(-1)!.number} · ${versions.at(-1)!.status.replace("_", " ")}` : "—", state: st(false, !!versions?.length) },
+    {
+      id: "strategist",
+      kind: "Agent 01",
+      title: ROSTER.strategist.name,
+      role: ROSTER.strategist.does,
+      meta: strategy ? (strategy.niche ?? "strategy ready") : answered >= 4 ? "ready to start" : "waiting for the answers",
+      state: st(busy(strategistRun?.status), !!strategy, !strategy && strategistRun?.status === "failed"),
+      progress: busy(strategistRun?.status) ? (strategistRun?.progress ?? "Starting") : null,
+      skills: skills("strategist"),
+    },
+    {
+      id: "researcher",
+      kind: "Agent 02",
+      title: ROSTER.researcher.name,
+      role: ROSTER.researcher.does,
+      meta: doneReport ? `${plural(reels.length, "reel")} · ${compact(plays)} plays` : strategy ? "ready to search" : "waiting for the strategy",
+      state: st(researching, !!doneReport, latestReport?.status === "failed"),
+      progress: researching ? (latestReport?.progress ?? "Waiting for the edit engine") : null,
+      skills: skills("researcher"),
+    },
+    {
+      id: "planner",
+      kind: "Agent 03",
+      title: ROSTER.planner.name,
+      role: ROSTER.planner.does,
+      meta: monthPlan ? `${plural(monthPlan.ideas.length, "idea")} · ${plural(created, "video")} made` : strategy ? "ready to plan" : "waiting for the strategy",
+      state: st(busy(plannerRun?.status), !!monthPlan, !monthPlan && plannerRun?.status === "failed"),
+      progress: busy(plannerRun?.status) ? (plannerRun?.progress ?? "Starting") : null,
+      skills: skills("planner"),
+    },
+    {
+      id: "scriptwriter",
+      kind: "Agent 04",
+      title: ROSTER.scriptwriter.name,
+      role: ROSTER.scriptwriter.does,
+      meta: shootPlan ? `${plural(shootPlan.scenes.length, "scene")} · ${Math.round(shootPlan.length_seconds)} s` : script?.body.trim() ? "script only" : "waiting for a brief",
+      state: st(writing.length > 0, !!script?.edit_prompt, !writing.length && lastWrite?.status === "failed"),
+      progress: writing.length ? `${writingNow?.progress ?? "Writing"}: ${plural(writing.length, "script")} to go` : null,
+      skills: skills("scriptwriter"),
+    },
+    {
+      id: "motion",
+      kind: "Agent 05",
+      title: ROSTER.motion.name,
+      role: ROSTER.motion.does,
+      meta: designBrief ? `${plural(designBrief.scenes.length, "scene")} designed` : designed ? "waiting for the script" : "engine templates",
+      state: st(drawing, !!designBrief),
+      progress: drawing ? (openJob?.progress ?? null) : null,
+      skills: skills("motion"),
+    },
+    {
+      id: "shoot",
+      kind: "Human",
+      title: "Videographer",
+      role: "Shoots from the shoot plan and drops the footage.",
+      meta: footage?.length ? plural(footage.length, "file") : `${plural(shots.length, "shot")} to get`,
+      state: st(!!footage?.length && !video?.footage_complete_at, !!video?.footage_complete_at),
+    },
+    {
+      id: "engine",
+      kind: "Engine",
+      title: ROSTER.engine.name,
+      role: ROSTER.engine.does,
+      meta: openJob ? "editing" : versions?.length ? `v${versions.at(-1)!.number} rendered` : "waiting for footage",
+      state: st(!!openJob, !!versions?.length, !openJob && lastJob?.status === "failed"),
+      progress: openJob ? (openJob.progress ?? "Queued") : null,
+      skills: skills("editor"),
+    },
+    {
+      id: "sound",
+      kind: "Agent 06",
+      title: ROSTER.sound.name,
+      role: `${ROSTER.sound.does} It also reads the research's trending sounds.`,
+      meta: sound ? (sound.track ? sound.track.title : "dialogue only") : trendAudio.length ? `${plural(trendAudio.length, "trending sound")} in` : "waiting for a cut",
+      state: st(scoring, !!sound),
+      progress: scoring ? (openJob?.progress ?? null) : null,
+      skills: skills("sound"),
+    },
+    {
+      id: "video",
+      kind: "Output",
+      title: "Video",
+      role: video?.title ?? "No video yet",
+      meta: versions?.length ? `v${versions.at(-1)!.number} · ${versions.at(-1)!.status.replace("_", " ")}` : video ? video.title : "—",
+      state: st(false, !!versions?.length),
+    },
   ];
   const links: HudLink[] = [
-    { id: "client-a1", label: "questionnaire", active: answered > 0 },
-    { id: "a1-apify", label: strategy ? strategy.keywords.slice(0, 2).map((k) => `#${k}`).join(" ") : "hashtags", active: !!latestReport },
-    { id: "apify-a2", label: doneReport ? `${reels.length} top reels` : "reels", active: !!doneReport || !!researching },
-    { id: "a1-a2", label: "niche + audience", active: !!strategy && !!latestReport },
-    { id: "a1-a3", label: "charte + pillars", active: !!strategy && !!script },
-    { id: "a2-a3", label: findings ? `${findings.hooks.length} hooks` : "key points", hot: true, active: !!findings && !!script },
-    { id: "refs-a3", label: refsDone.length ? `${refsDone.length} breakdown${refsDone.length > 1 ? "s" : ""}` : "references", hot: true, active: refsDone.length > 0 && !!script },
-    { id: "refs-a5", label: "look to match", active: refsDone.length > 0 && !!designBrief },
-    { id: "refs-engine", label: "frames + breakdowns", active: refsDone.length > 0 && (!!versions?.length || !!openJob) },
-    { id: "a3-shoot", label: "shoot plan", active: !!plan },
-    { id: "a3-engine", label: "edit prompt", hot: true, active: !!script?.edit_prompt },
+    { id: "client-strategist", label: "questionnaire", active: answered > 0 },
+    { id: "strategist-researcher", label: strategy ? strategy.keywords.slice(0, 2).map((k) => `#${k}`).join(" ") || "hashtags" : "hashtags", active: !!latestReport },
+    { id: "strategist-planner", label: "pillars + goals", active: !!strategy && !!monthPlan },
+    { id: "researcher-planner", label: findings ? `${plural(findings.ideas.length, "idea")} that work` : "what works", hot: true, active: !!findings && !!monthPlan },
+    { id: "researcher-scriptwriter", label: findings ? plural(findings.hooks.length, "hook") : "hooks + structures", hot: true, active: !!findings && !!script?.body.trim() },
+    { id: "planner-scriptwriter", label: created ? plural(created, "brief") : "briefs", active: created > 0 },
+    { id: "refs-scriptwriter", label: refsDone.length ? plural(refsDone.length, "breakdown") : "breakdowns", hot: true, active: refsDone.length > 0 && !!script?.body.trim() },
+    { id: "refs-motion", label: "look to match", active: refsDone.length > 0 && !!designBrief },
+    { id: "scriptwriter-motion", label: "script", active: !!designBrief },
+    { id: "scriptwriter-shoot", label: "shoot plan", active: !!shootPlan },
+    { id: "scriptwriter-engine", label: "edit prompt", hot: true, active: !!script?.edit_prompt },
+    { id: "motion-engine", label: designBrief ? plural(designBrief.scenes.length, "design prompt") : "design prompts", hot: true, active: !!designBrief },
     { id: "shoot-engine", label: "footage", active: !!footage?.length },
+    { id: "sound-engine", label: "music + effects", hot: true, active: !!sound },
     { id: "engine-video", label: "render", active: !!versions?.length },
-    { id: "a2-a4", label: trendAudio.length ? `${trendAudio.length} trending sounds` : "trending sounds", hot: true, active: !!trendAudio.length },
-    { id: "a4-engine", label: "music + effects", hot: true, active: !!sound },
-    { id: "a3-a5", label: "script", active: !!designBrief },
-    { id: "a5-engine", label: designBrief ? `${designBrief.scenes.length} design prompts` : "design prompts", hot: true, active: !!designBrief },
   ];
 
   // ------------------------------------------------------------ the comm log, from timestamps
+  const short = (t: string | null, n = 160) => ((t ?? "").length > n ? `${t!.slice(0, n - 1)}…` : (t ?? ""));
   const events: HudEvent[] = [];
-  if (form) events.push({ at: form.updated_at, who: "CLIENT → STRATEGIST", msg: `${answered} questionnaire answers`, link: "client-a1" });
+  if (form) events.push({ at: form.updated_at, who: "CLIENT → STRATEGIST", msg: `${answered} questionnaire answers`, link: "client-strategist" });
+  for (const r of [...runsOf("strategist")].reverse()) {
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "BRAND STRATEGIST", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
+  }
   if (strategy) {
-    events.push({ at: strategy.updated_at, who: "STRATEGIST → RESEARCHER", msg: `Niche: ${strategy.niche}`, link: "a1-a2" });
-    events.push({ at: strategy.updated_at, who: "STRATEGIST → SCRIPTWRITER", msg: `Charte graphique + ${asPillars(strategy.pillars).length} content pillars`, link: "a1-a3" });
+    events.push({ at: strategy.updated_at, who: "STRATEGIST → RESEARCHER", msg: `Niche: ${strategy.niche}`, link: "strategist-researcher" });
+    events.push({ at: strategy.updated_at, who: "STRATEGIST → PLANNER", msg: `Charte graphique + ${plural(asPillars(strategy.pillars).length, "content pillar")}`, link: "strategist-planner" });
   }
   for (const r of [...(reports ?? [])].reverse()) {
     const q = [...r.hashtags.map((h) => `#${h}`), ...r.accounts.map((a) => `@${a}`)].join(" ");
     events.push({ at: r.created_at, who: "STUDIO → RESEARCHER", msg: `Research requested: ${q}` });
-    if (r.started_at) events.push({ at: r.started_at, who: "RESEARCHER → APIFY", msg: `Search ${q}`, link: "a1-apify" });
+    if (r.started_at) events.push({ at: r.started_at, who: "RESEARCHER", msg: `Searching Instagram: ${q}`, link: "strategist-researcher" });
     if (r.status === "done" && r.finished_at) {
       const f = asFindings(r.findings);
-      events.push({ at: r.finished_at, who: "APIFY → RESEARCHER", msg: `${asReels(r.reels).length} top reels watched`, link: "apify-a2" });
-      if (f) events.push({ at: r.finished_at, who: "RESEARCHER → SCRIPTWRITER", msg: `${f.hooks.length} hooks, ${f.structures.length} structures, ${f.ideas.length} ideas`, link: "a2-a3" });
+      events.push({ at: r.finished_at, who: "RESEARCHER", msg: `${plural(asReels(r.reels).length, "top reel")} watched` });
+      if (f) events.push({ at: r.finished_at, who: "RESEARCHER → SCRIPTWRITER", msg: `${plural(f.hooks.length, "hook")}, ${plural(f.structures.length, "structure")}, ${plural(f.ideas.length, "idea")}`, link: "researcher-scriptwriter" });
     }
     if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "RESEARCHER", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
   }
+  for (const r of [...runsOf("planner")].reverse()) {
+    const p = asPlan(r.output);
+    if (r.status === "done" && r.finished_at && p) events.push({ at: r.finished_at, who: "PLANNER → STUDIO", msg: `${plural(p.ideas.length, "video idea")} for ${p.month}`, link: "researcher-planner" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "CONTENT PLANNER", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
+  }
+  const titleOf = new Map((videos ?? []).map((v) => [v.id, v.title]));
+  for (const r of [...writers].reverse()) {
+    const t = titleOf.get(r.video_id ?? "") ?? "a video";
+    if (r.status === "done" && r.finished_at) events.push({ at: r.finished_at, who: "SCRIPTWRITER", msg: `Script ready: ${t}`, link: "planner-scriptwriter" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "SCRIPTWRITER", msg: `Couldn't write ${t}: ${r.error ?? "unknown error"}`, tone: "bad" });
+  }
   for (const r of refs) {
     const name = [PLATFORM_LABEL[r.platform as ReferencePlatform] ?? r.platform, r.owner].filter(Boolean).join(" ");
-    events.push({ at: r.created_at, who: "STUDIO → REFERENCES", msg: `${name}${r.note ? `: ${r.note.length > 90 ? `${r.note.slice(0, 89)}…` : r.note}` : ""}` });
+    events.push({ at: r.created_at, who: "STUDIO → REFERENCES", msg: `${name}${r.note ? `: ${short(r.note, 90)}` : ""}` });
     if (r.status === "done" && r.finished_at) {
       const b = asReferenceBreakdown(r.analysis);
-      events.push({ at: r.finished_at, who: "REFERENCES → SCRIPTWRITER", msg: b ? `${name} broken down: ${b.summary.length > 120 ? `${b.summary.slice(0, 119)}…` : b.summary}` : `${name}: ${r.error ?? "link only"}`, link: "refs-a3" });
+      events.push({ at: r.finished_at, who: "REFERENCES → SCRIPTWRITER", msg: b ? `${name} broken down: ${short(b.summary, 120)}` : `${name}: ${r.error ?? "link only"}`, link: "refs-scriptwriter" });
     }
     if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "REFERENCES", msg: `Couldn't watch ${name}: ${r.error ?? "unknown error"}`, tone: "bad" });
   }
-  if (designBrief) events.push({ at: designBrief.written_at, who: "MOTION DIRECTOR → ENGINE", msg: `${designBrief.scenes.length} design prompts: ${designBrief.concept}`, link: "a5-engine" });
+  if (designBrief) events.push({ at: designBrief.written_at, who: "MOTION DIRECTOR → ENGINE", msg: `${plural(designBrief.scenes.length, "design prompt")}: ${designBrief.concept}`, link: "motion-engine" });
   if (script?.edit_prompt) {
-    events.push({ at: script.updated_at, who: "SCRIPTWRITER → VIDEOGRAPHER", msg: plan ? `${plan.scenes.length} scenes, ${shots.length} shots` : `${shots.length} shots`, link: "a3-shoot" });
-    events.push({ at: script.updated_at, who: "SCRIPTWRITER → ENGINE", msg: `Edit prompt (${script.edit_prompt.split(/\s+/).length} words)`, link: "a3-engine" });
+    events.push({ at: script.updated_at, who: "SCRIPTWRITER → VIDEOGRAPHER", msg: shootPlan ? `${plural(shootPlan.scenes.length, "scene")}, ${plural(shots.length, "shot")}` : plural(shots.length, "shot"), link: "scriptwriter-shoot" });
+    events.push({ at: script.updated_at, who: "SCRIPTWRITER → ENGINE", msg: `Edit prompt (${script.edit_prompt.split(/\s+/).length} words)`, link: "scriptwriter-engine" });
   }
-  const short = (t: string | null) => ((t ?? "").length > 160 ? `${t!.slice(0, 159)}…` : t ?? "");
   for (const a of asks ?? []) {
     if (a.kind === "client") events.push({ at: a.created_at, who: "CLIENT → SCRIPTWRITER", msg: `Changes asked: ${short(a.request)}` });
     else {
@@ -171,26 +279,49 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       if (a.reply) events.push({ at: a.created_at, who: "SCRIPTWRITER", msg: short(a.reply) });
     }
   }
-  if (footage?.length) events.push({ at: footage[0].created_at, who: "VIDEOGRAPHER → ENGINE", msg: `Footage: ${footage.length} file${footage.length > 1 ? "s" : ""} (first: ${footage[0].file_name})`, link: "shoot-engine" });
+  if (footage?.length) events.push({ at: footage[0].created_at, who: "VIDEOGRAPHER → ENGINE", msg: `Footage: ${plural(footage.length, "file")} (first: ${footage[0].file_name})`, link: "shoot-engine" });
   if (video?.footage_complete_at) events.push({ at: video.footage_complete_at, who: "VIDEOGRAPHER → ENGINE", msg: "All footage is in: start the edit", link: "shoot-engine" });
   for (const j of jobs ?? []) {
-    events.push({ at: j.created_at, who: "ENGINE", msg: `${j.source === "launch" ? "Edit" : j.source === "editor_fix" ? "Editor fixes" : "Client changes"} queued` });
-    if (j.started_at) events.push({ at: j.started_at, who: "ENGINE", msg: "Claude is editing" });
-    if (j.finished_at && j.status === "failed") events.push({ at: j.finished_at, who: "ENGINE", msg: `Failed: ${j.error ?? ""}`, tone: "bad" });
+    events.push({ at: j.created_at, who: "EDIT ENGINE", msg: `${j.source === "launch" ? "Edit" : j.source === "editor_fix" ? "Editor fixes" : "Client changes"} queued` });
+    if (j.started_at) events.push({ at: j.started_at, who: "EDIT ENGINE", msg: "Editing" });
+    if (j.finished_at && j.status === "failed") events.push({ at: j.finished_at, who: "EDIT ENGINE", msg: `Failed: ${j.error ?? ""}`, tone: "bad" });
   }
   for (const v of versions ?? []) {
     const s = asSoundReport(v.sound);
-    if (s) events.push({ at: v.created_at, who: "SOUND DESIGNER → ENGINE", msg: `${s.track ? `"${s.track.title}" (${s.track.library})` : "No music"}, ${s.sfx.length} effects${s.trend ? `, post with "${s.trend.title}"` : ""}`, link: "a4-engine" });
-    events.push({ at: v.created_at, who: "ENGINE → VIDEO", msg: `v${v.number} ready (${v.made_by === "claude" ? "Claude" : "editor"})`, link: "engine-video" });
+    if (s) events.push({ at: v.created_at, who: "SOUND DESIGNER → ENGINE", msg: `${s.track ? `"${s.track.title}" (${s.track.library})` : "No music"}, ${plural(s.sfx.length, "effect")}${s.trend ? `, post with "${s.trend.title}"` : ""}`, link: "sound-engine" });
+    events.push({ at: v.created_at, who: "ENGINE → VIDEO", msg: `v${v.number} ready (${v.made_by === "claude" ? "edit engine" : "editor"})`, link: "engine-video" });
   }
   events.sort((a, b) => a.at.localeCompare(b.at));
   for (const e of events) e.fresh = isFresh(e.at);
 
+  // ------------------------------------------------------------ now, or what's next
+  const now = nodes.filter((n) => n.state === "busy").map((n) => ({ who: n.title, text: `${n.progress ?? "working"}…`, busy: true }));
+  if (!now.length) {
+    const next = !strategy
+      ? answered >= 4
+        ? "Start production on the client's page: the strategist, then the research."
+        : "Waiting for the client's answers to the questionnaire."
+      : !monthPlan && !(videos ?? []).length
+        ? "Plan the month on the client's Production panel."
+        : !script?.body.trim()
+          ? "Write the scripts on the client's Production panel."
+          : !versions?.length
+            ? "Shoot, then the edit starts by itself when the footage is complete."
+            : "All quiet. Every agent is waiting for its next job.";
+    now.push({ who: "Next", text: next, busy: false });
+  }
+
   // ------------------------------------------------------------ panels
   const brandLink = `/clients/${client.id}/brand`;
+  const productionLink = `/clients/${client.id}#production`;
   const empty = (title: string, body: string, href?: string, action?: string) => (
     <EmptyState title={title}>
-      {body} {href && action && <Link href={href} className="text-accent">{action}</Link>}
+      {body}{" "}
+      {href && action && (
+        <Link href={href} className="text-accent">
+          {action}
+        </Link>
+      )}
     </EmptyState>
   );
   const panels: Partial<Record<NodeId, ReactNode>> = {
@@ -210,17 +341,21 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
                 </div>
                 {r.note && <p className="mt-1 text-xs text-ink-2">{r.note}</p>}
                 <p className={cx("mt-1 text-xs", r.status === "failed" ? "text-danger" : r.status === "done" ? "text-muted" : "text-accent")}>
-                  {r.status === "queued" ? "Waiting for the engine" : r.status === "running" ? `${r.progress ?? "Watching it"}…` : r.status === "failed" ? r.error : b ? b.summary : r.error ?? "Link only"}
+                  {r.status === "queued" ? "Waiting for the engine" : r.status === "running" ? `${r.progress ?? "Watching it"}…` : r.status === "failed" ? r.error : b ? b.summary : (r.error ?? "Link only")}
                 </p>
               </li>
             );
           })}
         </ul>
-        <p className="text-xs text-muted">The scriptwriter and the motion director read each breakdown; the editor and the sound designer also look at its frames.</p>
-        {video && <LinkButton href={`/videos/${video.id}#brief`} size="sm">Add a reference</LinkButton>}
+        <p className="text-xs text-muted">The scriptwriter and the motion director read each breakdown; the edit engine and the sound designer also look at its frames.</p>
+        {video && (
+          <LinkButton href={`/videos/${video.id}#brief`} size="sm">
+            Add a reference
+          </LinkButton>
+        )}
       </div>
     ) : (
-      empty("No references yet", "Add reels or videos the studio wants this one to feel like: on the video page (step 1), or for every video on the client page.", video ? `/videos/${video.id}#brief` : `/clients/${client.id}`, "Add one")
+      empty("No references yet", "Add reels or videos the studio wants this one to feel like: on the video page, or for every video on the client page.", video ? `/videos/${video.id}#brief` : `/clients/${client.id}`, "Add one")
     ),
     client: answered ? (
       <dl className="flex flex-col gap-2 text-sm">
@@ -232,61 +367,94 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
         ))}
       </dl>
     ) : (
-      empty("No answers yet", "The client fills it in under Your brand, or you can.", brandLink, "Open the questionnaire")
+      empty("No answers yet", "The client answers during onboarding, or you can.", brandLink, "Open the questionnaire")
     ),
-    a1: strategy ? (
+    strategist: strategy ? (
       <StrategyView niche={strategy.niche} keywords={strategy.keywords} accounts={strategy.reference_accounts} business={strategy.business} audience={strategy.audience} needs={strategy.needs} pillars={asPillars(strategy.pillars)} charte={charte} />
     ) : (
-      empty("Not run yet", answered >= 4 ? "The questionnaire is ready." : "Fill in at least 4 answers first.", brandLink, "Run the strategist")
+      empty("Not run yet", answered >= 4 ? "The questionnaire is ready." : "It needs at least 4 answers first.", productionLink, "Start production")
     ),
-    apify: latestReport ? (
-      <div className="flex flex-col gap-2 text-sm text-ink-2">
-        <p>Last search: {[...latestReport.hashtags.map((h) => `#${h}`), ...latestReport.accounts.map((a) => `@${a}`)].join(" ")}</p>
-        <p className="text-muted">Apify returns the reels with their video file, plays, likes, comments and caption. The researcher keeps the top 10 by reach, at most 3 per account.</p>
+    researcher: findings ? (
+      <div className="flex flex-col gap-4">
+        {latestReport && (
+          <p className="text-[13px] text-muted">
+            Searched {[...latestReport.hashtags.map((h) => `#${h}`), ...latestReport.accounts.map((a) => `@${a}`)].join(" ")} on Instagram, kept the top 10 reels by reach (3 per account at most) and watched them.
+          </p>
+        )}
+        <FindingsView findings={findings} reels={reels} audio={trendAudio} />
       </div>
-    ) : (
-      empty("No search yet", "Agent 2 sends the strategy's hashtags here.", brandLink, "Start a research run")
-    ),
-    a2: findings ? (
-      <FindingsView findings={findings} reels={reels} audio={trendAudio} />
     ) : researching ? (
-      <p className="text-sm text-ink-2">{latestReport?.progress ?? "Queued on the edit engine."}</p>
+      <p className="text-sm text-ink-2">{latestReport?.progress ?? "Waiting for the edit engine."}</p>
     ) : (
-      empty(latestReport?.status === "failed" ? "The last run failed" : "No research yet", latestReport?.error ?? "Run it from the Brand & strategy page.", brandLink, "Open")
+      empty(latestReport?.status === "failed" ? "The last run failed" : "No research yet", latestReport?.error ?? "It starts by itself after the strategy, or from the client's Production panel.", productionLink, "Open")
     ),
-    a3:
-      script?.edit_prompt && video ? (
+    planner: monthPlan ? (
+      <div className="flex flex-col gap-3 text-sm">
+        <p className="text-ink-2">{monthPlan.summary}</p>
+        <ol className="flex flex-col gap-2">
+          {monthPlan.ideas.map((idea, i) => (
+            <li key={i} className="rounded-xl border border-line p-3">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="font-medium text-ink">{idea.title}</span>
+                <span className="text-xs text-muted">
+                  {idea.pillar} · {Math.round(idea.length_seconds)} s
+                </span>
+                {idea.video_id && (
+                  <Link href={`/videos/${idea.video_id}`} className="ml-auto text-xs text-accent hover:underline">
+                    Open the video
+                  </Link>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-ink-2">Hook: {idea.hook}</p>
+            </li>
+          ))}
+        </ol>
+        <LinkButton href={productionLink} size="sm">
+          Turn ideas into videos
+        </LinkButton>
+      </div>
+    ) : busy(plannerRun?.status) ? (
+      <p className="text-sm text-ink-2">{plannerRun?.progress ?? "Planning"}…</p>
+    ) : (
+      empty(plannerRun?.status === "failed" ? "The last plan failed" : "No plan yet", plannerRun?.error ?? "It plans the month from the strategy and the research.", productionLink, "Plan the month")
+    ),
+    scriptwriter:
+      script?.body.trim() && video ? (
         <div className="flex flex-col gap-4">
-          {plan && <ShootPlanView plan={plan} />}
-          <div>
-            <div className="kicker mb-2">Edit prompt → engine</div>
-            <pre className="whitespace-pre-wrap rounded-xl bg-black/40 p-3 font-mono text-[12.5px] leading-relaxed text-[#c6f0ff]">{script.edit_prompt}</pre>
-          </div>
+          {writing.length > 0 && <p className="text-sm text-accent">{plural(writing.length, "script")} in progress for this client.</p>}
+          {shootPlan && <ShootPlanView plan={shootPlan} />}
+          {script.edit_prompt && (
+            <div>
+              <div className="kicker mb-2">Edit prompt → engine</div>
+              <pre className="rounded-xl bg-black/40 p-3 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-[#c6f0ff]">{script.edit_prompt}</pre>
+            </div>
+          )}
+          <LinkButton href={`/videos/${video.id}#script`} size="sm">
+            Read the script
+          </LinkButton>
         </div>
       ) : (
-        empty("No script from the scriptwriter yet", video ? "Open the video and press Write with the scriptwriter." : "Create a video for this client first.", video ? `/videos/${video.id}` : `/clients/${client.id}`, "Open")
+        empty(
+          writing.length ? `${plural(writing.length, "script")} in progress` : "No script yet",
+          video ? "Write the scripts from the client's Production panel, or one at a time on the video page." : "Create the videos first: plan the month on the client's page.",
+          video ? productionLink : `/clients/${client.id}`,
+          "Open",
+        )
       ),
-    a4: sound ? (
+    sound: sound ? (
       <div className="flex flex-col gap-3">
         <div className="kicker">v{scored?.number}</div>
         <SoundView sound={sound} />
       </div>
     ) : (
-      empty(
-        "No cut scored yet",
-        "After the editor locks each cut, the sound designer picks the music from every library, lines it up, adds the effects and the trending sound to post with.",
-        "/sounds",
-        "See the libraries",
-      )
+      empty("No cut scored yet", "After the editor locks each cut, the sound designer picks the music from every library, lines it up, adds the effects and the trending sound to post with.", "/sounds", "See the libraries")
     ),
-    a5: designBrief ? (
+    motion: designBrief ? (
       <DesignBriefView brief={designBrief} chosen={script?.design_templates ?? []} />
     ) : (
       empty(
         designed ? "No design brief yet" : "Using the engine's templates",
-        designed
-          ? "The motion director designs the scenes as soon as the scriptwriter writes the script, or press Design the motion on the video."
-          : "Choose design templates on a video, or make designed graphics the client's default in its brand kit.",
+        designed ? "The motion director designs the scenes as soon as the scriptwriter writes the script, or press Design the motion on the video." : "Choose design templates on a video, or make designed graphics the client's default in its brand kit.",
         video ? `/videos/${video.id}` : `/clients/${client.id}`,
         "Open",
       )
@@ -295,7 +463,11 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       <div className="flex flex-col gap-3 text-sm">
         <div className="kicker">Footage</div>
         {footage?.length ? (
-          <ul className="flex flex-col gap-1 text-ink-2">{footage.map((f, i) => <li key={i}>{f.file_name}</li>)}</ul>
+          <ul className="flex flex-col gap-1 text-ink-2">
+            {footage.map((f, i) => (
+              <li key={i}>{f.file_name}</li>
+            ))}
+          </ul>
         ) : (
           <p className="text-muted">Nothing uploaded yet.</p>
         )}
@@ -303,7 +475,13 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
         {shots.length > 0 && (
           <>
             <div className="kicker">Shot list</div>
-            <ul className="flex list-disc flex-col gap-1 pl-5 text-ink-2">{shots.map((s, i) => <li key={i} className={s.done ? "text-muted line-through" : ""}>{s.text}</li>)}</ul>
+            <ul className="flex list-disc flex-col gap-1 pl-5 text-ink-2">
+              {shots.map((s, i) => (
+                <li key={i} className={s.done ? "text-muted line-through" : ""}>
+                  {s.text}
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </div>
@@ -314,7 +492,9 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
           <ul className="flex flex-col gap-2">
             {[...(jobs ?? [])].reverse().map((j) => (
               <li key={j.id} className="rounded-xl border border-line p-2.5">
-                <div className="font-medium text-ink">{j.source.replace("_", " ")} · {j.status}</div>
+                <div className="font-medium text-ink">
+                  {j.source.replace("_", " ")} · {j.status}
+                </div>
                 {j.progress && <div className="text-muted">{j.progress}</div>}
                 {j.error && <div className="text-danger">{j.error}</div>}
               </li>
@@ -333,31 +513,44 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
     ),
     video: video ? (
       <div className="flex flex-col gap-3 text-sm">
-        <ul className="flex flex-col gap-1 text-ink-2">{(versions ?? []).map((v) => <li key={v.number}>v{v.number} · {v.status.replace("_", " ")} · {v.made_by}</li>)}</ul>
-        <LinkButton href={`/videos/${video.id}`} size="sm">Open the video</LinkButton>
+        <ul className="flex flex-col gap-1 text-ink-2">
+          {(versions ?? []).map((v) => (
+            <li key={v.number}>
+              v{v.number} · {v.status.replace("_", " ")} · {v.made_by === "claude" ? "edit engine" : "editor"}
+            </li>
+          ))}
+        </ul>
+        <LinkButton href={`/videos/${video.id}`} size="sm">
+          Open the video
+        </LinkButton>
       </div>
     ) : (
-      empty("No video yet", "Create one on the client page.", `/clients/${client.id}`, "Open the client")
+      empty("No video yet", "Plan the month on the client's page.", productionLink, "Open the client")
     ),
   };
 
   const meters = [
     { label: "Questionnaire", value: `${answered}/${QUESTIONS.length}`, fill: answered / QUESTIONS.length },
     { label: "Reels studied", value: String(reels.length), fill: reels.length / 10 },
-    { label: "References", value: String(refsDone.length), fill: Math.min(1, refsDone.length / 3) },
+    { label: "Ideas planned", value: String(monthPlan?.ideas.length ?? 0), fill: (monthPlan?.ideas.length ?? 0) / 8 },
     { label: "Hooks found", value: String(findings?.hooks.length ?? 0), fill: (findings?.hooks.length ?? 0) / 8 },
-    { label: "Scenes planned", value: String(plan?.scenes.length ?? 0), fill: (plan?.scenes.length ?? 0) / 8 },
+    { label: "Scenes planned", value: String(shootPlan?.scenes.length ?? 0), fill: (shootPlan?.scenes.length ?? 0) / 8 },
     { label: "Versions", value: String(versions?.length ?? 0), fill: Math.min(1, (versions?.length ?? 0) / 3) },
   ];
-  const live = !!researching || !!openJob || refsPending.length > 0;
+  const live = nodes.some((n) => n.state === "busy");
 
   return (
     <>
       <PageHeader
         eyebrow="Mission control"
         title="Agents"
-        description="How the five agents, the references, the videographer and the edit engine pass work to each other for one client, from the brief to the video. Click a node to read what it produced."
-        actions={<LinkButton href={brandLink}>Brand & strategy</LinkButton>}
+        description="Who does what for one client, from the brief to the video, read left to right. Click a card to see what it gets, what it hands over, its skills and what it made."
+        actions={
+          <>
+            <LinkButton href={productionLink}>Production</LinkButton>
+            <LinkButton href={brandLink}>Brand & strategy</LinkButton>
+          </>
+        }
       />
       {live && <AutoRefresh seconds={5} />}
       <nav aria-label="Client" className="mb-3 flex flex-wrap gap-2">
@@ -376,15 +569,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
           ))}
         </nav>
       )}
-      <AgentHud
-        nodes={nodes}
-        links={links}
-        events={events}
-        panels={panels}
-        satellites={reels.map((r) => ({ label: `@${r.owner} · ${compact(Math.max(0, r.plays ?? 0))} plays`, weight: Math.max(1, r.plays ?? 1) }))}
-        swatches={(charte?.palette ?? []).map((c) => c.hex)}
-        meters={meters}
-      />
+      <AgentHud nodes={nodes} links={links} events={events} panels={panels} meters={meters} now={now} swatches={(charte?.palette ?? []).map((c) => c.hex)} />
     </>
   );
 }

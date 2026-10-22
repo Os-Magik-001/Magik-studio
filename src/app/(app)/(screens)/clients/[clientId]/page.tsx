@@ -18,6 +18,7 @@ import {
   NewVideoForm,
 } from "./forms";
 import { ResetPasswordButton } from "@/components/password-tools";
+import { ProductionPanel } from "@/components/production/panel";
 
 export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
   return clientTitle((await params).clientId, "Client");
@@ -83,6 +84,8 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="flex min-w-0 flex-col gap-6">
+          <ProductionPanel clientId={client.id} viewer={viewer} />
+
           <Card>
             <CardHeader title="Videos" />
             {!videos?.length ? (
@@ -143,7 +146,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
           <Card>
             <CardHeader
               title="Brand kit"
-              description="Logo, colors, fonts, music mood and style rules. Claude follows these on every script and edit."
+              description="Logo, colors, fonts, music mood and style rules. The agents and the edit engine follow these on every script and edit."
             />
             <div className="p-5">
               <BrandKitForm

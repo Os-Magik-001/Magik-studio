@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { Db } from "@/lib/supabase/admin";
 import { asReferenceBreakdown, asReferenceStats } from "@/lib/agent-types";
 import { focusLabel, PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
 
@@ -25,8 +26,8 @@ export type ReferenceRow = {
 };
 
 // A video's own references first, then the client's; newest first in each.
-export async function loadReferences(clientId: string, videoId: string | null): Promise<ReferenceRow[]> {
-  const supabase = await createClient();
+export async function loadReferences(clientId: string, videoId: string | null, db?: Db): Promise<ReferenceRow[]> {
+  const supabase = db ?? (await createClient());
   let query = supabase
     .from("reference_videos")
     .select("video_id, url, platform, focus, note, status, watched, title, owner, duration, stats, analysis, error")

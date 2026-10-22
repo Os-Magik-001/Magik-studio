@@ -14,6 +14,10 @@ import { LocalDate } from "@/components/local-date";
 import { FootageCompleteForm, FootageDrop } from "@/app/(app)/(screens)/videos/[videoId]/forms";
 import { ShootPlanView } from "@/components/agents/views";
 import { asShootPlan } from "@/lib/agent-types";
+import { readBeats } from "@/lib/script-view";
+import { ScriptDocument } from "@/components/scripts/script-document";
+import { ScriptPdfLink } from "@/components/scripts/pdf-link";
+import { ScriptStatusBadge } from "@/components/status";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Shoot", "Shoot · ");
@@ -28,7 +32,7 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
   const supabase = await createClient();
   const [{ data: client }, { data: script }, { data: shoots }, { data: footage }] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
-    supabase.from("scripts").select("body, shot_list, status, shoot_plan").eq("video_id", videoId).maybeSingle(),
+    supabase.from("scripts").select("body, beats, shot_list, status, shoot_plan").eq("video_id", videoId).maybeSingle(),
     supabase.from("shoots").select("*").eq("video_id", videoId).order("starts_at"),
     supabase.from("footage").select("id, file_name, size_bytes, created_at").eq("video_id", videoId).order("created_at"),
   ]);
@@ -54,8 +58,8 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
             <CardHeader title="Shot list" description={shots.length ? `${doneCount} of ${shots.length} captured` : undefined} />
             {!script ? (
               <div className="p-5">
-                <EmptyState title="The script isn't approved yet">
-                  You&apos;ll see the script and shot list here once the client signs off.
+                <EmptyState title="The script isn't ready yet">
+                  You&apos;ll see the script, the shot list and the shoot plan here as soon as it goes to the client.
                 </EmptyState>
               </div>
             ) : shots.length === 0 ? (
@@ -86,18 +90,29 @@ export default async function ShootDetail({ params }: { params: Promise<{ videoI
               </ul>
             )}
           </Card>
+          {script?.body.trim() && (
+            <Card>
+              <CardHeader
+                title="Script"
+                description={script.status === "approved" ? "Approved by the client." : "Waiting for the client's approval: it can still change."}
+                actions={
+                  <>
+                    <ScriptPdfLink videoId={video.id} label="PDF with the shoot plan" />
+                    <ScriptStatusBadge status={script.status} />
+                  </>
+                }
+              />
+              <div className="p-5">
+                <ScriptDocument beats={readBeats(script.beats, script.body)} body={script.body} plan={plan} />
+              </div>
+            </Card>
+          )}
           {plan && (
             <Card>
               <CardHeader title="Shoot plan" description="Scene by scene: framing, action, lines and what not to forget." />
               <div className="p-5">
                 <ShootPlanView plan={plan} />
               </div>
-            </Card>
-          )}
-          {script && (
-            <Card>
-              <CardHeader title="Script" />
-              <div className="whitespace-pre-wrap p-5 text-sm leading-relaxed text-ink">{script.body}</div>
             </Card>
           )}
         </div>

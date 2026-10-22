@@ -20,8 +20,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type EditStyle = "clean" | "dynamic";
-// The editor plans the cut; the sound designer does the music and effects after it.
-export type Agent = "editor" | "sound";
+// The editor plans the cut; the sound designer does the music and effects after it; the researcher
+// studies a niche's top reels. (The app's agents read their own skills from the same folder.)
+export type Agent = "editor" | "sound" | "researcher";
 export type Skill = { name: string; description: string; formats: string[] | "all"; enabled: boolean; style: EditStyle | "any"; when: string[]; agents: string[]; body: string };
 
 export const skillsDir = process.env.ENGINE_SKILLS_DIR ?? fileURLToPath(new URL("../skills", import.meta.url));

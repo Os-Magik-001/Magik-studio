@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { Db } from "@/lib/supabase/admin";
 
 // The studio's motion prompt library as the scriptwriter reads it: prompts the team saved
 // (mostly from Prompt Motion, each credited to its creator), the best matches for the video
@@ -44,8 +45,8 @@ export function formatMotionLibrary(prompts: Saved[], about: string, limit = 12,
   return out.join("\n\n");
 }
 
-export async function motionLibrary(about: string) {
-  const supabase = await createClient();
+export async function motionLibrary(about: string, db?: Db) {
+  const supabase = db ?? (await createClient());
   const { data } = await supabase
     .from("motion_prompts")
     .select("title, prompt, kind, tags, source_url, creator, notes")

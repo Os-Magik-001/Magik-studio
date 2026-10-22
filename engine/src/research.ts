@@ -12,6 +12,7 @@ import { analyzeTrack } from "./analysis.ts";
 import { config, db } from "./config.ts";
 import { run } from "./exec.ts";
 import { log } from "./job.ts";
+import { loadSkills } from "./skills.ts";
 import { contactSheets, probe } from "./media.ts";
 import { clientMemory } from "./memory.ts";
 import type { TrendAudio } from "./sound.ts";
@@ -314,6 +315,11 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
   }
   content.push({ type: "text", text: "Write the key points." });
 
+  // The researcher's skills (engine/skills, agents: researcher): the studio's research playbook.
+  const skills = await loadSkills("social_short", undefined, (m) => log(null, m), "dynamic", "", "researcher");
+  const system = skills.length
+    ? `${SYSTEM}\n\nYour skills: the studio's own playbook for this job.\n\n${skills.map((k) => `<skill name="${k.name}">\n${k.body}\n</skill>`).join("\n\n")}`
+    : SYSTEM;
   const anthropic = new Anthropic();
   const response = await anthropic.beta.messages.parse({
     model: config.model,
@@ -322,7 +328,7 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
     fallbacks: "default",
     thinking: { type: "adaptive" },
     output_config: { effort: "high", format: betaZodOutputFormat(Findings) },
-    system: SYSTEM,
+    system,
     messages: [{ role: "user", content }],
   });
   const findings = response.parsed_output;
@@ -349,6 +355,19 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
   return { reels, findings: rest, audio };
 }
 
+// The studio managers and whoever asked hear when the research is in: the month's plan builds on it.
+async function tellStudio(report: Report, title: (client: string) => string, body: string) {
+  const [{ data: admins }, { data: row }, { data: client }] = await Promise.all([
+    db.from("profiles").select("id").eq("role", "admin"),
+    db.from("trend_reports").select("requested_by").eq("id", report.id).maybeSingle(),
+    db.from("clients").select("name").eq("id", report.client_id).maybeSingle(),
+  ]);
+  const ids = new Set([...(admins ?? []).map((a) => a.id), ...(row?.requested_by ? [row.requested_by] : [])]);
+  if (ids.size) {
+    await db.from("notifications").insert([...ids].map((user_id) => ({ user_id, client_id: report.client_id, kind: "production", title: title(client?.name ?? "A client"), body })));
+  }
+}
+
 export async function runResearch(report: Report) {
   const dir = path.join(config.workDir, `research-${report.id}`);
   try {
@@ -360,10 +379,12 @@ export async function runResearch(report: Report) {
     );
     await db.from("trend_reports").update({ status: "done", reels, findings, audio, progress: null, finished_at: new Date().toISOString() }).eq("id", report.id);
     log(report.id, `research done: ${reels.length} reels studied`);
+    await tellStudio(report, (name) => `${name}: the trend research is ready`, `${reels.length} top reels studied. Next: plan the month on the client's Production panel.`);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     log(report.id, `research failed: ${message}`);
     await db.from("trend_reports").update({ status: "failed", error: message, progress: null, finished_at: new Date().toISOString() }).eq("id", report.id);
+    await tellStudio(report, (name) => `${name}: the trend research failed`, `${message} The month can still be planned from the strategy alone.`).catch(() => null);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

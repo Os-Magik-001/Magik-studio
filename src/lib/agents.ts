@@ -3,26 +3,47 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { QUESTIONS, type Answers } from "@/lib/questionnaire";
-import type { Charte, Pillar, ShootPlan, TrendFindings } from "@/lib/agent-types";
+import { beatsText, type Charte, type ContentPlan, type Pillar, type ShootPlan, type TrendFindings } from "@/lib/agent-types";
+import { skillsBlock, type AgentKey } from "@/lib/skills";
+import { fakeAgents, fakeAnswer, type FakeKind } from "@/lib/agent-fakes";
 import type { RevisionKind } from "@/lib/workflow";
 import { templateById } from "@/lib/design-templates";
 
-// Agents 1 and 3 run here, in the app. Agent 2 (trend research) downloads and watches
-// videos, so it runs on the edit engine (engine/src/research.ts).
+// The brand strategist, the content planner, the scriptwriter and the motion director run here,
+// in the app. The trend researcher downloads and watches videos, so it runs on the edit engine
+// (engine/src/research.ts). Each agent reads its skills (engine/skills, see @/lib/skills).
 
 const MODEL = "claude-opus-5-5";
 
 // `context` is what stays the same from one call to the next for a client (strategy, research,
 // the memory of their videos): it goes first and is cached, so a round of changes doesn't pay
 // for it again.
-async function ask<T extends z.ZodType>(schema: T, system: string, prompt: string, effort: "medium" | "high", context?: string) {
+async function ask<T extends z.ZodType>({
+  agent,
+  kind,
+  schema,
+  system,
+  prompt,
+  effort,
+  context,
+}: {
+  // Whose skills to add to the instructions (none for one-off helpers like the invoice wording).
+  agent: AgentKey | null;
+  kind: FakeKind;
+  schema: T;
+  system: string;
+  prompt: string;
+  effort: "medium" | "high";
+  context?: string;
+}): Promise<z.infer<T>> {
+  if (fakeAgents()) return fakeAnswer(kind, prompt) as z.infer<T>;
   const client = new Anthropic();
   const response = await client.beta.messages.parse({
     model: MODEL,
     max_tokens: 20000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    system,
+    system: agent ? system + (await skillsBlock(agent)) : system,
     output_config: { effort, format: betaZodOutputFormat(schema) },
     messages: [
       {
@@ -31,8 +52,8 @@ async function ask<T extends z.ZodType>(schema: T, system: string, prompt: strin
       },
     ],
   });
-  if (response.stop_reason === "refusal") throw new Error("Claude declined this request.");
-  if (response.stop_reason === "max_tokens" || !response.parsed_output) throw new Error("Claude's answer came back incomplete. Try again.");
+  if (response.stop_reason === "refusal") throw new Error("The agent declined this request.");
+  if (response.stop_reason === "max_tokens" || !response.parsed_output) throw new Error("The agent's answer came back incomplete. Try again.");
   return response.parsed_output as z.infer<T>;
 }
 
@@ -86,7 +107,60 @@ export async function runStrategist(input: { clientName: string; answers: Answer
   const prompt = [`Client: ${input.clientName}`, `Questionnaire:\n${answers}`, input.memory && `Videos the studio already made for this client:\n${input.memory}`]
     .filter(Boolean)
     .join("\n\n");
-  return ask(Strategy, STRATEGIST, prompt, "high");
+  return ask({ agent: "strategist", kind: "strategy", schema: Strategy, system: STRATEGIST, prompt, effort: "high" });
+}
+
+// ---------------------------------------------------------------- the content planner
+
+const Plan = z.object({
+  summary: z.string().describe("The month's plan in 2 sentences: the mix of pillars and the thread that ties the videos together."),
+  ideas: z
+    .array(
+      z.object({
+        title: z.string().describe("The video's title as the viewer would want to watch it, in the language of the client's videos."),
+        pillar: z.string().describe("The content pillar it serves: one of the strategy's pillar names."),
+        goal: z.string().describe("The goal it moves, from the strategy's needs, in a few words."),
+        hook: z.string().describe("The first two seconds: what we see and what is said or written."),
+        brief: z
+          .string()
+          .describe("3 to 5 sentences in English: what the video is about, who is in it, where it is filmed, what we must see, the call to action and the length."),
+        format: z.enum(["social_short", "ad", "podcast_clip"]),
+        length_seconds: z.number().describe("Target length in seconds (usually 15 to 45 for Reels)."),
+        shoot_group: z.string().describe("A short name shared by the videos that can be shot in the same session (same place and people), or empty."),
+        why: z.string().describe("Why it should work: the research pattern, the brand fact or the season it uses."),
+      }),
+    )
+    .describe("Exactly the number of videos asked for, in the order to publish them."),
+});
+
+const PLANNER = `You are the content planner at Magik Studio, a studio that makes short-form videos (Instagram Reels, TikTok, Shorts) for businesses. Once a client is onboarded, you plan their videos for the month from the brand strategy and the trend research, so the studio can brief, script and shoot them right away.
+
+Plan videos the client's own team can be filmed doing, in their own place. Build on what the research found works in the niche and on the videos the studio already made for the client: never repeat one. Every idea must be specific to this client, never generic.`;
+
+export async function runContentPlanner(input: {
+  clientName: string;
+  count: number;
+  month: string;
+  language: string;
+  pack: string | null;
+  strategy: { niche: string | null; business: string | null; audience: string | null; needs: string[]; pillars: unknown; charte: unknown };
+  findings: TrendFindings | null;
+  memory: string | null;
+}): Promise<ContentPlan> {
+  const s = input.strategy;
+  const prompt = [
+    `Client: ${input.clientName}`,
+    `Plan ${input.count} video${input.count > 1 ? "s" : ""} for ${input.month}.${input.pack ? ` The client's pack: ${input.pack}.` : ""}`,
+    `Language of the videos: ${input.language}`,
+    `Brand strategy:\nNiche: ${s.niche}\nBusiness: ${s.business}\nAudience: ${s.audience}\nNeeds: ${s.needs.join("; ")}\nContent pillars: ${JSON.stringify(s.pillars)}\nCharte graphique: ${JSON.stringify(s.charte)}`,
+    input.findings ? `What works in viral videos in this niche (the trend research):\n${JSON.stringify(input.findings)}` : "No trend research yet: plan from the strategy and the pillars.",
+    input.memory && `Videos the studio already made for this client:\n${input.memory}`,
+    "Plan the month.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const plan = await ask({ agent: "planner", kind: "plan", schema: Plan, system: PLANNER, prompt, effort: "high" });
+  return { summary: plan.summary, month: input.month, ideas: plan.ideas.slice(0, input.count).map((i) => ({ ...i, video_id: null })) };
 }
 
 // ---------------------------------------------------------------- Agent 3: scriptwriter
@@ -94,9 +168,17 @@ export async function runStrategist(input: { clientName: string; answers: Answer
 const Script = z.object({
   concept: z.string().describe("The idea of the video in 1 to 2 sentences."),
   length_seconds: z.number().describe("Target length of the finished video."),
-  script: z
-    .string()
-    .describe("The full script a client can read: numbered beats with rough timing, what we see, exact spoken lines, and on-screen text."),
+  beats: z
+    .array(
+      z.object({
+        time: z.string().describe("The beat's range in the video, e.g. 0:00–0:02. The ranges add up to the target length."),
+        title: z.string().describe("2 to 4 words naming the beat (Hook, The dough, First customer)."),
+        visual: z.string().describe("What we see: the shot or shots, concrete enough to film, in plain words the client understands."),
+        voice: z.string().describe("The exact spoken line, starting with who says it (\"VO:\" for voice-over, or the person's name and a colon), in the language of the video; empty when nothing is said."),
+        on_screen: z.string().describe("The exact words on screen, in the language of the video; empty when none."),
+      }),
+    )
+    .describe("The script the client approves, as numbered beats from the hook to the call to action."),
   scenes: z
     .array(
       z.object({
@@ -121,7 +203,8 @@ const Script = z.object({
     ),
 });
 
-export type ScriptDraft = z.infer<typeof Script>;
+// `script`: the beats as plain text, the script's body (@/lib/agent-types beatsText).
+export type ScriptDraft = z.infer<typeof Script> & { script: string };
 
 // What the scriptwriter knows about a client before any one video. It is the same for every
 // call about the client, so it goes in the cached context.
@@ -162,7 +245,7 @@ const MEMORY = `You remember the client's other videos: keep what recurs consist
 const SCRIPTWRITER = `You are the head scriptwriter at Magik Studio. You write short-form videos (Reels, TikTok, Shorts) that perform: a hook in the first 2 seconds, constant visual change, a payoff and a call to action.
 
 You receive the client's brand strategy (niche, charte graphique, business and needs), the key points from viral videos in their niche, and the brief for this video. You deliver three things:
-1. a script the client can approve,
+1. a script the client can approve, as numbered beats: what we see, who says what, the words on screen,
 2. a detailed shoot plan the videographer follows on set, scene by scene, so nothing is missed,
 3. an edit prompt for the studio's automatic editor (it cuts the footage, writes captions, adds 3D motion graphics, music and sound effects from these notes).
 
@@ -200,9 +283,10 @@ export async function runScriptwriter(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const draft = await ask(Script, SCRIPTWRITER, prompt, "high", brandContext(input));
+  const draft = await ask({ agent: "scriptwriter", kind: "script", schema: Script, system: SCRIPTWRITER, prompt, effort: "high", context: brandContext(input) });
   return {
     ...draft,
+    script: beatsText(draft.beats),
     plan: { concept: draft.concept, length_seconds: draft.length_seconds, scenes: draft.scenes, broll: draft.broll, props_wardrobe: draft.props_wardrobe },
   };
 }
@@ -238,7 +322,7 @@ export async function adaptScript(input: BrandInput & { title: string; format: s
   ]
     .filter(Boolean)
     .join("\n\n");
-  return ask(Adapted, ADAPTER, prompt, "medium", brandContext(input));
+  return ask({ agent: "scriptwriter", kind: "adapt", schema: Adapted, system: ADAPTER, prompt, effort: "medium", context: brandContext(input) });
 }
 
 // ---------------------------------------------------------------- Agent 3, changes on request
@@ -256,7 +340,7 @@ const REVISER = `You are the head scriptwriter at Magik Studio. You delivered th
 - Earlier requests in this video's thread still hold unless the new one overrides them. Hand edits by the studio are deliberate: keep them.
 - If a request would hurt the video, do it the best way you can and say so in your reply. If it can be read two ways, take the one that makes the better video and say which.
 - Spoken lines stay in the language of the video; everything else stays in English. Respect the charte graphique and the don'ts.
-- Return the complete script, shot list, shoot plan and edit prompt, not only what changed.
+- Return the complete script (as numbered beats), shot list, shoot plan and edit prompt, not only what changed. A script written as plain text comes back as beats with its words kept.
 
 ${MOTION}
 
@@ -293,9 +377,10 @@ export async function reviseScript(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const draft = await ask(Revision, REVISER, prompt, "medium", brandContext(input));
+  const draft = await ask({ agent: "scriptwriter", kind: "revise", schema: Revision, system: REVISER, prompt, effort: "medium", context: brandContext(input) });
   return {
     ...draft,
+    script: beatsText(draft.beats),
     plan: draft.scenes.length
       ? { concept: draft.concept, length_seconds: draft.length_seconds, scenes: draft.scenes, broll: draft.broll, props_wardrobe: draft.props_wardrobe }
       : null,
@@ -397,7 +482,7 @@ export async function runMotionDirector(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const brief = await ask(DesignBriefSchema, MOTION_DIRECTOR, prompt, "high", brandContext(input));
+  const brief = await ask({ agent: "motion", kind: "design", schema: DesignBriefSchema, system: MOTION_DIRECTOR, prompt, effort: "high", context: brandContext(input) });
   // The engine's motion designer gets the full direction of every template the brief uses.
   const used = [...new Set([...input.chosen.map((c) => c.id), ...brief.scenes.map((s) => s.template).filter((t) => t !== "custom")])];
   const directions = used.flatMap((id): DesignChoice[] => {
@@ -434,12 +519,14 @@ export async function writeInvoiceWording(input: {
   ]
     .filter(Boolean)
     .join("\n");
-  return ask(
-    InvoiceWording,
-    "You write the wording of invoices for Magik Studio, a video studio that makes short-form videos for businesses. Be precise, warm and professional. Never invent services, prices or discounts that aren't in the pack.",
+  return ask({
+    agent: null,
+    kind: "invoice",
+    schema: InvoiceWording,
+    system: "You write the wording of invoices for Magik Studio, a video studio that makes short-form videos for businesses. Be precise, warm and professional. Never invent services, prices or discounts that aren't in the pack.",
     prompt,
-    "medium",
-  );
+    effort: "medium",
+  });
 }
 
 const LogoIdeas = z.object({
@@ -465,11 +552,13 @@ const LogoIdeas = z.object({
 export async function designLogoIdeas(input: { clientName: string; answers: Answers }) {
   const answers = QUESTIONS.filter((q) => input.answers[q.key]).map((q) => `${q.label}: ${input.answers[q.key]}`).join("\n");
   const fonts = "bebas (bold condensed), archivo (heavy modern), montserrat (clean geometric), space (techy), unbounded (wide playful), syne (artsy editorial), poppins (rounded warm), playfair (elegant serif), dmserif (classic luxurious serif), cormorant (refined high-end serif)";
-  const { ideas } = await ask(
-    LogoIdeas,
-    `You are the brand designer at Magik Studio. You propose six simple, timeless logos for a small business, built only from the studio's logo templates, fonts (${fonts}) and symbols. Fit the business, its customers and its personality; keep the client's own colors when they gave some. Vary templates, fonts and palettes so the six are clearly different.`,
-    `Business: ${input.clientName}\n\nTheir answers:\n${answers || "(none yet)"}\n\nPropose the six logos.`,
-    "medium",
-  );
+  const { ideas } = await ask({
+    agent: null,
+    kind: "logos",
+    schema: LogoIdeas,
+    system: `You are the brand designer at Magik Studio. You propose six simple, timeless logos for a small business, built only from the studio's logo templates, fonts (${fonts}) and symbols. Fit the business, its customers and its personality; keep the client's own colors when they gave some. Vary templates, fonts and palettes so the six are clearly different.`,
+    prompt: `Business: ${input.clientName}\n\nTheir answers:\n${answers || "(none yet)"}\n\nPropose the six logos.`,
+    effort: "medium",
+  });
   return ideas;
 }

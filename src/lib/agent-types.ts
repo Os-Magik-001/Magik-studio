@@ -141,3 +141,43 @@ export const asDesignBrief = (v: unknown) => (v && typeof v === "object" && "sce
 export const asShootPlan = (v: unknown) => (v && typeof v === "object" && "scenes" in v ? (v as ShootPlan) : null);
 export const asReferenceBreakdown = (v: unknown) => (v && typeof v === "object" && "hook" in v && "borrow" in v ? (v as ReferenceBreakdown) : null);
 export const asReferenceStats = (v: unknown) => (v && typeof v === "object" && "cutsPerSecond" in v ? (v as ReferenceStats) : null);
+
+// The scriptwriter's script as numbered beats (scripts.beats): how everyone reads it, in the app
+// and in the PDF.
+export type ScriptBeat = { time: string; title: string; visual: string; voice: string; on_screen: string };
+
+export const asBeats = (v: unknown): ScriptBeat[] =>
+  Array.isArray(v) ? (v as ScriptBeat[]).filter((b) => b && typeof b === "object" && typeof b.visual === "string") : [];
+
+// The beats as plain text: the script's body, which the engine and anyone without the app read.
+export function beatsText(beats: ScriptBeat[], heading?: string) {
+  const blocks = beats.map((b, i) =>
+    [
+      `${i + 1}. ${b.title}${b.time ? ` (${b.time})` : ""}`,
+      b.visual && `We see: ${b.visual}`,
+      b.voice && b.voice,
+      b.on_screen && `On screen: ${b.on_screen}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  return [heading, ...blocks].filter(Boolean).join("\n\n");
+}
+
+// The content planner's month (agent_runs.output for a planner run).
+export type PlanIdea = {
+  title: string;
+  pillar: string;
+  goal: string;
+  hook: string;
+  brief: string;
+  format: "social_short" | "ad" | "podcast_clip";
+  length_seconds: number;
+  shoot_group: string;
+  why: string;
+  // Set once the studio made it a video.
+  video_id?: string | null;
+};
+export type ContentPlan = { summary: string; month: string; ideas: PlanIdea[] };
+
+export const asPlan = (v: unknown) => (v && typeof v === "object" && "ideas" in v && Array.isArray((v as ContentPlan).ideas) ? (v as ContentPlan) : null);
