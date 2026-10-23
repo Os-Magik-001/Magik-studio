@@ -31,6 +31,13 @@ export default async function AboutPage() {
             <p className="text-[13px] text-muted">The workspace of Magik Studio: plan, script, shoot, edit, review and approve.</p>
           </div>
         </div>
+        <div className="frost flex items-center gap-5 rounded-[18px] p-6">
+          <Image src="/motchi/motchi.webp" alt="Motchi" width={80} height={90} unoptimized className="h-[90px] w-auto drop-shadow-[0_8px_14px_rgba(0,0,0,0.45)]" />
+          <div>
+            <p className="text-[17px] font-semibold text-ink">Meet Motchi</p>
+            <p className="text-[13px] text-muted">The assistant of Magik OS. He lives in the bottom-right corner of your screen: click him and ask him anything about how Magik OS works.</p>
+          </div>
+        </div>
         <SettingsGroup title="Keyboard shortcuts">
           {SHORTCUTS.map(([keys, what]) => (
             <SettingsRow key={keys} label={what}>

@@ -31,6 +31,7 @@ import {
 import { TopBar } from "@/components/shell/top-bar";
 import { Dock } from "@/components/shell/dock";
 import { Spotlight, type QuickAction } from "@/components/shell/spotlight";
+import { Motchi } from "@/components/motchi/motchi";
 
 const MENU_H = 46;
 
@@ -553,6 +554,7 @@ export function Desktop({
 
         <TopBar current={focusedWin} />
         <Dock ref={dockEl} />
+        <Motchi />
         {spotlight && (
           <Spotlight
             apps={apps}

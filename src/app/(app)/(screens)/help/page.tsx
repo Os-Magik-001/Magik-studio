@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CircleHelp, Inbox, Keyboard, LayoutGrid, MousePointer2 } from "lucide-react";
-import { displayName, getViewer, type Role } from "@/lib/auth";
+import { displayName, getViewer } from "@/lib/auth";
+import { FAQ, TIPS } from "@/lib/guide";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { LocalDate } from "@/components/local-date";
@@ -9,44 +10,11 @@ import { AnswerForm, AskForm } from "./help-forms";
 
 export const metadata: Metadata = { title: "Help" };
 
-type QA = [string, string];
-
-// What each role asks most. Clients' answers never mention how the studio works inside.
-const FAQ: Record<Role, QA[]> = {
-  client: [
-    ["Where do I see my videos?", "Open Your videos in the Dock. Each video shows its latest cut; click it to watch, comment on the exact moment you'd like changed, then approve it or ask for changes."],
-    ["How do I follow where each video is?", "Open Pipeline: every video is in a column, from the script to the shoot, the edit, your review and posting. Anything waiting for you is marked."],
-    ["How do I approve a script?", "In Pipeline or Your videos, open the video: its script is at the top. Read it, then approve it or ask for changes in a few words."],
-    ["When will my videos be posted?", "Open Calendar: posting dates are in gold, shoots in orange. You can also add your own events and share them with the studio."],
-    ["Where are my invoices and my contract?", "In Settings, under Documents."],
-    ["How do referrals work?", "Open Referrals: share your link with a business that needs videos. When they sign with Magik, you earn credits."],
-  ],
-  admin: [
-    ["How do I start a new client?", "Onboarding, then New client: their details, the pack, the invoice, the contract, then send them their link. They finish their setup on their own."],
-    ["A client can't get in. Why?", "Clients use Magik OS once their onboarding is finished. In their client folder you can open their setup, or mark them onboarded if they started before onboarding existed."],
-    ["How do I pause or remove someone?", "Team, then Manage on their row: pause stops them signing in until you resume them; delete removes their account for good (their work stays)."],
-    ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
-    ["Where do referral credits come from?", "Referrals: when you mark a referral signed, its referrer gets the credits set in Settings, Studio."],
-  ],
-  editor: [
-    ["Where do I start my day?", "Pipeline shows every video by phase and what it's waiting on; your videos have your initials."],
-    ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
-    ["How do I invite someone to a meeting?", "Calendar, Create: add a title and a time, then Invite the team."],
-  ],
-  videographer: [
-    ["Where are my shoots?", "Shoots lists them with their shot lists; Calendar shows them in orange."],
-    ["How do I send the footage?", "Open the shoot, then upload the files or link the Drive folder, and mark the footage complete."],
-  ],
-  seller: [
-    ["How do I start a new client?", "Onboarding, then New client: details, pack, invoice, contract, then send the link."],
-    ["Where do referrals come in?", "Referrals: every business referred to Magik, with who referred it. Follow them up and mark them signed."],
-  ],
-};
-
-const TIPS: { icon: typeof LayoutGrid; title: string; text: string }[] = [
-  { icon: MousePointer2, title: "Windows", text: "Every app opens in its own window. Drag a window by its top bar, resize it from any edge, double-click the bar to fill the screen. Drag it to the left or right edge to fill half." },
-  { icon: LayoutGrid, title: "Mission Control", text: "The grid button in the menu bar (or F3) shows every open window side by side; click one to bring it forward. Yellow puts a window in the Dock, red closes it." },
-  { icon: Keyboard, title: "Search", text: "⌘K finds an app, a client, a video or an event. ⌘-click a link to open it in a new window." },
+// The questions and tips live with Motchi's guide (@/lib/guide), so the two always agree.
+const TIP_CARDS: { icon: typeof LayoutGrid; title: string; text: string }[] = [
+  { icon: MousePointer2, title: "Windows", text: TIPS.windows },
+  { icon: LayoutGrid, title: "Mission Control", text: TIPS.mission },
+  { icon: Keyboard, title: "Search", text: TIPS.search },
 ];
 
 export default async function HelpPage() {
@@ -88,7 +56,7 @@ export default async function HelpPage() {
       )}
 
       <div className="grid gap-3 @min-[48rem]:grid-cols-3">
-        {TIPS.map((t) => (
+        {TIP_CARDS.map((t) => (
           <section key={t.title} className="frost rounded-[16px] p-4">
             <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.08] text-ink">
               <t.icon size={17} aria-hidden />
