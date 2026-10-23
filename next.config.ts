@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     // Script files (PDF, Word, text) up to 4 MB go to a server action to be read; Vercel takes
     // request bodies up to 4.5 MB.
     serverActions: { bodySizeLimit: "4.5mb" },
+    // Builds compile from scratch: with the cache Vercel restores between builds, a build
+    // shipped the previous version of globals.css next to the new pages (2026-10-22).
+    turbopackFileSystemCacheForBuild: false,
   },
   // Pages open inside the desktop's windows (same-origin iframes); no other site may frame them.
   async headers() {

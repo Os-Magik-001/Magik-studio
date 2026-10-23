@@ -85,10 +85,11 @@ export const frameOf = (win: Win, area: Area): Rect => (win.zoom ? zoomRect(win.
 export function newFrame(size: [number, number], area: Area, open: number, remembered: Rect | null): Rect {
   const step = (open % 6) * 30;
   if (remembered) return fitRect({ ...remembered, x: remembered.x + (open ? step : 0), y: remembered.y + (open ? step : 0) }, area);
+  // Centred, a little above the middle like macOS, fully on screen; later ones cascade.
   const w = Math.min(size[0], area.w - GAP * 4 - step);
   const h = Math.min(size[1], area.bottom - area.top - 20 - step);
-  const x = Math.round((area.w - w) / 2) + step - 45;
-  const y = area.top + Math.max(10, Math.round((area.bottom - area.top - h) / 3)) + step;
+  const x = clamp(Math.round((area.w - w) / 2) + step, GAP * 2, Math.max(GAP * 2, area.w - w - GAP * 2));
+  const y = clamp(area.top + Math.max(10, Math.round((area.bottom - area.top - h) / 3)) + step, area.top + 6, Math.max(area.top + 6, area.bottom - h));
   return fitRect({ x, y, w, h }, area);
 }
 
