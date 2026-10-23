@@ -1,11 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { getViewer } from "@/lib/auth";
+import { answerFromGuide } from "@/lib/guide";
 import { fakeAgents } from "@/lib/agent-fakes";
 import { MOTCHI_MODEL, mayAsk, motchiPerson, motchiSystem, streamRedactor } from "@/lib/motchi";
 
 // Motchi's answers (src/components/motchi), streamed as plain text while he writes them. Only for
-// someone signed in; he answers from the user guide for their role and nothing else.
+// someone signed in; he answers from the user guide for their role and nothing else. When his
+// model can't answer (no key, no credits, an outage), the guide answers on its own.
 
 const Body = z.object({
   messages: z
@@ -25,11 +27,8 @@ export async function POST(request: Request) {
   if (!messages.length || messages.at(-1)?.role !== "user" || messages.at(-1)!.content.length > 1000) return say("I didn't catch that. Ask me again?", 400);
   if (!mayAsk(viewer.id)) return say("You've asked me a lot in a short time! Give me a few minutes, then ask again.", 429);
 
-  if (fakeAgents()) {
-    const question = messages.at(-1)!.content;
-    return say(`Hi${viewer.fullName ? ` ${viewer.fullName.split(" ")[0]}` : ""}! I'm Motchi. This is a local test answer to "${question.slice(0, 80)}". Online, I answer from the Magik OS guide.`);
-  }
-  if (!process.env.ANTHROPIC_API_KEY) return say("I'm resting right now. Help, the question mark in the menu bar, has the answers people ask most.", 503);
+  const fromGuide = () => answerFromGuide(viewer.role, messages.at(-1)!.content);
+  if (fakeAgents() || !process.env.ANTHROPIC_API_KEY) return say(fromGuide());
 
   const client = new Anthropic();
   const stream = client.beta.messages.stream(
@@ -52,7 +51,12 @@ export async function POST(request: Request) {
   const filter = streamRedactor();
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (text: string) => text && controller.enqueue(encoder.encode(text));
+      let sent = false;
+      const send = (text: string) => {
+        if (!text) return;
+        sent = true;
+        controller.enqueue(encoder.encode(text));
+      };
       try {
         for await (const event of stream) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") send(filter.push(event.delta.text));
@@ -64,7 +68,7 @@ export async function POST(request: Request) {
       } catch (err) {
         if (!request.signal.aborted) {
           console.error("Motchi couldn't answer:", err instanceof Error ? err.message : err);
-          send("\n\nSorry, I lost my train of thought. Ask me again?");
+          send(sent ? "\n\nSorry, I lost my train of thought. Ask me again?" : fromGuide());
         }
       } finally {
         controller.close();

@@ -66,7 +66,7 @@ const DETAILS: Record<string, string> = {
   help: "The question mark in the menu bar: how Magik OS works, the questions people ask most, and a message to the studio (they answer in your notifications, usually the same day).",
 };
 
-const DESKTOP = `- Every app opens in its own window, and several can be open at once. Drag a window by its top bar, resize it from any edge or corner, double-click the top bar to fill the screen, or drag it to the left or right edge of the screen to fill half.
+const DESKTOP = `- Every app opens in its own window, and several can be open at once. Drag a window by its top bar, resize it from any edge or corner, double-click the top bar to fill the screen, or drag it to the left or right edge of the screen to fill half (two windows side by side).
 - The three buttons at the top left of a window: red closes it, yellow puts it in the Dock (click it there to bring it back), green fills the screen. The arrows next to them go back and forward inside the window.
 - Mission Control (the grid button in the menu bar, F3, or Control and the up arrow) shows every open window side by side; click one to bring it forward.
 - Search (⌘K, or the search field at the top right of the menu bar) finds an app, a client, a video or an event.
@@ -114,4 +114,55 @@ export function guideFor(role: Role): string {
     "## Questions people ask",
     FAQ[role].map(([q, a]) => `Q: ${q}\nA: ${a}`).join("\n\n"),
   ].join("\n\n");
+}
+
+// When Motchi's model can't answer (no key, no credits, an outage), he still answers from this
+// guide: the passages that share the most words with the question, in English or French.
+const SAME: Record<string, string> = {
+  fenetre: "window", ecran: "screen", fond: "wallpaper", wallpapers: "wallpaper", video: "video", calendrier: "calendar", agenda: "calendar",
+  publication: "posting", publier: "posting", publiee: "posting", publie: "posting", poste: "posting", post: "posting", posted: "posting", quand: "when", passe: "password", facture: "invoice",
+  contrat: "contract", parrainage: "referral", parrain: "referral", referrals: "referral", credits: "credit", equipe: "team", supprimer: "delete",
+  effacer: "delete", approuver: "approve", valider: "approve", modification: "change", changement: "change", changer: "change", modifier: "change",
+  tournage: "shoot", tournages: "shoot", rechercher: "search", recherche: "search", chercher: "search", aide: "help", reglage: "settings",
+  reglages: "settings", parametre: "settings", parametres: "settings", apparence: "appearance", notification: "notification", mettre: "",
+  pause: "pause", suspendre: "pause", nouveau: "new", nouvelle: "new", demarrer: "start", commencer: "start", lien: "link", logo: "logo",
+  couleur: "color", couleurs: "color", colours: "color", colour: "color", marque: "brand", site: "website", web: "website", telecharger: "download",
+  commentaire: "comment", commenter: "comment", fermer: "close", ouvrir: "open", reduire: "minimize", raccourci: "shortcut", clavier: "shortcut",
+};
+const STOP = new Set(
+  "the and are can does how what when where which who why with you your for from into have has this that there their them then than about over just like want need get make use using please also some any all one two".split(" ").concat(
+    "les des une est pour que qui quoi comment mon mes mes ton tes votre vos nos dans sur avec sans par pas plus moins tout tous faire peux peut veux voudrais svp merci bonjour salut ".split(" "),
+  ),
+);
+const terms = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .split(/[^a-z0-9]+/)
+    .map((w) => SAME[w] ?? SAME[w.replace(/s$/, "")] ?? w.replace(/(ies)$/, "y").replace(/(?<=[a-z]{3})s$/, ""))
+    .filter((w) => w.length > 2 && !STOP.has(w));
+
+// What Motchi never talks about, whatever the guide says.
+const PRIVATE = /\b(api|secrets?|tokens?|database|bases? de donn\w*|env|environment|environnement|supabase|vercel|anthropic|claude|apify|servers?|serveurs?|source code|code source|cl[eé]s?)\b/i;
+
+export function answerFromGuide(role: Role, question: string): string {
+  if (PRIVATE.test(question)) return "That's private to the studio, so I can't share it. I'm here to help with how Magik OS works: ask me about your apps, your windows or your settings.";
+  const asked = new Set(terms(question));
+  const passages = [
+    ...FAQ[role].map(([q, a]) => ({ text: a, words: new Set(terms(`${q} ${a}`)), boost: new Set(terms(q)) })),
+    ...APPS.filter((a) => a.id !== "home" && a.roles.includes(role)).map((a) => {
+      const text = `**${a.name}**: ${a.hint}.${DETAILS[a.id] ? ` ${DETAILS[a.id]}` : ""}`;
+      return { text, words: new Set(terms(`${a.name} ${text}`)), boost: new Set(terms(a.name)) };
+    }),
+    ...DESKTOP.split("\n").map((line) => ({ text: line.replace(/^- /, ""), words: new Set(terms(line)), boost: new Set<string>() })),
+    ...SETTINGS.filter((s) => !s.roles || s.roles.includes(role)).map((s) => ({ text: `**Settings, ${s.label}**: ${s.text}.`, words: new Set(terms(`settings ${s.label} ${s.text}`)), boost: new Set(terms(s.label)) })),
+  ];
+  const scored = passages
+    .map((p) => ({ text: p.text, score: [...asked].reduce((n, w) => n + (p.words.has(w) ? 1 + (p.boost.has(w) ? 0.6 : 0) + (w.length > 6 ? 0.3 : 0) : 0), 0) }))
+    .filter((p) => p.score >= 1)
+    .sort((a, b) => b.score - a.score);
+  if (!scored.length) return "I'm not sure about that one. Help (the question mark in the menu bar) has the questions people ask most, and you can write to the studio from there.";
+  const best = scored.slice(0, scored[1] && scored[1].score >= scored[0].score * 0.8 ? 2 : 1).map((p) => p.text);
+  return `${best.join("\n\n")}\n\nFor anything else, Help (the question mark in the menu bar) reaches the studio.`;
 }
