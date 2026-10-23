@@ -310,7 +310,7 @@ export function WindowFrame({ win, focused, hidden, mission, aside }: { win: Win
               </button>
             </div>
             <div className="pointer-events-none flex min-w-0 flex-1 items-center justify-center gap-2 px-2">
-              {app && <AppIcon icon={app.icon} tint={app.tint} glyph={app.glyph} size={20} />}
+              {app && <AppIcon icon={app.icon} size={20} />}
               <span className="truncate text-[13.5px] font-semibold text-ink/90">{title}</span>
             </div>
             <div className="flex items-center">

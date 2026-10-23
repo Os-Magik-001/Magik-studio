@@ -284,7 +284,18 @@ input::-webkit-calendar-picker-indicator {
 
 /* ------------------------------------------------------------------ Desktop */
 
-/* App icons: a squircle with depth, a soft top light and a glass rim (macOS 26). */
+/* App icons (src/components/shell/app-icon.tsx): flat Apple tiles, lifted by a soft shadow,
+   a little more in the Dock. */
+.mac-icon {
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0.5px 0.5px rgba(0, 0, 0, 0.3)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.22));
+}
+.dock-icon .mac-icon {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3)) drop-shadow(0 5px 9px rgba(0, 0, 0, 0.38));
+}
+
+/* A big tile in the same style, with any symbol (setup, paused account). */
 .app-icon {
   position: relative;
   display: grid;
@@ -292,17 +303,7 @@ input::-webkit-calendar-picker-indicator {
   border-radius: 23%;
   color: #fff;
   overflow: hidden;
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.45),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.28),
-    0 6px 16px -6px rgba(0, 0, 0, 0.7);
-}
-.app-icon::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 52%);
-  pointer-events: none;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.7);
 }
 .app-icon::after {
   content: "";
@@ -454,11 +455,6 @@ html[data-solid="1"] .material-window {
 .dock-item:active .dock-icon {
   transform: translateY(-4px) scale(1.02);
   transition-duration: 0.12s;
-}
-
-/* The 3D icons sit on the glass with a soft shadow. */
-.app-icon-3d {
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55)) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 }
 
 /* Home's panels: the same glass as an app, a little lighter at the rim. */

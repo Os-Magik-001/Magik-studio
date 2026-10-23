@@ -115,7 +115,7 @@ export function Spotlight({
               const selected = i === active;
               const [label, hint, icon] =
                 row.kind === "app"
-                  ? [row.app.name, row.app.hint, <AppIcon key="i" icon={row.app.icon} tint={row.app.tint} glyph={row.app.glyph} size={30} className="rounded-[8px]" />]
+                  ? [row.app.name, row.app.hint, <AppIcon key="i" icon={row.app.icon} size={30} />]
                   : row.kind === "action"
                     ? [row.action.label, row.action.hint, <span key="i" className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-white/10"><ArrowRight size={16} aria-hidden /></span>]
                     : [

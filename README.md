@@ -12,7 +12,7 @@ How the windows work (`src/components/desktop/`): the router renders one page at
 
 - `src/app/(app)/layout.tsx`: the desktop (`desktop/desktop.tsx`), with Home (`components/home/dashboard.tsx`, data in `src/lib/home.ts`) under the windows.
 - `src/app/(app)/(screens)/`: every app; `not-found.tsx` and `error.tsx` show in the window too.
-- `src/lib/apps.ts`: which apps each role gets, which app and which window a path opens in. Icons are `public/icons/<icon>.webp` (3D renders); the Calendar icon shows today's date.
+- `src/lib/apps.ts`: which apps each role gets, which app and which window a path opens in. Icons are drawn as SVG in `src/components/shell/app-icon.tsx` (Apple style: a gradient tile, one white symbol); the Calendar icon shows today's date.
 - Settings (`/account`) has a sidebar: General, Appearance (wallpaper, dimming, Dock size and names, glass or solid windows, saved to the person's account), Notifications (what to be told about), Calendar (week start, the Google/Apple link), Password & security (sign out everywhere), Documents (clients' invoices and contract), Referrals & credits, Studio (admin), About.
 
 ## Who sees what

@@ -53,7 +53,7 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
                 className="dock-item group relative flex w-[64px] flex-col items-center gap-1 rounded-[18px] pb-1 focus-visible:outline-offset-0 sm:w-[82px] sm:gap-1.5"
               >
                 <span className="dock-icon relative block h-[46px] w-[46px] sm:h-[62px] sm:w-[62px]">
-                  <AppIcon icon={app.icon} tint={app.tint} glyph={app.glyph} size="fill" />
+                  <AppIcon icon={app.icon} size="fill" />
                 </span>
                 <span className={cx("dock-label max-w-full truncate px-0.5 text-[10.5px] font-medium sm:text-[11.5px]", on ? "text-accent" : "text-white/80")}>{app.name}</span>
                 <span
@@ -94,7 +94,7 @@ function MinimizedTile({ win, onOpen }: { win: Win; onOpen: () => void }) {
         className="dock-item group relative flex w-[64px] flex-col items-center gap-1 rounded-[18px] pb-1 sm:w-[82px] sm:gap-1.5"
       >
         <span className="dock-icon relative flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-white/[0.07] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] sm:h-[62px] sm:w-[62px]">
-          {app ? <AppIcon icon={app.icon} tint={app.tint} glyph={app.glyph} size={34} /> : null}
+          {app ? <AppIcon icon={app.icon} size={34} /> : null}
         </span>
         <span className="dock-label max-w-full truncate px-0.5 text-[10.5px] font-medium text-white/60 sm:text-[11.5px]">{win.title}</span>
       </button>
