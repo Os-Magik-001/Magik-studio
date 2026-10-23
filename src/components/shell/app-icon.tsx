@@ -5,11 +5,21 @@ import type { AppIconName } from "@/lib/apps";
 import { cx } from "@/components/ui";
 import { useNow } from "@/components/use-now";
 
-// The apps' icons, in Apple's manner: a rounded square in one soft gradient and one simple
-// white symbol. Drawn as SVG on a 48 x 48 grid, so they stay sharp at every size. A symbol's
-// cut-outs are painted with the tile's own gradient (`cut`), so they read as holes.
+// The apps' icons, in the Liquid Glass style of macOS: a glass tile in one soft gradient whose
+// rim catches the light, and one simple symbol of frosted glass floating over it, lit on its
+// top edges, shaded on the bottom ones, with a soft shadow under it. Drawn as SVG on a 48 x 48
+// grid, so they stay sharp at every size. A symbol is white shapes (lighter ones are more
+// see-through); whatever it paints with `cut` is cut out of the glass.
 
-type Icon = { from: string; to: string; glyph: (cut: string) => ReactNode };
+type Icon = {
+  from: string;
+  to: string;
+  glyph: (cut: string) => ReactNode;
+  // Coloured details laid over the glass (the palette's paints, the camera's light).
+  accent?: ReactNode;
+  // The symbol keeps its own colours instead of turning to glass (the Magik monogram).
+  raw?: boolean;
+};
 
 const W = "#ffffff";
 
@@ -48,6 +58,12 @@ const TILE = (() => {
   return `${path}Z`;
 })();
 
+// A colour between two hex colours: t = 0 gives a, 1 gives b.
+function mix(a: string, b: string, t: number) {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return `rgb(${[0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t)).join(", ")})`;
+}
+
 // A sparkle: four points, curved sides.
 const sparkle = (x: number, y: number, r: number) =>
   `M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`;
@@ -80,6 +96,7 @@ const ICONS: Record<AppIconName, Icon> = {
     from: "#2f2c27",
     to: "#0b0a09",
     glyph: () => <image href="/brand/magik-monogram.svg" x={9} y={9} width={30} height={30} />,
+    raw: true,
   },
   pipeline: {
     from: "#7a7cff",
@@ -191,9 +208,9 @@ const ICONS: Record<AppIconName, Icon> = {
       <>
         <rect x={8.5} y={15.5} width={22} height={17} rx={4.2} fill={W} />
         <path d="M31.5 21.6 39.5 17v14l-8-4.6Z" fill={W} />
-        <circle cx={14.5} cy={21} r={2.2} fill="#ff3b30" />
       </>
     ),
+    accent: <circle cx={14.5} cy={21} r={2.2} fill="#ff3b30" />,
   },
   team: {
     from: "#8fa3c4",
@@ -215,6 +232,10 @@ const ICONS: Record<AppIconName, Icon> = {
     glyph: () => (
       <>
         <path d="M24 9.5C15.4 9.5 9 15.8 9 23.6 9 31.4 15.2 38.5 22.8 38.5c2.6 0 3.2-2 2.2-3.8-.9-1.6-.2-3.7 2-3.7h4.6c4.3 0 8.4-3.1 8.4-8.4C40 15.4 32.6 9.5 24 9.5Z" fill={W} />
+      </>
+    ),
+    accent: (
+      <>
         <circle cx={16.6} cy={20} r={2.7} fill="#ff375f" />
         <circle cx={23.3} cy={15.4} r={2.7} fill="#ffcc00" />
         <circle cx={31} cy={17.2} r={2.7} fill="#0a84ff" />
@@ -307,8 +328,10 @@ export function AppIcon({
   size?: number | "fill";
   className?: string;
 }) {
-  const { from, to, glyph } = ICONS[icon];
-  const tint = `tile${useId().replace(/[^\w-]/g, "")}`;
+  const { from, to, glyph, accent, raw } = ICONS[icon];
+  const id = useId().replace(/[^\w-]/g, "");
+  const ref = (name: string) => `url(#${name}${id})`;
+  const symbol = icon === "calendar" ? null : raw ? glyph("#000") : <rect width={48} height={48} fill={ref("glass")} mask={ref("cut")} />;
   return (
     <svg
       viewBox="0 0 48 48"
@@ -317,14 +340,77 @@ export function AppIcon({
       style={size === "fill" ? { width: "100%", height: "100%" } : { width: size, height: size }}
     >
       <defs>
-        <linearGradient id={tint} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={48}>
+        <linearGradient id={`tile${id}`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={48}>
           <stop stopColor={from} />
           <stop offset={1} stopColor={to} />
         </linearGradient>
+        {/* Light from above, pooling at the top of the tile. */}
+        <radialGradient id={`sheen${id}`} gradientUnits="userSpaceOnUse" cx={24} cy={-6} r={40}>
+          <stop stopColor={W} stopOpacity={0.3} />
+          <stop offset={1} stopColor={W} stopOpacity={0} />
+        </radialGradient>
+        {/* The glass rim: bright where the light hits the top left, a glint at the bottom right. */}
+        <linearGradient id={`rim${id}`} gradientUnits="userSpaceOnUse" x1={6} y1={0} x2={42} y2={48}>
+          <stop stopColor={W} stopOpacity={0.9} />
+          <stop offset={0.32} stopColor={W} stopOpacity={0.14} />
+          <stop offset={0.72} stopColor={W} stopOpacity={0.05} />
+          <stop offset={1} stopColor={W} stopOpacity={0.5} />
+        </linearGradient>
+        {/* Frosted glass: brightest at the top, letting the tile's colour through lower down. */}
+        <linearGradient id={`glass${id}`} gradientUnits="userSpaceOnUse" x1={0} y1={8} x2={0} y2={40}>
+          <stop stopColor={W} stopOpacity={0.94} />
+          <stop offset={1} stopColor={W} stopOpacity={0.66} />
+        </linearGradient>
+        {/* The thickness of the tile's glass: a soft glow just inside its edge. */}
+        <filter id={`edge${id}`} filterUnits="userSpaceOnUse" x={0} y={0} width={48} height={48}>
+          <feGaussianBlur stdDeviation={1.1} />
+        </filter>
+        <clipPath id={`clip${id}`}>
+          <path d={TILE} />
+        </clipPath>
+        <mask id={`cut${id}`} maskUnits="userSpaceOnUse" x={0} y={0} width={48} height={48}>
+          {glyph("#000")}
+        </mask>
+        {/* The symbol's depth: a shadow under it, a lit edge on top, a shaded edge below. */}
+        <filter id={`depth${id}`} filterUnits="userSpaceOnUse" x={-4} y={-4} width={56} height={58} colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation={1.3} result="soft" />
+          <feOffset in="soft" dy={1.6} result="drop" />
+          <feFlood floodColor={mix(to, "#000000", 0.55)} floodOpacity={0.5} />
+          <feComposite in2="drop" operator="in" />
+          <feComposite in2="SourceAlpha" operator="out" result="shadow" />
+          <feMorphology in="SourceAlpha" operator="erode" radius={0.45} result="inner" />
+          <feComposite in="SourceAlpha" in2="inner" operator="out" />
+          <feGaussianBlur stdDeviation={0.2} />
+          <feComposite in2="SourceAlpha" operator="in" result="outline" />
+          <feFlood floodColor={W} floodOpacity={0.55} />
+          <feComposite in2="outline" operator="in" result="rimline" />
+          <feOffset in="SourceAlpha" dx={0.55} dy={0.8} result="down" />
+          <feComposite in="SourceAlpha" in2="down" operator="out" />
+          <feGaussianBlur stdDeviation={0.3} />
+          <feComposite in2="SourceAlpha" operator="in" result="top" />
+          <feFlood floodColor={W} floodOpacity={0.95} />
+          <feComposite in2="top" operator="in" result="lit" />
+          <feOffset in="SourceAlpha" dx={-0.5} dy={-0.9} result="up" />
+          <feComposite in="SourceAlpha" in2="up" operator="out" />
+          <feGaussianBlur stdDeviation={0.45} />
+          <feComposite in2="SourceAlpha" operator="in" result="bottom" />
+          <feFlood floodColor={mix(to, "#000000", 0.25)} floodOpacity={0.4} />
+          <feComposite in2="bottom" operator="in" result="shade" />
+          <feMerge>
+            <feMergeNode in="shadow" />
+            <feMergeNode in="SourceGraphic" />
+            <feMergeNode in="shade" />
+            <feMergeNode in="rimline" />
+            <feMergeNode in="lit" />
+          </feMerge>
+        </filter>
       </defs>
-      <path d={TILE} fill={`url(#${tint})`} />
-      {icon === "calendar" ? <CalendarFace /> : glyph(`url(#${tint})`)}
-      <path d={TILE} fill="none" stroke={W} strokeOpacity={0.16} strokeWidth={0.8} />
+      <path d={TILE} fill={ref("tile")} />
+      <path d={TILE} fill={ref("sheen")} />
+      <path d={TILE} fill="none" stroke={W} strokeOpacity={0.22} strokeWidth={3.2} clipPath={ref("clip")} filter={ref("edge")} />
+      {symbol && <g filter={ref("depth")}>{symbol}</g>}
+      {icon === "calendar" ? <CalendarFace /> : accent}
+      <path d={TILE} fill="none" stroke={ref("rim")} strokeWidth={1.7} clipPath={ref("clip")} />
     </svg>
   );
 }
