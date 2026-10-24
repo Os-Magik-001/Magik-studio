@@ -39,7 +39,9 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
   ]);
   // No onboarding yet: the studio hasn't opened this client's setup. Magik OS waits for it.
   if (!progress || !client) return <BeingPrepared name={displayName(viewer)} />;
-  if (progress.completed_at) redirect("/");
+  // Finished (the brand step finishes it, so production starts): the desktop, except right
+  // after the last step, which shows that they're all set.
+  if (progress.completed_at && asked !== "done") redirect("/");
 
   const contract = contracts?.[0] ?? null;
   const steps: { key: Step; label: string; done: boolean }[] = [

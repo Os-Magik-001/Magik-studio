@@ -34,6 +34,8 @@ export type DesktopApi = {
   back: (id: string) => void;
   forward: (id: string) => void;
   reload: (id: string) => void;
+  // The focused window's page changes its own address, without a step in its history.
+  replace: (id: string, path: string) => void;
   // Every window to the Dock, the desktop in front.
   showDesktop: () => void;
   openSpotlight: () => void;

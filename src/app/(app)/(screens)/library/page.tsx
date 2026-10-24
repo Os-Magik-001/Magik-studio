@@ -35,12 +35,12 @@ export default async function LibraryPage() {
         title="Library"
         description="Videos new clients pick from when they set up their space (“videos to match”). Their picks become references the agents study."
       />
-      <div className="grid gap-6 @min-[80rem]:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-6 @min-[80rem]:grid-cols-[minmax(0,1fr)_380px]">
         <div>
           {!items?.length ? (
             <EmptyState title="The library is empty">Add a few reels in different styles: clients pick the ones that feel like their brand.</EmptyState>
           ) : (
-            <ul className="grid grid-cols-2 gap-4 @min-[48rem]:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 @min-[30rem]:grid-cols-2 @min-[48rem]:grid-cols-3">
               {items.map((item) => {
                 const yt = item.platform === "youtube" ? youtubeId(item.url) : null;
                 const cover = item.cover_path ? covers.get(item.cover_path) : yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : null;

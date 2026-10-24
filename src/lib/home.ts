@@ -111,7 +111,8 @@ export async function homeData(viewer: Viewer): Promise<HomeData> {
       tone: "accent",
     });
   }
-  for (const v of open) {
+  // The studio's deadlines, as in the Calendar: not for clients.
+  for (const v of role === "client" ? [] : open) {
     if (v.due_on && v.due_on >= today && v.due_on <= weekAhead) {
       items.push({ at: `${v.due_on}T23:59:00`, allDay: true, title: `Due · ${v.title}`, detail: v.clients?.name ?? videoStatusLabel(v.status), href: videoHref(v.id), tone: "info" });
     }

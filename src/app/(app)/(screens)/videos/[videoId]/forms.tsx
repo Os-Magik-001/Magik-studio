@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Input, Select, Textarea } from "@/components/ui";
-import { Field } from "@/components/field";
+import { Field, TzOffset } from "@/components/field";
 import { ScriptField } from "@/components/script-field";
 import { Uploader } from "@/components/uploader";
 import { ASPECTS, FORMAT_LABEL, type ScriptStatus } from "@/lib/workflow";
@@ -234,7 +234,7 @@ export function ScheduleShootForm({ videoId }: { videoId: string }) {
   return (
     <ActionForm action={scheduleShoot} resetOnSuccess onSuccess={() => setOpen(false)} className="flex flex-col gap-3">
       <input type="hidden" name="videoId" value={videoId} />
-      <input type="hidden" name="tzOffset" value={new Date().getTimezoneOffset()} />
+      <TzOffset />
       <Field label="Starts">
         <Input name="startsAt" type="datetime-local" required />
       </Field>

@@ -270,7 +270,7 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
     return target.set(Math.max(-1, Math.min(1, dx)), Math.max(-1, Math.min(1, -dy)));
   }
 
-  const clock = new THREE.Clock();
+  const timer = new THREE.Timer();
   let frame = 0;
   let last = 0;
   let hidden = document.visibilityState === "hidden";
@@ -285,7 +285,8 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
   function tick() {
     frame = requestAnimationFrame(tick);
     if (hidden) return;
-    const t = clock.getElapsedTime();
+    timer.update();
+    const t = timer.getElapsed();
     const busy = t - hopAt < 1.6 || t - wiggleAt < 1.2 || t - lookAt < 2.2 || thinking;
     if (t - last < (busy ? 1 / 60 : 1 / 30) - 0.002) return;
     const dt = Math.min(0.05, t - last);
@@ -373,6 +374,7 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
     resize,
     dispose: () => {
       cancelAnimationFrame(frame);
+      timer.dispose();
       window.removeEventListener("pointermove", onPointer);
       document.removeEventListener("visibilitychange", onVisibility);
       body.dispose();

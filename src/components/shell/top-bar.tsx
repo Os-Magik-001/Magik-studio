@@ -19,7 +19,7 @@ export function TopBar({ current }: { current: Win | null }) {
   return (
     <header className="topbar fixed inset-x-0 top-0 z-[9000] flex h-[46px] items-center gap-2 px-3 text-white select-none sm:gap-3 sm:px-5">
       <button type="button" onClick={d.showDesktop} className="flex shrink-0 items-center gap-2.5 rounded-lg px-1 py-1" aria-label="Magik OS: show the desktop">
-        <Image src="/brand/magik-monogram.svg" alt="" width={30} height={21} unoptimized priority className="h-[19px] w-auto" />
+        <Image src="/brand/magik-monogram.svg" alt="" width={28} height={19} unoptimized priority className="h-[19px] w-auto" />
         <span className="hidden font-display text-[13px] font-semibold tracking-[0.38em] sm:inline">
           MAGIK <span className="text-accent">OS</span>
         </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
 import { cx } from "@/components/ui";
 
 type Control = ReactElement<{ id?: string; "aria-describedby"?: string }>;
@@ -35,4 +35,23 @@ export function Field({
       )}
     </div>
   );
+}
+
+// A form's tzOffset: the browser's offset from UTC at the time picked in its startsAt field
+// (daylight saving time changes it), so a datetime-local value is stored as the moment meant.
+export function TzOffset() {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const input = ref.current;
+    const form = input?.form;
+    if (!input || !form) return;
+    const sync = () => {
+      const picked = new Date((form.elements.namedItem("startsAt") as HTMLInputElement | null)?.value ?? "");
+      input.value = String((Number.isFinite(picked.getTime()) ? picked : new Date()).getTimezoneOffset());
+    };
+    sync();
+    form.addEventListener("input", sync);
+    return () => form.removeEventListener("input", sync);
+  }, []);
+  return <input ref={ref} type="hidden" name="tzOffset" defaultValue="0" />;
 }

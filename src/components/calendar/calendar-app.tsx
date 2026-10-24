@@ -127,16 +127,30 @@ export function CalendarApp({ initial, role, people, clients, weekStart, view: i
     return map;
   }, [events]);
 
-  // An event asked for in the address (from Spotlight or a notification): its card opens once
-  // the event has loaded.
-  const [opened, setOpened] = useState(false);
-  if (!opened && focusEvent) {
-    const e = events.find((x) => x.id === `ev:${focusEvent}`);
+  // What the address asks for (Spotlight, Home, a notification): a day, an event, a new event.
+  // The Calendar may already be open, so each new ask is acted on when it comes; an event's card
+  // opens once the event has loaded.
+  const [asked, setAsked] = useState({ focusDate, focusEvent, startNew });
+  const [wanted, setWanted] = useState(focusEvent);
+  if (asked.focusDate !== focusDate || asked.focusEvent !== focusEvent || asked.startNew !== startNew) {
+    setAsked({ focusDate, focusEvent, startNew });
+    if (focusDate && focusDate !== asked.focusDate) setCursor(fromKey(focusDate));
+    if (focusEvent && focusEvent !== asked.focusEvent) setWanted(focusEvent);
+    if (startNew && !asked.startNew) setEditor(draftAt(nextSlot(new Date())));
+  }
+  if (wanted) {
+    const e = events.find((x) => x.id === `ev:${wanted}`);
     if (e) {
-      setOpened(true);
+      setWanted(null);
       setCard({ event: e, anchor: null });
     }
   }
+  // Then the address lets go of it: the same ask works again, and a reload doesn't repeat it.
+  const replaceAddress = desktop.replace;
+  const asking = !!(focusDate || focusEvent || startNew);
+  useEffect(() => {
+    if (asking && win?.focused) replaceAddress(win.id, "/calendar");
+  }, [asking, win?.focused, win?.id, replaceAddress]);
 
   // ------------------------------------------------------------ navigation
 

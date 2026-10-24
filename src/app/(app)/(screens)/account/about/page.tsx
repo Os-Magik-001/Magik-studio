@@ -23,7 +23,7 @@ export default async function AboutPage() {
     <WindowPage>
       <SettingsShell role={viewer.role} active="about" title="About Magik OS">
         <div className="frost flex items-center gap-5 rounded-[18px] p-6">
-          <Image src="/brand/magik-monogram.svg" alt="" width={64} height={45} unoptimized className="h-12 w-auto" />
+          <Image src="/brand/magik-monogram.svg" alt="" width={70} height={48} unoptimized className="h-12 w-auto" />
           <div>
             <p className="font-display text-[22px] font-bold tracking-[0.2em] text-ink">
               MAGIK <span className="text-accent">OS</span>

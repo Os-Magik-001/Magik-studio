@@ -26,7 +26,7 @@ export default function LoginPage({
 
       <div className="flex w-full max-w-[340px] flex-col items-center animate-rise-in">
         <div className="glass-bar flex h-[84px] w-[84px] items-center justify-center rounded-full">
-          <Image src="/brand/magik-monogram.svg" alt="" width={46} height={32} unoptimized priority className="h-8 w-auto" />
+          <Image src="/brand/magik-monogram.svg" alt="" width={47} height={32} unoptimized priority className="h-8 w-auto" />
         </div>
         <h1 className="on-wallpaper mt-3.5 font-display text-[20px] font-semibold tracking-tight">Magik OS</h1>
         <p className="on-wallpaper mt-0.5 text-[13px] text-white/70">Sign in to the studio</p>

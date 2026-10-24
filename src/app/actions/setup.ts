@@ -270,7 +270,7 @@ export async function uploadBrandLogo(_: ActionResult, formData: FormData): Prom
     return fail("Couldn't save your logo. Try again.");
   }
   await finishBrand(viewer, true, "They uploaded their logo.");
-  redirect("/setup");
+  redirect("/setup?step=done");
 }
 
 // "No, create one": the logo they built in the creator, as a transparent PNG.

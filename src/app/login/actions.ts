@@ -18,5 +18,16 @@ export async function signIn(_: ActionResult, formData: FormData): Promise<Actio
     if (error.code === "user_banned") return fail("This account is paused. Ask your studio manager to resume it.");
     return fail("Wrong email or password.");
   }
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+  redirect(sameSite(next));
+}
+
+// Only a page of Magik OS: "/\evil.com", "//evil.com" or "/<tab>/evil.com" would leave the site.
+function sameSite(next: string) {
+  if (!next.startsWith("/")) return "/";
+  try {
+    const url = new URL(next, "http://magik.local");
+    return url.origin === "http://magik.local" ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
 }

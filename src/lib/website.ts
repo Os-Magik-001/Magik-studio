@@ -2,6 +2,7 @@ import "server-only";
 import { cacheLife } from "next/cache";
 import type { Viewer } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deliver } from "@/lib/notify";
 
 // The client's website made with Magik (clients.site_*), shown in their Website app.
 
@@ -38,12 +39,15 @@ export async function ensureWebsiteNotice(viewer: Viewer) {
       admin.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", viewer.id).eq("kind", "website_missing"),
     ]);
     if (!client || siteStatus(client.site_status) !== "none" || (count ?? 0) > 0) return;
-    await admin.from("notifications").insert({
-      user_id: viewer.id,
-      client_id: viewer.clientId,
-      kind: "website_missing",
-      title: "You don't have a website with Magik yet",
-      body: "A website that matches your videos brings your clients one click closer. Open Website to tell the studio you're interested.",
-    });
+    // Through deliver(), so it keeps to what the client muted (Messages from the studio).
+    await deliver([
+      {
+        user_id: viewer.id,
+        client_id: viewer.clientId,
+        kind: "website_missing",
+        title: "You don't have a website with Magik yet",
+        body: "A website that matches your videos brings your clients one click closer. Open Website to tell the studio you're interested.",
+      },
+    ]);
   } catch {}
 }

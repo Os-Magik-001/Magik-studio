@@ -12,7 +12,7 @@ const DAY = 86_400_000;
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ date?: string; event?: string; new?: string }> }) {
   const viewer = await getViewer();
   const { date, event, new: isNew } = await searchParams;
-  const focus = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+  const focus = date && /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date)) ? date : null;
   // The month on screen first, as the studio counts days; a little more around it, whatever the
   // viewer's own time zone.
   const day = focus ?? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());

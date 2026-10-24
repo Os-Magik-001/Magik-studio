@@ -417,6 +417,17 @@ function Stage({
   const drawing = useRef<Stroke | null>(null);
   const [live, setLive] = useState<Stroke | null>(null);
 
+  // Every render of the page signs a new address for the same file, and a new address reloads
+  // the video (back to the start), as when its window comes to the front again. Keep the one it
+  // plays; take the new one for another file, or once the kept one stops working (it expires).
+  const [src, setSrc] = useState(url);
+  const latest = useRef(url);
+  useEffect(() => {
+    latest.current = url;
+  });
+  const file = (u: string | null) => u?.split("?")[0] ?? null;
+  if (file(url) !== file(src)) setSrc(url);
+
   // Fit the video's real frame into the stage so drawings line up with the picture.
   useEffect(() => {
     const el = wrapRef.current;
@@ -451,12 +462,13 @@ function Stage({
     <div ref={wrapRef} className="flex flex-col items-center gap-1.5">
       {label && <span className="self-start font-mono text-xs text-stage-muted">{label}</span>}
       <div className="relative bg-black" style={box ? { width: box.w, height: box.h } : { width: "100%", aspectRatio: `${aspect[0]} / ${aspect[1]}` }}>
-        {url ? (
+        {src ? (
           <video
             ref={videoRef}
             // The media fragment makes Safari decode and paint the first frame
             // instead of a black box until playback starts.
-            src={url.includes("#") ? url : `${url}#t=0.001`}
+            src={src.includes("#") ? src : `${src}#t=0.001`}
+            onError={() => latest.current !== src && setSrc(latest.current)}
             playsInline
             preload="auto"
             muted={muted}

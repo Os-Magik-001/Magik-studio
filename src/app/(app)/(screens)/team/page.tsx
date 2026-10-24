@@ -44,7 +44,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
           ]}
         />
       </div>
-      <div className="grid gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
           {list.length === 0 ? (
             <p className="px-5 py-8 text-center text-[13.5px] text-muted">Nobody here.</p>

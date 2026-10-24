@@ -45,9 +45,11 @@ export function ActionForm({ action, children, className, resetOnSuccess, onSucc
     startTransition(() => formAction(data));
   };
 
+  // POST: sent before the page is ready (no JavaScript yet), the browser would otherwise put
+  // what was typed, a password too, in the address.
   return (
     <PendingContext value={pending}>
-      <form ref={ref} onSubmit={onSubmit} className={className}>
+      <form ref={ref} method="post" onSubmit={onSubmit} className={className}>
         {children}
         {state.error && (
           <p role="alert" className="mt-2 text-[13px] text-danger">

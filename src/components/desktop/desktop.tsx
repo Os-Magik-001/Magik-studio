@@ -413,6 +413,15 @@ export function Desktop({
     [focus, router],
   );
 
+  // A page changes its own address (a deep link it has acted on), with no new step in its
+  // window's history. Only the focused window's page can: it is the router's.
+  const replace = useCallback(
+    (id: string, path: string) => {
+      if (stateRef.current.focused === id) routeTo(id, path, "replace");
+    },
+    [routeTo],
+  );
+
   const showDesktop = useCallback(() => {
     setMissionState(false);
     const st = stateRef.current;
@@ -515,6 +524,7 @@ export function Desktop({
     back: (id) => go(id, "back"),
     forward: (id) => go(id, "forward"),
     reload,
+    replace,
     showDesktop,
     openSpotlight: () => setSpotlight(true),
     registerDockIcon,

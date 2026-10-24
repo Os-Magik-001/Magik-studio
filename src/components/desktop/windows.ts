@@ -150,6 +150,8 @@ function step(state: State, action: Action): State {
           back = [...back, existing.path].slice(-30);
           ahead = [];
         }
+        // Back never leads to the page already shown (a page that changed its own address).
+        if (back.at(-1) === action.path) back = back.slice(0, -1);
       }
       return {
         top,

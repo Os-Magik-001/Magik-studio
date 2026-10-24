@@ -380,11 +380,18 @@ function PageSkeleton({ name }: { name?: string }) {
   );
 }
 
-// A page that broke while rendering: say so in its window, the others keep working.
+// A server action that redirected (a new client, the next onboarding step) rejects with Next.js's
+// redirect error once the router is already on its way there. Next.js's own boundaries sit
+// around the routes, not around the windows, so the window takes it.
+const isRedirect = (error: unknown) =>
+  typeof error === "object" && error !== null && String((error as { digest?: unknown }).digest ?? "").startsWith("NEXT_REDIRECT");
+
+// A page that broke while rendering: say so in its window, the others keep working. After a
+// redirect the page just starts over, as it would under Next.js's redirect boundary.
 class PageBoundary extends Component<{ children: ReactNode; onReload: () => void }, { failed: boolean }> {
   state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
+  static getDerivedStateFromError(error: unknown) {
+    return { failed: !isRedirect(error) };
   }
   render() {
     if (!this.state.failed) return this.props.children;

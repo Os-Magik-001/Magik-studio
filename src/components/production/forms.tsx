@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { TzOffset } from "@/components/field";
 import { Input, Select, Textarea, cx } from "@/components/ui";
 import { createPlannedVideos, planMonth, scheduleShootDay, sendScripts, startProductionNow, writeScripts } from "@/app/actions/production";
 import { requestTrendResearch } from "@/app/actions/agents";
@@ -211,15 +212,6 @@ export function ScriptActions({ clientId, toWrite, toRevise, toSend }: { clientI
       )}
     </div>
   );
-}
-
-// The browser's offset from UTC, set once it runs, so the shoot's time is stored as meant.
-function TzOffset() {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.value = String(new Date().getTimezoneOffset());
-  }, []);
-  return <input ref={ref} type="hidden" name="tzOffset" defaultValue="0" />;
 }
 
 export function ShootDayForm({

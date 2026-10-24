@@ -434,7 +434,7 @@ export function BrandStep({ brandName, initial }: { brandName: string; initial: 
         data.set("spec", JSON.stringify(spec));
         const res = await saveCreatedLogo(data);
         if (res.error) return { error: res.error };
-        router.refresh();
+        router.replace("/setup?step=done");
         return {};
       }}
     />
