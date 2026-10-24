@@ -263,6 +263,10 @@ export const FPS = 30;
 export const shotLength = (seg: Pick<Shot, "start" | "end" | "speed"> & { hold?: number }) =>
   Math.max(1, Math.round((seg.hold && seg.hold > 0 ? seg.hold : (seg.end - seg.start) / seg.speed) * FPS)) / FPS;
 export const overlapOf = (t: Shot["transition_in"]) => (t.type === "cut" ? 0 : t.seconds);
+// Shot b carries on shot a's take: the same clip's sound, picking up where it stopped, with
+// only the picture changing (a punch-in). There is no sound edit between them.
+export const sameTake = (a: Shot, b: Shot) =>
+  a.clip === b.clip && a.audio === "keep" && b.audio === "keep" && a.hold === 0 && b.hold === 0 && a.speed === b.speed && b.transition_in.type === "cut" && Math.abs(b.start - a.end) < 0.002;
 
 // Where everything sits on the finished video: speed changes stretch shots, and
 // each transition overlaps the two shots it joins by its length.
@@ -645,6 +649,12 @@ const SAY_TAIL = 0.2;
 // where Claude placed the shot. Exact match first, then the run that starts with the
 // quote's first words and ends with its last words.
 export function findWords(say: string, words: { start: number; end: number; text: string }[], near: number) {
+  const run = findRun(say, words, near);
+  return run && { start: words[run.from].start, end: words[run.to].end };
+}
+
+// The same, as the indices of the run's first and last words.
+export function findRun(say: string, words: { start: number; end: number; text: string }[], near: number) {
   const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]/gu, "");
   const quote = say.split(/\s+/).map(norm).filter(Boolean);
   const tokens = words.map((w) => norm(w.text));
@@ -668,8 +678,7 @@ export function findWords(say: string, words: { start: number; end: number; text
     }
   }
   if (!runs.length) return null;
-  const best = runs.reduce((a, b) => (Math.abs(words[b.from].start - near) < Math.abs(words[a.from].start - near) ? b : a));
-  return { start: words[best.from].start, end: words[best.to].end };
+  return runs.reduce((a, b) => (Math.abs(words[b.from].start - near) < Math.abs(words[a.from].start - near) ? b : a));
 }
 
 // Keeps the plan inside the real footage, whatever comes back.

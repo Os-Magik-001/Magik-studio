@@ -343,3 +343,27 @@ test("clean style strips every effect and keeps cuts, framing and subtitles", ()
   assert.deepEqual(out.on_screen_text.map((t) => t.style), ["caption", "label"], "subtitles and the episode label only");
   assert.deepEqual([out.graphics.length, out.motion.length, out.sfx.length], [0, 0, 0]);
 });
+
+test("shots that carry on one take join without a fade, a real edit keeps its fades", async () => {
+  // The 440 Hz tone of C1 runs on through a punch-in on the same take; a jump to a later
+  // moment of it is a real edit, faded over 15 ms each side.
+  const loud = async (segments: EditPlan["segments"], name: string) => {
+    const work = path.join(dir, name);
+    const plan: EditPlan = { ...EXTRAS, look: "natural", summary: "", segments, on_screen_text: [], end_card: { include: false, headline: null, seconds: 0, transition: CUT }, open_questions: [] };
+    await render({ plan, clips, aspect: "9:16", brand: { colors: [], fonts: [], logoFile: null }, workDir: work, output: path.join(work, "out.mp4") });
+    const { pcmOf } = await import("../src/speech.ts");
+    const x = await pcmOf(path.join(work, "picture.mp4"), 48000);
+    // RMS over 5 ms windows around the join (1.0 s in), against the shot's own level.
+    const rms = (t: number) => {
+      let s = 0;
+      for (let i = Math.round(t * 48000); i < Math.round((t + 0.005) * 48000); i++) s += x[i] * x[i];
+      return Math.sqrt(s / 240);
+    };
+    const steady = rms(0.5);
+    return Math.min(...[0.99, 0.995, 1.0, 1.005].map(rms)) / steady;
+  };
+  const same = await loud([shot("C1", 1, 2, "wide"), shot("C1", 2, 3, "punch-in", { zoom: { start: 1.3, end: 1.3 } })], "same-take");
+  const jump = await loud([shot("C1", 1, 2, "wide"), shot("C1", 2.5, 3.5, "later")], "jump");
+  assert.ok(same > 0.8, `one take: ${same.toFixed(2)} of the level at the join`);
+  assert.ok(jump < 0.5, `an edit: ${jump.toFixed(2)} of the level at the join`);
+});

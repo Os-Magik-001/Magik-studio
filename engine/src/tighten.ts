@@ -27,7 +27,7 @@ const GAP_START = 0.14;
 const BEAT_BEFORE_PUNCH = 0.45;
 const HOLD_AFTER_PUNCH = 0.3;
 // Shots whose point is the silence (reactions, glances, beats) are left alone.
-const KEEP_SILENCE = /react|glance|look|stare|deadpan|beat|pause|silent|silence|freeze|hold|b-roll|broll|cutaway|insert|establish|intro clip|logo|title|walk|entrance|ending|end card|tag/i;
+export const KEEP_SILENCE = /react|glance|look|stare|deadpan|beat|pause|silent|silence|freeze|hold|b-roll|broll|cutaway|insert|establish|intro clip|logo|title|walk|entrance|ending|end card|tag/i;
 
 const bare = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}']/gu, "");
 
@@ -109,11 +109,17 @@ export function tighten(plan: EditPlan, clips: Clip[]): TightenResult {
   });
 
   const tightened: EditPlan = { ...plan, segments: out };
-  const before = timelineOf(plan);
-  const after = timelineOf(tightened);
-  const removed = Math.round((before.length - after.length) * 100) / 100;
+  const removed = Math.round((timelineOf(plan).length - timelineOf(tightened).length) * 100) / 100;
   if (removed < 0.05) return { plan, removed: 0, notes: [] };
+  return { plan: followCut(plan, tightened, origin.map((o) => o.old)), removed, notes };
+}
 
+// `cut` with every title, graphic, motion item, overlay, sound effect and music section of
+// `plan` moved to stay on the same moment of the footage. `origin[n]` is the shot of `plan`
+// that shot n of `cut` was cut from (a shot may become several).
+export function followCut(plan: EditPlan, cut: EditPlan, origin: number[]): EditPlan {
+  const before = timelineOf(plan);
+  const after = timelineOf(cut);
   // Old timeline time -> new timeline time, through the source position in the clip.
   const remap = (t: number) => {
     const k = before.shots.findIndex((s) => t >= s.start && t < s.end);
@@ -121,8 +127,8 @@ export function tighten(plan: EditPlan, clips: Clip[]): TightenResult {
     const old = before.shots[k];
     const src = old.seg.hold > 0 ? old.seg.start : old.seg.start + (t - old.start) * old.seg.speed;
     // The new shot from the same old shot whose source range holds that moment (or the nearest).
-    const candidates = after.shots.filter((s, n) => origin[n].old === k);
-    if (!candidates.length) return after.shots.find((_, n) => origin[n].old > k)?.start ?? after.length;
+    const candidates = after.shots.filter((s, n) => origin[n] === k);
+    if (!candidates.length) return after.shots.find((_, n) => origin[n] > k)?.start ?? after.length;
     const hit = candidates.find((s) => src >= s.seg.start && src <= s.seg.end) ?? (src < candidates[0].seg.start ? candidates[0] : candidates.at(-1)!);
     if (old.seg.hold > 0) return hit.start + (t - old.start);
     const into = Math.min(Math.max(0, src - hit.seg.start), hit.seg.end - hit.seg.start) / hit.seg.speed;
@@ -133,16 +139,17 @@ export function tighten(plan: EditPlan, clips: Clip[]): TightenResult {
     const e = round(Math.max(remap(x.end), s + 0.2));
     return { ...x, start: s, end: e };
   };
-  tightened.on_screen_text = plan.on_screen_text.map(span);
-  tightened.graphics = plan.graphics.map(span);
-  tightened.motion = plan.motion.map(span);
-  tightened.overlays = plan.overlays.map((o) => ({ ...o, at: round(remap(o.at)) }));
-  tightened.sfx = plan.sfx.map((x) => ({ ...x, at: round(remap(x.at)) }));
-  tightened.music = { ...plan.music, sections: (plan.music.sections ?? []).map(span) };
+  const moved: EditPlan = { ...cut };
+  moved.on_screen_text = plan.on_screen_text.map(span);
+  moved.graphics = plan.graphics.map(span);
+  moved.motion = plan.motion.map(span);
+  moved.overlays = plan.overlays.map((o) => ({ ...o, at: round(remap(o.at)) }));
+  moved.sfx = plan.sfx.map((x) => ({ ...x, at: round(remap(x.at)) }));
+  moved.music = { ...plan.music, sections: (plan.music.sections ?? []).map(span) };
   // Graphics that span the whole video (progress bars, follow pills to the end) keep reaching the end.
-  tightened.graphics = tightened.graphics.map((g, n) => (plan.graphics[n].end >= before.length - 0.05 ? { ...g, end: round(after.length) } : g));
-  tightened.on_screen_text = tightened.on_screen_text.map((x, n) => (plan.on_screen_text[n].end >= before.length - 0.05 ? { ...x, end: round(after.length) } : x));
-  return { plan: tightened, removed, notes };
+  moved.graphics = moved.graphics.map((g, n) => (plan.graphics[n].end >= before.length - 0.05 ? { ...g, end: round(after.length) } : g));
+  moved.on_screen_text = moved.on_screen_text.map((x, n) => (plan.on_screen_text[n].end >= before.length - 0.05 ? { ...x, end: round(after.length) } : x));
+  return moved;
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;

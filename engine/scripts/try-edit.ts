@@ -22,6 +22,7 @@ import { probe } from "../src/media.ts";
 import { parseStoredPlan, timelineOf, timelineWords, type EditPlan } from "../src/plan.ts";
 import { designPass, type DesignAsset } from "../src/design.ts";
 import { loadSkills } from "../src/skills.ts";
+import { pictureCuts } from "../src/splits.ts";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -139,9 +140,11 @@ if (values.design) {
   ].filter(Boolean).join("\n\n");
   const subtitles = plan.captions.mode === "translate" ? plan.on_screen_text.filter((t) => t.style === "caption").map((t) => ({ text: t.text, start: t.start, end: t.end })) : undefined;
   const { shots } = timelineOf(plan);
+  // Where the picture really changes (a split edit moves a cut off its sound edit).
+  const cuts = pictureCuts(plan, clips);
   const { log } = await designPass({
     video: cut, words: timelineWords(plan, clips), subtitles,
-    shots: shots.map((s) => ({ start: s.start, end: s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
+    shots: shots.map((s, i) => ({ start: cuts[i], end: i + 1 < shots.length ? cuts[i + 1] : s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
     brief, brand: { colors: request.brand.colors, fonts: request.brand.fonts }, assets,
     workDir: path.join(dir, "design"), output, onStep: say, from: values["design-from"] ? path.resolve(values["design-from"]) : undefined,
   });

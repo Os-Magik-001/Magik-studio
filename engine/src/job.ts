@@ -18,6 +18,9 @@ import { reviewRender } from "./review.ts";
 import { loadSfxCatalog, type SfxEntry } from "./sfx.ts";
 import { scoreSound, type SoundReport, type SoundRequest, type TrendAudio } from "./sound.ts";
 import { loadSkills } from "./skills.ts";
+import { clipSounds, refineEdits } from "./edits.ts";
+import { checkCut } from "./qc.ts";
+import { pictureCuts } from "./splits.ts";
 import { anchorMotion, tighten } from "./tighten.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 
@@ -238,7 +241,7 @@ export async function planAndRender(
     note(`rejected plan (saved to ${keep}): ${raw.segments.map((s) => `${s.clip} ${s.start}-${s.end}`).join(", ") || "no shots"}`);
     throw err;
   }
-  const first = finish(checked, clips, note);
+  const first = await finish(checked, clips, note);
 
   const track = (plan: EditPlan) => catalogs.music.find((t) => t.id === plan.music.track);
   // A music download that fails shouldn't sink the edit: it goes out without music.
@@ -249,7 +252,7 @@ export async function planAndRender(
   const sound = { sfxCatalog: catalogs.sfx, warn: note };
 
   // The sound designer scores the locked cut. If it can't, the editor's music stays.
-  const score = async (cut: ReturnType<typeof finish>): Promise<ReturnType<typeof finish> & { sound: SoundReport | null }> => {
+  const score = async (cut: Awaited<ReturnType<typeof finish>>): Promise<Awaited<ReturnType<typeof finish>> & { sound: SoundReport | null }> => {
     if (!sounder) return { ...cut, sound: null };
     try {
       await step("The sound designer is scoring the cut");
@@ -290,7 +293,7 @@ export async function planAndRender(
 
   // The motion designer draws the graphics over the finished cut. If it can't, the engine's own
   // graphics (the editor's suggestions) go out instead.
-  type Final = ReturnType<typeof finish> & { sound: SoundReport | null };
+  type Final = Awaited<ReturnType<typeof finish>> & { sound: SoundReport | null };
   const designOver = async (cut: Final) => {
     if (!design) return { ...cut, design: null };
     try {
@@ -325,11 +328,13 @@ export async function planAndRender(
         references: rest.references?.flatMap((r) => (r.design ? [r.design] : [])).join("\n\n") || null,
       });
       const subtitles = plan.captions.mode === "translate" ? plan.on_screen_text.filter((x) => x.style === "caption").map((x) => ({ text: x.text, start: x.start, end: x.end })) : undefined;
+      // Shots where the picture really changes (a split edit moves a cut off its sound edit).
+      const cuts = pictureCuts(plan, clips);
       const designed = await designer({
         video: cutFile,
         words: timelineWords(plan, clips),
         subtitles,
-        shots: timelineOf(plan).shots.map((s) => ({ start: s.start, end: s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
+        shots: timelineOf(plan).shots.map((s, i, all) => ({ start: cuts[i], end: i + 1 < all.length ? cuts[i + 1] : s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
         brief,
         brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [] },
         assets,
@@ -350,14 +355,38 @@ export async function planAndRender(
     }
   };
 
+  const renderCut = async (plan: EditPlan, workDir: string) =>
+    render({ plan: shown(plan), clips, aspect: req.aspect, brand, workDir, output: cutFile, words: timelineWords(plan, clips), musicFile: await music(plan), ...sound });
+
+  // The edit check on the final render: every cut heard on its own. What it repairs renders
+  // once more; what it can't settle goes to the editor with the version's notes.
+  const listened = async (cut: Final, workDir: string): Promise<Final> => {
+    try {
+      await step("Listening to every cut");
+      const result = await checkCut({ dialogue: path.join(workDir, "picture.mp4"), plan: cut.plan, clips, sounds: await clipSounds(cut.plan, clips), workDir: path.join(workDir, "check"), language: languageOf(clips) });
+      result.notes.forEach((n) => note(`edit check: ${n}`));
+      result.flags.forEach((f) => note(`edit check, to listen to: ${f}`));
+      let plan = result.plan;
+      if (result.repaired) {
+        await step("Rendering the cut with its repaired edits");
+        await renderCut(plan, path.join(workDir, "checked"));
+      }
+      if (result.flags.length) plan = { ...plan, open_questions: [...plan.open_questions, ...result.flags.slice(0, 8).map((f) => `Edit check: ${f}.`)] };
+      return { ...cut, plan, length: timelineOf(plan).length };
+    } catch (err) {
+      note(`edit check skipped: ${err instanceof Error ? err.message : err}`);
+      return cut;
+    }
+  };
+
   if (req.selfReview === false) {
     const scored = await score(first);
     await step(`Rendering ${scored.length.toFixed(1)}s`);
-    await render({ plan: shown(scored.plan), clips, aspect: req.aspect, brand, workDir: dir, output: cutFile, words: timelineWords(scored.plan, clips), musicFile: await music(scored.plan), ...sound });
-    return designOver(scored);
+    await renderCut(scored.plan, dir);
+    return designOver(await listened(scored, dir));
   }
   await step(`Rendering ${first.length.toFixed(1)}s`);
-  await render({ plan: shown(first.plan), clips, aspect: req.aspect, brand, workDir: dir, output: cutFile, words: timelineWords(first.plan, clips), musicFile: await music(first.plan), ...sound });
+  await renderCut(first.plan, dir);
 
   // Self-review: watch the render back, then revise it like a senior editor would.
   // Anything going wrong here leaves the first cut in place rather than failing the edit.
@@ -378,7 +407,7 @@ export async function planAndRender(
       renderSheets: review.sheets,
     });
     note(`${usage2} (self-review)`);
-    revised = finish(validatePlan(raw2, clips, known, { clean }), clips, note);
+    revised = await finish(validatePlan(raw2, clips, known, { clean }), clips, note);
   } catch (err) {
     // The first cut stands if the review can't be planned.
     note(`self-review skipped: ${err instanceof Error ? err.message : err}`);
@@ -387,10 +416,15 @@ export async function planAndRender(
   // Without a review or a new sound, the first render is already the final cut.
   if (revised || final.sound) {
     await step(`Rendering the ${revised ? "reviewed" : "scored"} cut, ${final.length.toFixed(1)}s`);
-    await render({ plan: shown(final.plan), clips, aspect: req.aspect, brand, workDir: path.join(dir, "final"), output: cutFile, words: timelineWords(final.plan, clips), musicFile: await music(final.plan), ...sound });
+    await renderCut(final.plan, path.join(dir, "final"));
+    return designOver(await listened(final, path.join(dir, "final")));
   }
-  return designOver(final);
+  return designOver(await listened(final, dir));
 }
+
+// The language the clips were transcribed in, for listening to the cut (Whisper guessing the
+// language of a two-second shot is a gamble).
+const languageOf = (clips: Clip[]) => clips.flatMap((c) => c.transcript ?? []).find((l) => l.language)?.language ?? config.whisperLanguage;
 
 const CLEAN = `EDITING STYLE: CLEAN (like Cluely's skits). Cuts, framing and subtitles only. Do not use motion templates, freeze frames (hold), titles, labels, stickers, graphics, cards, sound effects, transitions other than cut, pushes or highlight words: they will be removed. Music only as a section under the series intro clip, never under dialogue. All the quality comes from choosing the best takes and cutting them with perfect comic timing.`;
 
@@ -404,12 +438,22 @@ const SELF_REVIEW = `Self-review. The previous cut is your own first cut; you ar
 - Keep copying each speech shot's exact words into say: the engine times the cut from them.
 - If a note is wrong (a deliberate pause), keep it as it is. Don't change what already works.`;
 
-// Trim pass after validation; logs what it changed.
-function finish(checked: ReturnType<typeof validatePlan>, clips: Clip[], note: Note) {
+// Trim pass and edit pass after validation; logs what they changed.
+async function finish(checked: ReturnType<typeof validatePlan>, clips: Clip[], note: Note) {
   checked.problems.forEach((p) => note(`plan fix: ${p}`));
   const tight = tighten(checked.plan, clips);
   if (tight.removed) note(`trim pass: removed ${tight.removed.toFixed(1)}s (${tight.notes.length ? tight.notes.join("; ") : "heads and tails"})`);
-  const plan = anchorMotion(tight.plan);
+  // Every edit with sound placed again from the sound itself (see edits.ts). A clip that
+  // can't be read leaves the cut as the trim pass left it.
+  let cut = tight.plan;
+  try {
+    const refined = refineEdits(cut, clips, await clipSounds(cut, clips));
+    if (refined.notes.length) note(`edit pass: ${refined.notes.join("; ")}`);
+    cut = refined.plan;
+  } catch (err) {
+    note(`edit pass skipped: ${err instanceof Error ? err.message : err}`);
+  }
+  const plan = anchorMotion(cut);
   return { plan, length: timelineOf(plan).length };
 }
 

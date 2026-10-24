@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { createCanvas } from "@napi-rs/canvas";
 import { DEFAULT_CAPTIONS, PLAIN_SHOT, type EditPlan } from "../src/plan.ts";
+import { RATE } from "../src/speech.ts";
 
 export type FixtureClip = { file: string; label: string; w: number; h: number; seconds: number; tone: number | null; color: string };
 
@@ -84,3 +85,21 @@ export const EXTRAS = {
   music: { track: null, start: 0, volume: "low", sections: [] },
   sfx: [],
 } satisfies Partial<EditPlan>;
+
+// Synthetic sound at the speech map's rate: a room (soft noise) with "syllables" (voiced
+// 300 Hz swells with a little hiss) where `parts` says, each [start, end] in seconds.
+export function voice(seconds: number, parts: [number, number][], seed = 3) {
+  let s = seed;
+  const noise = () => ((s = (s * 16807) % 2147483647) / 2147483647) * 2 - 1;
+  const x = new Float32Array(Math.round(seconds * RATE));
+  for (let i = 0; i < x.length; i++) x[i] = noise() * 0.0015;
+  for (const [a, b] of parts) {
+    for (let i = Math.round(a * RATE); i < Math.min(x.length, Math.round(b * RATE)); i++) {
+      const t = i / RATE - a;
+      // A vowel's swell, so each part has one peak.
+      const env = Math.sin((Math.PI * t) / (b - a));
+      x[i] += env * (0.3 * Math.sin(2 * Math.PI * 300 * t) + 0.12 * Math.sin(2 * Math.PI * 1200 * t)) + noise() * 0.01 * env;
+    }
+  }
+  return x;
+}

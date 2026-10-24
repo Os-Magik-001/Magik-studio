@@ -5,13 +5,15 @@ import { config } from "./config.ts";
 import { run } from "./exec.ts";
 import { clipLoudness, frameSize } from "./media.ts";
 import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
-import { overlapOf, shotLength, type Clip, type EditPlan } from "./plan.ts";
+import { overlapOf, sameTake, shotLength, type Clip, type EditPlan } from "./plan.ts";
 import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 import { pictureShifts } from "./splits.ts";
 import { sfxSource, type SfxEntry } from "./sfx.ts";
 
 const FPS = 30;
+// The edit's sound: every shot is cut at this rate, to the sample.
+const RATE = 48000;
 
 type Shot = EditPlan["segments"][number];
 
@@ -234,10 +236,12 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     args.push("-f", "lavfi", "-t", seconds.toFixed(3), "-i", "anullsrc=r=48000:cl=stereo");
     return input++;
   };
-  // Every piece's sound is padded or trimmed to exactly its picture's length, so
-  // transitions line up.
-  const normA = (label: string, out: string, seconds: number, tempo = "") =>
-    `[${label}]asetpts=PTS-STARTPTS,${tempo}aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,apad=whole_dur=${seconds.toFixed(3)},atrim=end=${seconds.toFixed(3)}[${out}]`;
+  // Every piece's sound is padded or trimmed to exactly its picture's length, to the
+  // sample (a frame is 1600 samples), so transitions line up and nothing drifts.
+  const normA = (label: string, out: string, seconds: number, tempo = "") => {
+    const samples = Math.round(seconds * RATE);
+    return `[${label}]asetpts=PTS-STARTPTS,${tempo}aresample=${RATE},aformat=sample_fmts=fltp:channel_layouts=stereo,apad=whole_len=${samples},atrim=end_sample=${samples}[${out}]`;
+  };
 
   const pieces: { seconds: number; transition: EditPlan["end_card"]["transition"] }[] = [];
   // Split edits: each shot's picture may start and end a few frames off its sound.
@@ -257,19 +261,26 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     // Source ranges: the sound exactly as planned, the picture moved by the split.
     const vStart = Math.max(0, seg.start + pin * seg.speed);
     const vEnd = Math.min(clip.duration, seg.end + pout * seg.speed);
-    const from = Math.min(seg.start, vStart);
+    // The input starts on a whole millisecond and every trim is measured from that exact
+    // point, so two shots that carry on one take meet on the same sample.
+    const from = Math.floor(Math.min(seg.start, vStart) * 1000) / 1000;
     const to = Math.max(seg.end, vEnd);
-    args.push("-ss", from.toFixed(3), "-t", (to - from).toFixed(3), "-i", clip.file);
+    args.push("-ss", from.toFixed(3), "-t", (to - from + 0.05).toFixed(3), "-i", clip.file);
     const v = input++;
     const frameCount = Math.max(1, Math.round((seconds + pout - pin) * FPS));
-    const vTrim = `trim=start=${(vStart - from).toFixed(4)}:duration=${(vEnd - vStart).toFixed(4)},setpts=PTS-STARTPTS,`;
+    const vTrim = `trim=start=${(vStart - from).toFixed(6)}:duration=${(vEnd - vStart).toFixed(6)},setpts=PTS-STARTPTS,`;
     // A freeze repeats its first frame for the hold; any push still plays over it.
     const freeze = seg.hold > 0 ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB,trim=duration=${seconds.toFixed(3)},` : "";
     filters.push(`[${v}:v]${vTrim}${freeze}${shotVideo(seg, clip, W, H, plan.look, frameCount)}[v${i}]`);
     if (clip.hasAudio && seg.audio === "keep" && seg.hold === 0) {
-      // 15 ms fades at both ends: a hard audio cut clicks and jumps in room tone.
-      const fadeOut = Math.max(0, (seg.end - seg.start) - 0.015);
-      filters.push(`[${v}:a]atrim=start=${(seg.start - from).toFixed(4)}:duration=${(seg.end - seg.start).toFixed(4)},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st=${fadeOut.toFixed(4)}:d=0.015[as${i}]`);
+      // 15 ms fades at both ends: a hard audio cut clicks and jumps in room tone. Where the
+      // shot carries on the same take as its neighbour there is no edit, so no fade either:
+      // the sound runs on sample for sample.
+      const fadeIn = i > 0 && sameTake(plan.segments[i - 1], seg) ? "" : ",afade=t=in:d=0.015";
+      const fadeOut = i + 1 < plan.segments.length && sameTake(seg, plan.segments[i + 1]) ? "" : `,afade=t=out:st=${Math.max(0, seg.end - seg.start - 0.015).toFixed(6)}:d=0.015`;
+      const first = Math.round((seg.start - from) * RATE);
+      const last = first + Math.round((seg.end - seg.start) * RATE);
+      filters.push(`[${v}:a]aresample=${RATE},atrim=start_sample=${first}:end_sample=${last},asetpts=PTS-STARTPTS${fadeIn}${fadeOut}[as${i}]`);
       const gain = level.get(seg.clip);
       filters.push(normA(`as${i}`, `a${i}`, seconds, `${gain ? `volume=${gain.toFixed(1)}dB,` : ""}${atempo(seg.speed)}`));
     } else filters.push(normA(`${addSilence(seconds)}:a`, `a${i}`, seconds));
