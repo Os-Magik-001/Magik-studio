@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button, cx } from "@/components/ui";
+import { useHydrated } from "@/components/local-date";
 import type { ActionResult } from "@/lib/action-result";
 
 type Props = {
@@ -45,8 +46,8 @@ export function ActionForm({ action, children, className, resetOnSuccess, onSucc
     startTransition(() => formAction(data));
   };
 
-  // POST: sent before the page is ready (no JavaScript yet), the browser would otherwise put
-  // what was typed, a password too, in the address.
+  // POST, never the browser's default GET: that would put what was typed, a password too, in the
+  // address. A form can't be sent before the page is ready anyway (SubmitButton waits for it).
   return (
     <PendingContext value={pending}>
       <form ref={ref} method="post" onSubmit={onSubmit} className={className}>
@@ -84,12 +85,15 @@ export function SubmitButton({
   value?: string;
 }) {
   const pending = use(PendingContext);
+  // Until the page's JavaScript runs, the form would go out as a plain POST the page can't
+  // answer: the button (and Enter in a field) waits for it, usually a fraction of a second.
+  const ready = useHydrated();
   return (
     <Button
       type="submit"
       variant={variant}
       size={size}
-      disabled={pending}
+      disabled={pending || !ready}
       aria-busy={pending}
       className={cx(className)}
       name={name}
