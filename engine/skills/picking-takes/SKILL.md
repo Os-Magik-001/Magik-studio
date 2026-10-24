@@ -12,21 +12,24 @@ formats: all
   - Choose an earlier take when it's clearly better, or when the later one lost a lead-in or context the earlier one had.
   - Follow the editor's notes when they point to a take.
 - If several sentences were said in one fluent run, keep them as one shot. One clean run beats four best-of picks stitched together.
-- Never splice half a sentence from one take onto half from another.
+- Never splice half a sentence from one take onto half from another (a sentence deliberately bridged between a scene and a confessional is the exception: split it at a comma or before the key noun).
 - If two takes each hold a different piece of information, you can keep a part of each.
 
 **Distrust suspicious transcript lines**
 - A transcript line with few words over a long time (under about 1.6–2 words per second) usually hides a pause, a false start or a retake inside it. Don't trust its timing.
 - A line that seems said twice may have been merged into one by the transcriber. Check whether its length makes sense.
+- Word times can be off by a few tenths of a second, most often on the first word after a pause. The engine's own word timing from `say` and its trim pass are measured on the audio; trust them over arithmetic on transcript times.
 
 **Pad around speech**
 - Copy the exact words of each speech shot into `say`. The engine sets the in and out points from the words' measured timing (about 0.12s before the first word, 0.2s after the last), which is more precise than any time you could write.
-- A clipped first or last syllable is the most noticeable mistake in a speech edit.
+- A clipped first or last syllable is the most noticeable mistake in a speech edit; the studio's clients send cuts back for it. A "t", "k" or "p" release belongs to the word before it.
 - No shot of speech shorter than 0.35s unless it's a needed connecting word.
+- Never let two takes overlap at a cut, so no syllable is heard twice ("Nor-Normally").
 
 **Pauses and fillers**
-- Compress pauses rather than removing them: keep 0.25–0.45s between phrases (measured sitcom dialogue keeps 275–540 ms). Speech with no gaps sounds frantic.
-- Long pauses (over about 0.8s) shrink to that gap.
+- Compress pauses rather than removing them. What to keep between phrases depends on the format (measured on the studio's references): 0.15-0.45 s in dialogue comedy and series (Cluely's median 0.23 s, The Boyz 0.25-0.45 s); 0.12-0.25 s in creator and realtor talking heads, where nothing over about 0.3 s is left inside a shot. Speech with no gaps at all sounds frantic.
+- Long empty pauses (over about 0.75 s) shrink to that gap.
+- **A performed pause is not an empty pause:** the beat before a punchline (0.8-1.6 s in top comedy), a shrug, a stare, a gesture between two orders. Keep it and protect it (see `cutting`: label the shot `punchline` or `reaction`, or write "beat" in its purpose).
 - Never cut out laughter, a gasp or a one-word punchline. Mark punchlines `beat: punchline`, so their beat before and after is kept.
 - Cut filler where the line allows: um, uh, "like", "you know", "I mean", "basically", and weak openers such as "so", "okay so" and "anyway".
   - Keep a single filler when it's the only bridge between thoughts, or carries the speaker's warmth.

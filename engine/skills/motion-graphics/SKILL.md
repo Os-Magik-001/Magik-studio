@@ -9,12 +9,12 @@ agents: editor, motion
 The motion templates are what make an edit feel produced rather than just cut. Use them on the moments that deserve a beat, never as wallpaper.
 
 **Templates and when to use them**
-- **`character_intro`** (2.8–3.5s, full frame): presents a person.
+- **`character_intro`** (2.2–2.8s, full frame; up to 3s for the first person and a closing group): presents a person. The references' freeze intros hold 2.0–2.4s (median 2.2s, nine of them in a 10.9 M-play reel); the studio's own 4–5s freeze cards dragged.
   - Put a `hold` shot under it: the same clip and framing as the shot before it, with `start` at the frame you freeze on and `hold` equal to the motion length.
   - Freeze on a frame where the person is sharp, facing camera, with head and shoulders in frame, ideally mid-expression (a smirk, raised eyebrows).
   - `title` is the name. `subtitle` is the role in 3–6 words.
   - `lines`: 2–3 stats. Make them funny or telling, written as `LABEL|0-100` ("VISION|100", "SLEEP|8"), or one plain line ("Never takes the stairs").
-  - Use it once per person, the first time they matter. Put it right after their first line, so we hear them, then freeze.
+  - Use it once per person, the first time they matter. Put it right after their first line, so we hear them, then freeze: the freeze starts 0.0–0.4s after that line's last syllable (or mid-action for a silent gag). Leave 3–8s of live footage between two intros.
   - Sound: a `hit` at the freeze, plus a `whoosh` 0.4s later as the card flips in.
 - **`cast_lineup`** (2.8–3.8s, full frame): introduces a group, for an opener or "meet the team".
   - Give 2–6 `people`, each with the clip and time of a clean frame of them (they're cut out automatically), a `focus` on them, a name and a short role.
