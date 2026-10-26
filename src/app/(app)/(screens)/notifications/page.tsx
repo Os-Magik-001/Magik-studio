@@ -7,6 +7,7 @@ import { markNotificationsRead } from "@/app/actions/workflow";
 import { LocalDate } from "@/components/local-date";
 import { notificationHref } from "@/lib/notification-links";
 import { WindowPage } from "@/components/desktop/window-page";
+import { friendlyError } from "@/lib/errors";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -51,7 +52,7 @@ export default async function NotificationsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className={cx("text-sm", n.read_at ? "text-ink-2" : "font-medium text-ink")}>{n.title}</div>
-                  {n.body && <div className="mt-0.5 line-clamp-2 text-[13px] text-muted">{n.body}</div>}
+                  {n.body && <div className="mt-0.5 line-clamp-2 text-[13px] text-muted">{friendlyError(n.body)}</div>}
                 </div>
                 <span className="shrink-0 text-xs text-muted">
                   <LocalDate value={n.created_at} preset="short" />

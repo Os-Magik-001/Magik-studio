@@ -22,6 +22,7 @@ import { run } from "./exec.ts";
 import { contactSheets, download, probe, SHEET_COLS, SHEET_ROWS } from "./media.ts";
 import { apify, cutTimes, plays, withSound, type Item } from "./research.ts";
 import { transcribe, transcriptionAvailable, type TranscriptLine } from "./transcribe.ts";
+import { friendlyError } from "./errors.ts";
 
 // job.ts imports this file, so the log line is written here rather than imported from it.
 const log = (id: string | null, msg: string) => console.log(`${new Date().toISOString()} ${id ? `[${id.slice(0, 8)}] ` : ""}${msg}`);
@@ -472,8 +473,9 @@ export async function runReference(row: ReferenceRow) {
       .eq("id", row.id);
     log(row.id, `reference done: ${row.platform}${studied.watched ? ", watched" : ""}${studied.analysis ? ", broken down" : ""}`);
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    log(row.id, `reference failed: ${message}`);
+    const raw = e instanceof Error ? e.message : String(e);
+    log(row.id, `reference failed: ${raw}`);
+    const message = friendlyError(raw);
     await db.from("reference_videos").update({ status: "failed", error: message.slice(0, 500), progress: null, finished_at: new Date().toISOString() }).eq("id", row.id);
   } finally {
     await rm(dir, { recursive: true, force: true });

@@ -14,6 +14,7 @@ import { LocalDate } from "@/components/local-date";
 import { ScriptPdfLink } from "@/components/scripts/pdf-link";
 import { cx } from "@/components/ui";
 import { CreateVideosForm, PlanForm, ResearchForm, ScriptActions, ShootDayForm, StartProductionButton } from "./forms";
+import { friendlyError } from "@/lib/errors";
 
 // A client's production, from the onboarding to the shoot, on their page: the five steps, what
 // the agents are doing now, and one button for each next move. It starts by itself when the
@@ -254,9 +255,9 @@ export async function ProductionPanel({ clientId, viewer }: { clientId: string; 
           }
         >
           {busy(strategist?.status) && <Working>{strategist!.progress ?? "The brand strategist is starting"}…</Working>}
-          {!strategy && strategist?.status === "failed" && <Problem>{strategist.error ?? "The brand strategist couldn't finish."}</Problem>}
+          {!strategy && strategist?.status === "failed" && <Problem>{friendlyError(strategist.error) ?? "The brand strategist couldn't finish."}</Problem>}
           {busy(report?.status) && <Working>{report!.status === "queued" ? "The research waits for the edit engine (it runs on the studio's Mac)" : (report!.progress ?? "Researching")}…</Working>}
-          {report?.status === "failed" && <Problem>The research failed: {report.error ?? "unknown error"}. Try again below, or plan from the strategy alone.</Problem>}
+          {report?.status === "failed" && <Problem>The research failed: {(friendlyError(report.error) ?? "unknown error").replace(/\.$/, "")}. Try again below, or plan from the strategy alone.</Problem>}
           {!busy(strategist?.status) && (answered >= 4 || strategy) && (
             <div className="flex flex-wrap items-center gap-3">
               <StartProductionButton clientId={client.id} again={!!strategy} />
@@ -296,7 +297,7 @@ export async function ProductionPanel({ clientId, viewer }: { clientId: string; 
           }
         >
           {busy(planner?.status) && <Working>{planner!.progress ?? "The content planner is starting"}…</Working>}
-          {planner?.status === "failed" && !busy(planner.status) && <Problem>{planner.error ?? "The content planner couldn't finish."}</Problem>}
+          {planner?.status === "failed" && !busy(planner.status) && <Problem>{friendlyError(planner.error) ?? "The content planner couldn't finish."}</Problem>}
           {strategy && busy(report?.status) && !plan && <p className="text-[13px] text-muted">The research is still running: plan now from the strategy, or wait a few minutes for sharper ideas.</p>}
           {plan && planRun && (
             <CreateVideosForm

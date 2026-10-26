@@ -3,6 +3,7 @@
 import { getViewer } from "@/lib/auth";
 import { notificationHref } from "@/lib/notification-links";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyError } from "@/lib/errors";
 
 export type SpotlightHit = { kind: "client" | "video" | "event"; id: string; title: string; subtitle: string; href: string };
 
@@ -84,7 +85,7 @@ export async function notificationFeed(): Promise<{ items: FeedItem[]; unread: n
     items: (data ?? []).map((n) => ({
       id: n.id,
       title: n.title,
-      body: n.body,
+      body: friendlyError(n.body),
       kind: n.kind,
       at: n.created_at,
       unread: !n.read_at,

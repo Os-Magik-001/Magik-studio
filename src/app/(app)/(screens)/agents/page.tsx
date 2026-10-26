@@ -15,6 +15,7 @@ import { EmptyState, LinkButton, PageHeader, cx } from "@/components/ui";
 import { AgentHud, type HudEvent, type HudLink, type HudNode, type NodeId, type NodeState } from "@/components/agents/hud";
 import { DesignBriefView, FindingsView, ShootPlanView, SoundView, StrategyView } from "@/components/agents/views";
 import { WindowPage } from "@/components/desktop/window-page";
+import { friendlyError } from "@/lib/errors";
 
 export const metadata: Metadata = { title: "Agents" };
 
@@ -231,7 +232,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   const events: HudEvent[] = [];
   if (form) events.push({ at: form.updated_at, who: "CLIENT → STRATEGIST", msg: `${answered} questionnaire answers`, link: "client-strategist" });
   for (const r of [...runsOf("strategist")].reverse()) {
-    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "BRAND STRATEGIST", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "BRAND STRATEGIST", msg: `Failed: ${friendlyError(r.error) ?? "unknown error"}`, tone: "bad" });
   }
   if (strategy) {
     events.push({ at: strategy.updated_at, who: "STRATEGIST → RESEARCHER", msg: `Niche: ${strategy.niche}`, link: "strategist-researcher" });
@@ -246,27 +247,27 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       events.push({ at: r.finished_at, who: "RESEARCHER", msg: `${plural(asReels(r.reels).length, "top reel")} watched` });
       if (f) events.push({ at: r.finished_at, who: "RESEARCHER → SCRIPTWRITER", msg: `${plural(f.hooks.length, "hook")}, ${plural(f.structures.length, "structure")}, ${plural(f.ideas.length, "idea")}`, link: "researcher-scriptwriter" });
     }
-    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "RESEARCHER", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "RESEARCHER", msg: `Failed: ${friendlyError(r.error) ?? "unknown error"}`, tone: "bad" });
   }
   for (const r of [...runsOf("planner")].reverse()) {
     const p = asPlan(r.output);
     if (r.status === "done" && r.finished_at && p) events.push({ at: r.finished_at, who: "PLANNER → STUDIO", msg: `${plural(p.ideas.length, "video idea")} for ${p.month}`, link: "researcher-planner" });
-    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "CONTENT PLANNER", msg: `Failed: ${r.error ?? "unknown error"}`, tone: "bad" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "CONTENT PLANNER", msg: `Failed: ${friendlyError(r.error) ?? "unknown error"}`, tone: "bad" });
   }
   const titleOf = new Map((videos ?? []).map((v) => [v.id, v.title]));
   for (const r of [...writers].reverse()) {
     const t = titleOf.get(r.video_id ?? "") ?? "a video";
     if (r.status === "done" && r.finished_at) events.push({ at: r.finished_at, who: "SCRIPTWRITER", msg: `Script ready: ${t}`, link: "planner-scriptwriter" });
-    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "SCRIPTWRITER", msg: `Couldn't write ${t}: ${r.error ?? "unknown error"}`, tone: "bad" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "SCRIPTWRITER", msg: `Couldn't write ${t}: ${friendlyError(r.error) ?? "unknown error"}`, tone: "bad" });
   }
   for (const r of refs) {
     const name = [PLATFORM_LABEL[r.platform as ReferencePlatform] ?? r.platform, r.owner].filter(Boolean).join(" ");
     events.push({ at: r.created_at, who: "STUDIO → REFERENCES", msg: `${name}${r.note ? `: ${short(r.note, 90)}` : ""}` });
     if (r.status === "done" && r.finished_at) {
       const b = asReferenceBreakdown(r.analysis);
-      events.push({ at: r.finished_at, who: "REFERENCES → SCRIPTWRITER", msg: b ? `${name} broken down: ${short(b.summary, 120)}` : `${name}: ${r.error ?? "link only"}`, link: "refs-scriptwriter" });
+      events.push({ at: r.finished_at, who: "REFERENCES → SCRIPTWRITER", msg: b ? `${name} broken down: ${short(b.summary, 120)}` : `${name}: ${friendlyError(r.error) ?? "link only"}`, link: "refs-scriptwriter" });
     }
-    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "REFERENCES", msg: `Couldn't watch ${name}: ${r.error ?? "unknown error"}`, tone: "bad" });
+    if (r.status === "failed" && r.finished_at) events.push({ at: r.finished_at, who: "REFERENCES", msg: `Couldn't watch ${name}: ${friendlyError(r.error) ?? "unknown error"}`, tone: "bad" });
   }
   if (designBrief) events.push({ at: designBrief.written_at, who: "MOTION DIRECTOR → ENGINE", msg: `${plural(designBrief.scenes.length, "design prompt")}: ${designBrief.concept}`, link: "motion-engine" });
   if (script?.edit_prompt) {
@@ -285,7 +286,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
   for (const j of jobs ?? []) {
     events.push({ at: j.created_at, who: "EDIT ENGINE", msg: `${j.source === "launch" ? "Edit" : j.source === "editor_fix" ? "Editor fixes" : "Client changes"} queued` });
     if (j.started_at) events.push({ at: j.started_at, who: "EDIT ENGINE", msg: "Editing" });
-    if (j.finished_at && j.status === "failed") events.push({ at: j.finished_at, who: "EDIT ENGINE", msg: `Failed: ${j.error ?? ""}`, tone: "bad" });
+    if (j.finished_at && j.status === "failed") events.push({ at: j.finished_at, who: "EDIT ENGINE", msg: `Failed: ${friendlyError(j.error) ?? ""}`, tone: "bad" });
   }
   for (const v of versions ?? []) {
     const s = asSoundReport(v.sound);
@@ -342,7 +343,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
                 </div>
                 {r.note && <p className="mt-1 text-xs text-ink-2">{r.note}</p>}
                 <p className={cx("mt-1 text-xs", r.status === "failed" ? "text-danger" : r.status === "done" ? "text-muted" : "text-accent")}>
-                  {r.status === "queued" ? "Waiting for the engine" : r.status === "running" ? `${r.progress ?? "Watching it"}…` : r.status === "failed" ? r.error : b ? b.summary : (r.error ?? "Link only")}
+                  {r.status === "queued" ? "Waiting for the engine" : r.status === "running" ? `${r.progress ?? "Watching it"}…` : r.status === "failed" ? friendlyError(r.error) : b ? b.summary : (friendlyError(r.error) ?? "Link only")}
                 </p>
               </li>
             );
@@ -497,7 +498,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
                   {j.source.replace("_", " ")} · {j.status}
                 </div>
                 {j.progress && <div className="text-muted">{j.progress}</div>}
-                {j.error && <div className="text-danger">{j.error}</div>}
+                {j.error && <div className="text-danger">{friendlyError(j.error)}</div>}
               </li>
             ))}
           </ul>

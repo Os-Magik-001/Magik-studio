@@ -9,6 +9,7 @@ import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui
 import { removeSoundLibrary, syncSoundLibrary } from "@/app/actions/sounds";
 import { AddLibraryForm } from "./forms";
 import { WindowPage } from "@/components/desktop/window-page";
+import { friendlyError } from "@/lib/errors";
 
 export const metadata: Metadata = { title: "Sound" };
 
@@ -92,7 +93,7 @@ function Libraries({ title, items, canRemove }: { title: string; items: Library[
               </div>
               {l.license && <p className="text-[13px] text-muted">{l.license}</p>}
               {l.progress && <p className="text-[13px] text-accent">{l.progress}…</p>}
-              {l.error && <p className="text-[13px] text-danger">{l.error}</p>}
+              {l.error && <p className="text-[13px] text-danger">{friendlyError(l.error)}</p>}
               {l.source === "drive" && (
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
                   {l.synced_at && <LocalDate value={l.synced_at} preset="short" prefix="Synced " />}

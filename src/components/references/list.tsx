@@ -3,6 +3,7 @@ import { asReferenceBreakdown, asReferenceStats } from "@/lib/agent-types";
 import { focusLabel, PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
 import { Badge, cx } from "@/components/ui";
 import { removeReference, retryReference } from "@/app/actions/references";
+import { friendlyError } from "@/lib/errors";
 
 export type ReferenceItem = {
   id: string;
@@ -130,8 +131,8 @@ function Status({ r, watchedFacts }: { r: ReferenceItem; watchedFacts: string[] 
         {r.progress ?? "Watching it"}…
       </p>
     );
-  if (r.status === "failed") return <p className={cx(line, "text-danger")}>{r.error ?? "The engine couldn't open it."}</p>;
-  if (!r.watched && !asReferenceBreakdown(r.analysis)) return <p className={cx(line, "text-muted")}>{r.error ?? "Link only: the agents use the title and your note."}</p>;
+  if (r.status === "failed") return <p className={cx(line, "text-danger")}>{friendlyError(r.error) ?? "The engine couldn't open it."}</p>;
+  if (!r.watched && !asReferenceBreakdown(r.analysis)) return <p className={cx(line, "text-muted")}>{friendlyError(r.error) ?? "Link only: the agents use the title and your note."}</p>;
   return (
     <p className={cx(line, "text-success")}>
       {r.watched ? "Watched" : "Looked at"}

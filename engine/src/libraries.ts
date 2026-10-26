@@ -13,6 +13,7 @@ import { fetchDriveFile, listDriveFiles } from "./drive.ts";
 import { log } from "./job.ts";
 import { loadCatalog, moodOf, MOODS, type Mood, type Track } from "./music.ts";
 import { loadSfxCatalog, type SfxEntry } from "./sfx.ts";
+import { friendlyError } from "./errors.ts";
 
 type Library = { id: string; name: string; kind: "music" | "sfx"; drive_folder_id: string | null; license: string };
 
@@ -136,8 +137,8 @@ export async function syncLibrary(lib: Library) {
     log(lib.id, `library ${lib.name}: ${count ?? 0} files (${gone.length} removed)`);
   } catch (err) {
     // Drive's refusal names footage; here it's a library folder.
-    const message = (err as Error).message.replace("share the footage with", "share the folder with");
-    log(lib.id, `library ${lib.name} failed: ${message}`);
+    const message = friendlyError((err as Error).message.replace("share the footage with", "share the folder with"));
+    log(lib.id, `library ${lib.name} failed: ${(err as Error).message}`);
     await db.from("sound_libraries").update({ status: "failed", progress: null, error: message.slice(0, 500) }).eq("id", lib.id);
   } finally {
     await rm(dir, { recursive: true, force: true });

@@ -1,3 +1,5 @@
+import { friendlyError } from "@/lib/errors";
+
 export type ActionResult = {
   ok?: boolean;
   error?: string;
@@ -5,7 +7,8 @@ export type ActionResult = {
   data?: Record<string, string>;
 };
 
-export const fail = (error: string): ActionResult => ({ error });
+// Never the AI service's raw error: what it means (see errors.ts).
+export const fail = (error: string): ActionResult => ({ error: friendlyError(error) });
 export const done = (message?: string, data?: Record<string, string>): ActionResult => ({
   ok: true,
   message,

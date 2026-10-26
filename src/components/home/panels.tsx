@@ -6,6 +6,7 @@ import { cx } from "@/components/ui";
 import { formatCalendarDate } from "@/lib/dates";
 import { Ago, TodayTime } from "@/components/home/time";
 import { PanelLights } from "@/components/home/widget";
+import { friendlyError } from "@/lib/errors";
 
 // Home's panels: glass windows like the apps', each a summary that opens its app.
 
@@ -360,7 +361,7 @@ export function ActivityPanel({ rows }: { rows: ActivityRow[] }) {
                 <span className={cx("mt-[7px] h-[7px] w-[7px] shrink-0 rounded-full", n.unread ? "bg-accent" : "bg-white/15")} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-medium text-ink">{n.title}</span>
-                  {n.body && <span className="block truncate text-[12px] text-muted">{n.body}</span>}
+                  {n.body && <span className="block truncate text-[12px] text-muted">{friendlyError(n.body)}</span>}
                 </span>
                 <span className="shrink-0 pt-0.5 text-[11.5px] text-muted">
                   <Ago at={n.at} />

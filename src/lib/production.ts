@@ -9,6 +9,7 @@ import { answeredCount, readAnswers, type Answers } from "@/lib/questionnaire";
 import { reviseWithScriptwriter, writeScript } from "@/lib/scripts";
 import type { Database, Json } from "@/lib/database.types";
 import { createAdminClient, type Db } from "@/lib/supabase/admin";
+import { friendlyError } from "@/lib/errors";
 
 // Production: what happens once a client is onboarded. The studio's agents work in the
 // background, one run at a time per worker, so a month of scripts never hits a request's time
@@ -111,7 +112,7 @@ export async function workOnce() {
   } catch (e) {
     await db
       .from("agent_runs")
-      .update({ status: "failed", progress: null, error: e instanceof Error ? e.message : "The agent couldn't finish.", finished_at: now() })
+      .update({ status: "failed", progress: null, error: e instanceof Error ? friendlyError(e.message) : "The agent couldn't finish.", finished_at: now() })
       .eq("id", run.id);
   }
   return true;

@@ -12,6 +12,7 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { QuestionnaireForm, ResearchForm, StrategistButton } from "@/components/agents/forms";
 import { FindingsView, StrategyView } from "@/components/agents/views";
 import { WindowPage } from "@/components/desktop/window-page";
+import { friendlyError } from "@/lib/errors";
 
 export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
   return clientTitle((await params).clientId, "Brand & strategy", " · Brand & strategy");
@@ -132,7 +133,7 @@ export default async function BrandPage({ params }: { params: Promise<{ clientId
                       {[...r.hashtags.map((h) => `#${h}`), ...r.accounts.map((a) => `@${a}`)].join(" ")}
                     </span>
                     {r.progress && <span className="text-muted">· {r.progress}</span>}
-                    {r.error && <span className="text-danger">· {r.error}</span>}
+                    {r.error && <span className="text-danger">· {friendlyError(r.error)}</span>}
                     <span className="ml-auto text-xs text-muted">
                       <LocalDate value={r.created_at} preset="short" />
                     </span>

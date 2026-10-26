@@ -24,6 +24,7 @@ import { pictureCuts } from "./splits.ts";
 import { anchorMotion, tighten } from "./tighten.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 import { describeTypography, pageTypography, parseTypography } from "./typefaces.ts";
+import { friendlyError } from "./errors.ts";
 
 export const log = (job: string | null, msg: string) =>
   console.log(`${new Date().toISOString()} ${job ? `[${job.slice(0, 8)}] ` : ""}${msg}`);
@@ -669,8 +670,9 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
     await notify(video.id, `Claude's v${number} is ready for your check: ${video.title}`, `${rendered.duration.toFixed(1)}s. ${plan.summary}`);
     log(job.id, `done: v${number}, ${rendered.duration.toFixed(1)}s`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log(job.id, `failed: ${message}`);
+    const raw = err instanceof Error ? err.message : String(err);
+    log(job.id, `failed: ${raw}`);
+    const message = friendlyError(raw);
     await db
       .from("edit_jobs")
       .update({ status: "failed", progress: null, error: message.slice(0, 1000), finished_at: new Date().toISOString() })

@@ -43,6 +43,7 @@ import {
 import { WindowPage } from "@/components/desktop/window-page";
 import { PostingDate } from "./posting";
 import { parseTypography, typographyFromKit } from "@/lib/typography";
+import { friendlyError } from "@/lib/errors";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Video");
@@ -453,7 +454,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
                           {j.progress}…
                         </p>
                       )}
-                      {j.status === "failed" && j.error && <p className="mt-1.5 text-[13px] text-danger">{j.error}</p>}
+                      {j.status === "failed" && j.error && <p className="mt-1.5 text-[13px] text-danger">{friendlyError(j.error)}</p>}
                       {j.instructions && <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap text-[13px] text-ink-2">{j.instructions}</p>}
                     </li>
                   ))}

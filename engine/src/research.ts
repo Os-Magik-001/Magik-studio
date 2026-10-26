@@ -17,6 +17,7 @@ import { contactSheets, probe } from "./media.ts";
 import { clientMemory } from "./memory.ts";
 import type { TrendAudio } from "./sound.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
+import { friendlyError } from "./errors.ts";
 
 type Report = { id: string; client_id: string; hashtags: string[]; accounts: string[]; attempts: number };
 
@@ -381,8 +382,9 @@ export async function runResearch(report: Report) {
     log(report.id, `research done: ${reels.length} reels studied`);
     await tellStudio(report, (name) => `${name}: the trend research is ready`, `${reels.length} top reels studied. Next: plan the month on the client's Production panel.`);
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    log(report.id, `research failed: ${message}`);
+    const raw = e instanceof Error ? e.message : String(e);
+    log(report.id, `research failed: ${raw}`);
+    const message = friendlyError(raw);
     await db.from("trend_reports").update({ status: "failed", error: message, progress: null, finished_at: new Date().toISOString() }).eq("id", report.id);
     await tellStudio(report, (name) => `${name}: the trend research failed`, `${message} The month can still be planned from the strategy alone.`).catch(() => null);
   } finally {

@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/database.types";
 import { categoryOf, readPreferences } from "@/lib/preferences";
+import { friendlyError } from "@/lib/errors";
 
 type NotificationRow = Database["public"]["Tables"]["notifications"]["Insert"];
 
@@ -14,7 +15,7 @@ export async function deliver(rows: NotificationRow[]) {
   const muted = new Map((people ?? []).map((p) => [p.id, new Set(readPreferences(p.preferences).muted ?? [])]));
   const paused = new Set((people ?? []).filter((p) => p.paused_at).map((p) => p.id));
   const keep = rows.filter((r) => !paused.has(r.user_id) && !muted.get(r.user_id)?.has(categoryOf(r.kind)));
-  if (keep.length) await admin.from("notifications").insert(keep);
+  if (keep.length) await admin.from("notifications").insert(keep.map((r) => ({ ...r, body: friendlyError(r.body) })));
 }
 
 type Audience = {
