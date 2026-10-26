@@ -72,7 +72,7 @@ export async function homeData(viewer: Viewer): Promise<HomeData> {
     supabase.from("notifications").select("id, title, body, kind, read_at, created_at, video_id, client_id").order("created_at", { ascending: false }).limit(5),
     role === "seller"
       ? Promise.resolve({ data: [] as { id: string; title: string; status: VideoStatus; due_on: string | null; updated_at: string; clients: { name: string } | null }[] })
-      : supabase.from("videos").select("id, title, status, due_on, updated_at, clients(name)").order("updated_at", { ascending: false }).limit(200),
+      : supabase.from("videos").select("id, title, status, due_on, updated_at, clients(name)").eq("internal", false).order("updated_at", { ascending: false }).limit(200),
     role === "seller"
       ? Promise.resolve({ data: [] as { id: string; video_id: string; starts_at: string; location: string | null; videos: { title: string } | null }[] })
       : supabase.from("shoots").select("id, video_id, starts_at, location, videos(title)").gte("starts_at", iso(new Date(Date.now() - 3 * 3600_000))).order("starts_at").limit(8),

@@ -225,6 +225,23 @@ const ICONS: Record<AppIconName, Icon> = {
     ),
   },
   videos: { from: "#ff8a5c", to: "#ec3046", glyph: clapper },
+  // A screen with its play button, and the gold sparkle of the engine making it.
+  make: {
+    from: "#4a4fb8",
+    to: "#16183f",
+    glyph: (cut) => (
+      <>
+        <rect x={8.5} y={15} width={26} height={21} rx={4.6} fill={W} />
+        <path d="M18.8 20.6 27 25.5 18.8 30.4Z" fill={cut} />
+      </>
+    ),
+    accent: (
+      <>
+        <path d={sparkle(36.2, 13.2, 6.4)} fill="#ffd84a" />
+        <path d={sparkle(40, 23.4, 2.6)} fill="#ffe58a" />
+      </>
+    ),
+  },
   video: { from: "#ff8a5c", to: "#ec3046", glyph: clapper },
   brand: {
     from: "#ff82c8",

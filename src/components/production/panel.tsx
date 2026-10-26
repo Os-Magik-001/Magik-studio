@@ -122,7 +122,7 @@ export async function ProductionPanel({ clientId, viewer }: { clientId: string; 
     supabase.from("brand_strategies").select("niche, keywords, reference_accounts, pillars, updated_at").eq("client_id", clientId).maybeSingle(),
     supabase.from("trend_reports").select("id, status, progress, error, hashtags, accounts, reels, findings, created_at, finished_at").eq("client_id", clientId).order("created_at", { ascending: false }).limit(4),
     supabase.from("agent_runs").select("id, agent, status, progress, error, video_id, output, created_at, finished_at").eq("client_id", clientId).order("created_at", { ascending: false }).limit(80),
-    supabase.from("videos").select("id, title, status, brief, videographer_id, created_at, scripts(status, body), shoots(starts_at)").eq("client_id", clientId).order("created_at"),
+    supabase.from("videos").select("id, title, status, brief, videographer_id, created_at, scripts(status, body), shoots(starts_at)").eq("client_id", clientId).eq("internal", false).order("created_at"),
     supabase.from("profiles").select("id, full_name, email, role").in("role", ["editor", "videographer"]).order("full_name"),
     supabase.from("client_team").select("user_id").eq("client_id", clientId),
   ]);

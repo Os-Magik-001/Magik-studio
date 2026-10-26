@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getViewer, displayName } from "@/lib/auth";
-import { visibleVideo } from "@/lib/access";
+import { clientVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { parseShotList } from "@/lib/workflow";
@@ -29,7 +29,7 @@ export default async function ReviewPage({
 }) {
   const [{ videoId }, { v }] = await Promise.all([params, searchParams]);
   const viewer = await getViewer();
-  const video = await visibleVideo(videoId);
+  const video = await clientVideo(videoId);
   if (!video) notFound();
 
   const supabase = await createClient();

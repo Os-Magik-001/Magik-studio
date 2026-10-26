@@ -111,6 +111,7 @@ export async function writeScript(videoId: string, { by, notes = "", db }: { by:
   const admin = createAdminClient();
   const { data: video } = await db.from("videos").select("id, client_id, title, format, aspect, brief").eq("id", videoId).maybeSingle();
   if (!video) throw new Error("Video not found.");
+  if (!video.client_id) throw new Error("This video has no client.");
   if (!video.brief?.trim()) throw new Error("Add the brief first: the scriptwriter writes from it.");
 
   const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion, references] = await Promise.all([
@@ -190,6 +191,7 @@ export async function reviseWithScriptwriter(videoId: string, { by, asked, useCl
   const admin = createAdminClient();
   const { data: video } = await db.from("videos").select("id, client_id, title, format, aspect, brief").eq("id", videoId).maybeSingle();
   if (!video) throw new Error("Video not found.");
+  if (!video.client_id) throw new Error("This video has no client.");
   const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, { data: thread }, memory, motion, references] = await Promise.all([
     db.from("clients").select("name").eq("id", video.client_id).single(),
     db.from("brand_kits").select("style_rules, graphics").eq("client_id", video.client_id).maybeSingle(),

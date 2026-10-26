@@ -22,12 +22,14 @@ export const FAQ: Record<Role, QA[]> = {
     ["How do I pause or remove someone?", "Team, then Manage on their row: pause stops them signing in until you resume them; delete removes their account for good (their work stays)."],
     ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
     ["Where do referral credits come from?", "Referrals: when you mark a referral signed, its referrer gets the credits set in Settings, Studio."],
+    ["How do I make a video quickly, without the client steps?", "Open Make a video: name it, choose a client or the studio, add the footage, say what it should be, pick the fonts and colors and press Make the video. The engine makes it; watch it, download it, or ask for changes on the same page. Clients never see these videos."],
     ["How do I choose the fonts and colors of an edit?", "On the video's page, step Edit: before Launch the edit, pick a starting point (the client's brand kit or a preset), then the three fonts (titles, accent words, text) and the five colors. The preview shows the video's title in them. Fixes and client changes keep the same choice."],
   ],
   editor: [
     ["Where do I start my day?", "Pipeline shows every video by phase and what it's waiting on; your videos have your initials."],
     ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
     ["How do I invite someone to a meeting?", "Calendar, Create: add a title and a time, then Invite the team."],
+    ["How do I make a video quickly, without the client steps?", "Open Make a video: name it, choose a client or the studio, add the footage, say what it should be, pick the fonts and colors and press Make the video. The engine makes it; watch it, download it, or ask for changes on the same page. Clients never see these videos."],
     ["How do I choose the fonts and colors of an edit?", "On the video's page, step Edit: before Launch the edit, pick a starting point (the client's brand kit or a preset), then the three fonts (titles, accent words, text) and the five colors. The preview shows the video's title in them. Fixes and client changes keep the same choice."],
   ],
   videographer: [
@@ -51,6 +53,7 @@ const DETAILS: Record<string, string> = {
   pipeline: "The board groups every video by phase and shows its next step and who it's waiting on. Open a video for its page: the script, the shoot, the footage, every version and its comments, the review and the posting date.",
   "client-pipeline": "Each of your videos sits in a column, from the script to the shoot, the edit, your review and posting; anything waiting for you is marked. Open one to read its script, watch its cuts, approve or ask for changes.",
   videos: "Watch each cut, comment right on the moment you want changed, approve it, or download it.",
+  make: "Make a video without the client steps: name it (for a client or for the studio), add the footage (upload small files or paste a Google Drive link), say what it should be, pick the fonts and colors, and press Make the video. The edit engine cuts it, picks the music and sets the titles and captions; watch it and download it on the same page, then ask for changes as often as needed. Clients never see these videos.",
   clients: "One folder per client: their videos, scripts, footage, every version and their brand kit. A client's folder also holds their access, their website and the production panel: plan the month, create the videos and their scripts, send the scripts to the client, make the client's changes, plan a shoot day.",
   onboarding: "New client: their details, the pack, the invoice and the contract, then send them their link; they finish their setup on their own. The packs the studio sells are listed here; a pack sets the price on the invoice and the client's revision rounds.",
   sales: "The sales workspace. Its tools are coming soon.",

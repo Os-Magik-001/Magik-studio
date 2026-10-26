@@ -143,7 +143,7 @@ export async function writeScripts(_: ActionResult, formData: FormData): Promise
   const revise = text(formData, "mode") === "revise";
 
   const supabase = await createClient();
-  const { data: videos } = await supabase.from("videos").select("id, brief, status, scripts(body, status)").eq("client_id", client.id).in("status", ["script", "shoot"]);
+  const { data: videos } = await supabase.from("videos").select("id, brief, status, scripts(body, status)").eq("client_id", client.id).eq("internal", false).in("status", ["script", "shoot"]);
   const busy = new Set((await openRuns(client.id, "scriptwriter")).map((r) => r.video_id));
   const todo = (videos ?? []).filter((v) => {
     if (busy.has(v.id)) return false;
@@ -164,7 +164,7 @@ export async function sendScripts(_: ActionResult, formData: FormData): Promise<
   const client = await visibleClient(text(formData, "clientId"));
   if (!client) return fail("Client not found.");
   const supabase = await createClient();
-  const { data: videos } = await supabase.from("videos").select("id, title, scripts(body, status)").eq("client_id", client.id);
+  const { data: videos } = await supabase.from("videos").select("id, title, scripts(body, status)").eq("client_id", client.id).eq("internal", false);
   const busy = new Set((await openRuns(client.id, "scriptwriter")).map((r) => r.video_id));
   const ready = (videos ?? []).filter((v) => v.scripts?.status === "draft" && v.scripts.body.trim() && !busy.has(v.id));
   if (!ready.length) return fail("No finished script is waiting to be sent.");

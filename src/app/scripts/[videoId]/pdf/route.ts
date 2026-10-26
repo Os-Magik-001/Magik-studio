@@ -1,5 +1,5 @@
 import { getViewer } from "@/lib/auth";
-import { visibleVideo } from "@/lib/access";
+import { clientVideo } from "@/lib/access";
 import { asShootPlan } from "@/lib/agent-types";
 import { readBeats } from "@/lib/script-view";
 import { renderScriptPdf } from "@/lib/script-pdf";
@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(_: Request, { params }: { params: Promise<{ videoId: string }> }) {
   const { videoId } = await params;
   const viewer = await getViewer();
-  const video = await visibleVideo(videoId);
+  const video = await clientVideo(videoId);
   if (!video) return new Response("Script not found.", { status: 404 });
   const supabase = await createClient();
   const [{ data: script }, { data: client }] = await Promise.all([

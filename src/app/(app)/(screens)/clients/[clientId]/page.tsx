@@ -44,6 +44,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
       .from("videos")
       .select("id, title, status, format, due_on, editor:profiles!videos_editor_id_fkey(full_name, email)")
       .eq("client_id", clientId)
+      .eq("internal", false)
       .order("created_at", { ascending: false }),
     supabase.from("brand_kits").select("*").eq("client_id", clientId).maybeSingle(),
     supabase.from("profiles").select("id, full_name, email, role, client_id").order("full_name"),

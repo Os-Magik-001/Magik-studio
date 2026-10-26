@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { getViewer, requireRole } from "@/lib/auth";
-import { visibleVideo, visibleVersion } from "@/lib/access";
+import { clientVideo, visibleVideo, visibleVersion } from "@/lib/access";
 import { notify } from "@/lib/notify";
 import { objectExists } from "@/lib/storage";
 import { DriveError, driveConfigured, parseDriveLink, resolveDriveVideos } from "@/lib/drive";
@@ -47,7 +47,7 @@ export async function directMotion(_: ActionResult, formData: FormData): Promise
   await requireRole("admin", "editor");
   if (!claudeConfigured()) return fail("The agents aren't connected yet: ANTHROPIC_API_KEY is missing.");
   const videoId = text(formData, "videoId");
-  const video = await visibleVideo(videoId);
+  const video = await clientVideo(videoId);
   if (!video) return fail("Video not found.");
 
   const supabase = await createClient();
@@ -227,7 +227,7 @@ export async function restoreScriptRevision(formData: FormData) {
 export async function fastTrackScript(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const viewer = await requireRole("admin", "editor");
   const videoId = text(formData, "videoId");
-  const video = await visibleVideo(videoId);
+  const video = await clientVideo(videoId);
   if (!video) return fail("Video not found.");
   const body = text(formData, "script");
   if (!body) return fail("Paste the script first.");

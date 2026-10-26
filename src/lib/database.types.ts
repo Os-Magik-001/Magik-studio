@@ -1908,7 +1908,7 @@ export type Database = {
         Row: {
           aspect: string
           brief: string | null
-          client_id: string
+          client_id: string | null
           created_at: string
           created_by: string | null
           due_on: string | null
@@ -1916,6 +1916,7 @@ export type Database = {
           footage_complete_at: string | null
           format: Database["public"]["Enums"]["video_format"]
           id: string
+          internal: boolean
           post_at: string | null
           post_platforms: string[]
           status: Database["public"]["Enums"]["video_status"]
@@ -1927,7 +1928,7 @@ export type Database = {
         Insert: {
           aspect?: string
           brief?: string | null
-          client_id: string
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           due_on?: string | null
@@ -1935,6 +1936,7 @@ export type Database = {
           footage_complete_at?: string | null
           format?: Database["public"]["Enums"]["video_format"]
           id?: string
+          internal?: boolean
           post_at?: string | null
           post_platforms?: string[]
           status?: Database["public"]["Enums"]["video_status"]
@@ -1946,7 +1948,7 @@ export type Database = {
         Update: {
           aspect?: string
           brief?: string | null
-          client_id?: string
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           due_on?: string | null
@@ -1954,6 +1956,7 @@ export type Database = {
           footage_complete_at?: string | null
           format?: Database["public"]["Enums"]["video_format"]
           id?: string
+          internal?: boolean
           post_at?: string | null
           post_platforms?: string[]
           status?: Database["public"]["Enums"]["video_status"]

@@ -2,7 +2,7 @@ import { videoTitle } from "@/lib/titles";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Download, ExternalLink, Trash2 } from "lucide-react";
 import { requireRole, displayName } from "@/lib/auth";
 import { visibleVideo } from "@/lib/access";
@@ -63,8 +63,11 @@ const nowIso = () => new Date().toISOString();
 export default async function VideoPage({ params }: { params: Promise<{ videoId: string }> }) {
   const { videoId } = await params;
   const viewer = await requireRole("admin", "editor");
-  const video = await visibleVideo(videoId);
-  if (!video) notFound();
+  const found = await visibleVideo(videoId);
+  if (!found) notFound();
+  // Made in Make a video: it has its own page, without the client steps.
+  if (found.internal || !found.client_id) redirect(`/make/${videoId}`);
+  const video = { ...found, client_id: found.client_id };
 
   const supabase = await createClient();
   const [

@@ -51,7 +51,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       .eq("client_id", client.id)
       .order("created_at", { ascending: false })
       .limit(5),
-    supabase.from("videos").select("id, title, status, footage_complete_at, created_at").eq("client_id", client.id).order("created_at", { ascending: false }),
+    supabase.from("videos").select("id, title, status, footage_complete_at, created_at").eq("client_id", client.id).eq("internal", false).order("created_at", { ascending: false }),
     supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", client.id).maybeSingle(),
     supabase
       .from("reference_videos")

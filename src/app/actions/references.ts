@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
-import { visibleVideo } from "@/lib/access";
+import { clientVideo } from "@/lib/access";
 import { parseReferenceLink, REFERENCE_FOCUS, WATCHABLE } from "@/lib/reference-links";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,7 +16,7 @@ export async function addReference(_: ActionResult, formData: FormData): Promise
   const videoId = optionalText(formData, "videoId");
   let clientId = text(formData, "clientId");
   if (videoId) {
-    const video = await visibleVideo(videoId);
+    const video = await clientVideo(videoId);
     if (!video) return fail("Video not found.");
     clientId = video.client_id;
   } else {

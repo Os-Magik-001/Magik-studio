@@ -75,6 +75,7 @@ export function SubmitButton({
   className,
   name,
   value,
+  disabled,
 }: {
   children: ReactNode;
   pendingText?: string;
@@ -83,6 +84,7 @@ export function SubmitButton({
   className?: string;
   name?: string;
   value?: string;
+  disabled?: boolean;
 }) {
   const pending = use(PendingContext);
   // Until the page's JavaScript runs, the form would go out as a plain POST the page can't
@@ -93,7 +95,7 @@ export function SubmitButton({
       type="submit"
       variant={variant}
       size={size}
-      disabled={pending || !ready}
+      disabled={disabled || pending || !ready}
       aria-busy={pending}
       className={cx(className)}
       name={name}

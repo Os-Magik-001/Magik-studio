@@ -80,6 +80,8 @@ export async function clientMemory(clientId: string, opts: { except?: string; de
     .from("videos")
     .select("id, title, format, status, brief, created_at, scripts(body, edit_prompt, shoot_plan)")
     .eq("client_id", clientId)
+    // What the client saw: never the team's own Make a video edits.
+    .eq("internal", false)
     .order("created_at", { ascending: false })
     .limit(100);
   if (opts.except) query = query.neq("id", opts.except);

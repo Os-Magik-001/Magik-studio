@@ -484,15 +484,19 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
     await step("Gathering the script, brand kit and footage");
     const { data: video } = await db.from("videos").select("*").eq("id", job.video_id).single();
     if (!video) throw new Error("The video no longer exists.");
+    // A video made in Make a video may have no client: the studio's own, with no brand kit,
+    // memories or research.
+    const clientId = video.client_id;
+    const none = Promise.resolve({ data: null });
     const [{ data: client }, { data: kit }, { data: script }, { data: footage }, memory, soundMemory, { data: research }] = await Promise.all([
-      db.from("clients").select("name").eq("id", video.client_id).single(),
-      db.from("brand_kits").select("*").eq("client_id", video.client_id).maybeSingle(),
+      clientId ? db.from("clients").select("name").eq("id", clientId).single() : none,
+      clientId ? db.from("brand_kits").select("*").eq("client_id", clientId).maybeSingle() : none,
       db.from("scripts").select("body, shot_list, status, design_templates, design_brief").eq("video_id", video.id).maybeSingle(),
       db.from("footage").select("storage_path, file_name, source, drive_file_id").eq("video_id", video.id).order("created_at"),
       // The edit goes ahead without the memories if they can't be read.
-      clientMemory(video.client_id, video.id, "edit").catch(() => null),
-      musicMemory(video.client_id, video.id).catch(() => null),
-      db.from("trend_reports").select("audio, findings").eq("client_id", video.client_id).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle(),
+      clientId ? clientMemory(clientId, video.id, "edit").catch(() => null) : null,
+      clientId ? musicMemory(clientId, video.id).catch(() => null) : null,
+      clientId ? db.from("trend_reports").select("audio, findings").eq("client_id", clientId).eq("status", "done").order("finished_at", { ascending: false }).limit(1).maybeSingle() : none,
     ]);
     const trend = research ? { audio: Array.isArray(research.audio) ? (research.audio as unknown as TrendAudio[]) : [], notes: (research.findings as { audio?: string[] } | null)?.audio ?? [] } : null;
     // For now Claude can edit before the script is approved, or with no script (brief and footage only).
@@ -508,8 +512,8 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
     await watchClips(clips, dir, `${client?.name ?? ""}. ${video.title}. ${script?.body ?? ""}`, step);
 
     // The studio's reference videos: any the engine hasn't watched yet are watched first.
-    await settleReferences(video.client_id, video.id, step).catch((err) => note(`references: ${err instanceof Error ? err.message : err}`));
-    const references = await editReferences(video.client_id, video.id, dir).catch((err) => (note(`references unavailable: ${err instanceof Error ? err.message : err}`), [] as EditReference[]));
+    if (clientId) await settleReferences(clientId, video.id, step).catch((err) => note(`references: ${err instanceof Error ? err.message : err}`));
+    const references = clientId ? await editReferences(clientId, video.id, dir).catch((err) => (note(`references unavailable: ${err instanceof Error ? err.message : err}`), [] as EditReference[])) : [];
     if (references.length) note(`references: ${references.map((r) => r.label).join("; ")}`);
 
     // Revisions start from the previous cut and its open comments.
@@ -578,7 +582,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
         formatKey: video.format,
         clean: kit?.edit_style === "clean",
         brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile, typography },
-        clientName: client?.name ?? "Client",
+        clientName: client?.name ?? (clientId ? "Client" : "Magik Studio (the studio's own video)"),
         title: video.title,
         format: video.format.replace("_", " "),
         aspect: video.aspect,

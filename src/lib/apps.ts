@@ -24,6 +24,7 @@ export type AppIconName =
   | "brand"
   | "documents"
   | "video"
+  | "make"
   | "calendar"
   | "website"
   | "sales"
@@ -81,6 +82,16 @@ export const APPS: AppDef[] = [
     roles: ["client"],
     hint: "Watch, download, comment and approve your videos",
     size: [1240, 840],
+  },
+  {
+    id: "make",
+    name: "Make a video",
+    href: "/make",
+    match: ["/make"],
+    icon: "make",
+    roles: ["admin", "editor"],
+    hint: "Footage in, finished video out: the edit engine, without the client steps",
+    size: [1220, 880],
   },
   {
     id: "clients",
@@ -292,6 +303,7 @@ const UUID = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})";
 const DOCS: { re: RegExp; kind: string; app: (role: Role) => string; size: [number, number] }[] = [
   { re: new RegExp(`^/(?:videos|review)/${UUID}(?:/|$)`, "i"), kind: "video", app: (role) => (role === "client" ? "videos" : "pipeline"), size: [1220, 900] },
   { re: new RegExp(`^/shoots/${UUID}(?:/|$)`, "i"), kind: "video", app: () => "shoots", size: [1120, 860] },
+  { re: new RegExp(`^/make/${UUID}(?:/|$)`, "i"), kind: "video", app: () => "make", size: [1240, 900] },
   { re: new RegExp(`^/clients/${UUID}(?:/|$)`, "i"), kind: "client", app: () => "clients", size: [1200, 880] },
   { re: new RegExp(`^/onboarding/${UUID}(?:/|$)`, "i"), kind: "onboarding", app: () => "onboarding", size: [1140, 880] },
 ];

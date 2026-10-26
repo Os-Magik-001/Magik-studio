@@ -38,6 +38,8 @@ async function StudioPipeline({ searchParams }: { searchParams: Promise<Filters>
     supabase
       .from("videos")
       .select("id, title, status, format, due_on, updated_at, brief, footage_complete_at, editor_id, client:clients(id, name), editor:profiles!videos_editor_id_fkey(full_name, email)")
+      // Videos made in Make a video skip these phases; they live in that app.
+      .eq("internal", false)
       .order("updated_at", { ascending: false }),
     supabase.from("scripts").select("video_id, status, body, edit_prompt"),
     supabase.from("footage").select("video_id"),

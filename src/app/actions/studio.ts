@@ -327,7 +327,7 @@ export async function deleteVideo(formData: FormData) {
   if (uploads.length) await admin.storage.from("footage").remove(uploads);
   if (versions?.length) await admin.storage.from("versions").remove(versions.map((v) => v.storage_path));
   await createClient().then((s) => s.from("videos").delete().eq("id", videoId));
-  redirect(`/clients/${video.client_id}`);
+  redirect(video.internal || !video.client_id ? "/make" : `/clients/${video.client_id}`);
 }
 
 export async function markDelivered(_: ActionResult, formData: FormData): Promise<ActionResult> {

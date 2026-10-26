@@ -191,13 +191,13 @@ export async function feedEvents(userId: string, from: string, to: string) {
       admin.from("client_team").select("client_id").eq("user_id", userId),
       admin.from("videos").select("id, client_id").eq("editor_id", userId),
     ]);
-    clientIds = [...new Set([...(team ?? []).map((t) => t.client_id), ...(assigned ?? []).map((v) => v.client_id)])];
+    clientIds = [...new Set([...(team ?? []).map((t) => t.client_id), ...(assigned ?? []).flatMap((v) => (v.client_id ? [v.client_id] : []))])];
     const { data: theirs } = clientIds.length ? await admin.from("videos").select("id").in("client_id", (team ?? []).map((t) => t.client_id)) : { data: [] };
     videoIds = [...new Set([...(assigned ?? []).map((v) => v.id), ...(theirs ?? []).map((v) => v.id)])];
   } else if (p.role === "videographer") {
     const { data } = await admin.from("videos").select("id, client_id").eq("videographer_id", userId);
     videoIds = (data ?? []).map((v) => v.id);
-    clientIds = [...new Set((data ?? []).map((v) => v.client_id))];
+    clientIds = [...new Set((data ?? []).flatMap((v) => (v.client_id ? [v.client_id] : [])))];
   } else if (p.role === "client") {
     clientIds = p.client_id ? [p.client_id] : [];
     const { data } = p.client_id ? await admin.from("videos").select("id").eq("client_id", p.client_id) : { data: [] };

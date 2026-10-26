@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Check } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { visibleVideo } from "@/lib/access";
+import { clientVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 import { driveServiceEmail } from "@/lib/drive";
 import { formatBytes, parseShotList, FORMAT_LABEL } from "@/lib/workflow";
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ videoId: 
 export default async function ShootDetail({ params }: { params: Promise<{ videoId: string }> }) {
   const { videoId } = await params;
   await requireRole("videographer", "admin");
-  const video = await visibleVideo(videoId);
+  const video = await clientVideo(videoId);
   if (!video) notFound();
 
   const supabase = await createClient();
