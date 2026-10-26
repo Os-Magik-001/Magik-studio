@@ -26,6 +26,8 @@ window.setup = async (spec) => {
   // One transparent pixel column keeps every screenshot RGBA: Chrome drops the alpha channel
   // of fully opaque frames, and a format switch mid-sequence breaks ffmpeg's compositing.
   root.style.clipPath = "inset(0 0 0 1px)";
+  // The editor's fonts, when they chose them: rules after the page's own, for the same families.
+  document.getElementById("brand-faces").textContent = spec.faces ?? "";
   // Fonts first: templates measure text to fit it.
   await Promise.all([...document.fonts].map((f) => f.load().catch(() => {})));
   const mod = await templates[spec.template]();

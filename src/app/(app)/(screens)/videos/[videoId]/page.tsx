@@ -42,6 +42,7 @@ import {
 } from "./forms";
 import { WindowPage } from "@/components/desktop/window-page";
 import { PostingDate } from "./posting";
+import { parseTypography, typographyFromKit } from "@/lib/typography";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   return videoTitle((await params).videoId, "Video");
@@ -80,6 +81,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
     { data: savedPrompts },
     { data: references },
     { data: writingRuns },
+    { data: typed },
   ] = await Promise.all([
       supabase.from("clients").select("id, name, revision_limit").eq("id", video.client_id).single(),
       supabase.from("scripts").select("*").eq("video_id", videoId).maybeSingle(),
@@ -99,7 +101,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         .eq("video_id", videoId)
         .order("created_at"),
       supabase.from("videos").select("id", { count: "exact", head: true }).eq("client_id", video.client_id).neq("id", videoId),
-      supabase.from("brand_kits").select("graphics").eq("client_id", video.client_id).maybeSingle(),
+      supabase.from("brand_kits").select("graphics, fonts, colors").eq("client_id", video.client_id).maybeSingle(),
       supabase.from("motion_prompts").select("id, title, creator, notes, tags").order("created_at", { ascending: false }),
       supabase
         .from("reference_videos")
@@ -109,6 +111,8 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
         .order("created_at", { ascending: false }),
         // The scriptwriter at work on this video from the client's Production panel.
       supabase.from("agent_runs").select("id, status, progress").eq("video_id", videoId).eq("agent", "scriptwriter").in("status", ["queued", "running"]).limit(1),
+      // Fonts and colors picked for this video or the client's latest ones, to start the next edit from.
+      supabase.from("videos").select("id, typography").eq("client_id", video.client_id).not("typography", "is", null).order("updated_at", { ascending: false }).limit(10),
   ]);
 
   const refs = [...(references ?? [])].sort((a, b) => Number(!!b.video_id) - Number(!!a.video_id));
@@ -130,6 +134,13 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
   const designed = kit?.graphics === "designed" || designTemplates.length > 0;
   const designBrief = asDesignBrief(script?.design_brief);
   const watching = refs.some((r) => r.status === "queued" || r.status === "running");
+  const kitTypography = kit && (kit.fonts.length || kit.colors.length) ? typographyFromKit(kit) : null;
+  const typography = {
+    initial: parseTypography((typed ?? []).find((v) => v.id === videoId)?.typography) ?? parseTypography(typed?.[0]?.typography) ?? kitTypography ?? typographyFromKit(null),
+    brandKit: kitTypography,
+    title: video.title,
+    clientName: client?.name ?? "",
+  };
 
   // Where the video stands: the same reading as the Pipeline board.
   const now = nowIso();
@@ -411,7 +422,7 @@ export default async function VideoPage({ params }: { params: Promise<{ videoId:
           <StepCard step="edit" state={states.edit} title="Edit with the engine" description="Launch the edit with any notes. Fix requests and client changes go back to the edit engine the same way.">
             <div className="flex flex-col gap-5">
               {openJobs.length === 0 && (
-                <LaunchEditForm key={script?.updated_at} videoId={video.id} prompt={script?.edit_prompt ?? undefined} disabledReason={!footage?.length ? "Add the raw footage first (step 4)." : undefined} />
+                <LaunchEditForm key={script?.updated_at} videoId={video.id} prompt={script?.edit_prompt ?? undefined} type={typography} disabledReason={!footage?.length ? "Add the raw footage first (step 4)." : undefined} />
               )}
               {(jobs ?? []).length > 0 && (
                 <ul className="flex flex-col gap-2">

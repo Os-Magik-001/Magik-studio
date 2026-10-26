@@ -22,11 +22,13 @@ export const FAQ: Record<Role, QA[]> = {
     ["How do I pause or remove someone?", "Team, then Manage on their row: pause stops them signing in until you resume them; delete removes their account for good (their work stays)."],
     ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
     ["Where do referral credits come from?", "Referrals: when you mark a referral signed, its referrer gets the credits set in Settings, Studio."],
+    ["How do I choose the fonts and colors of an edit?", "On the video's page, step Edit: before Launch the edit, pick a starting point (the client's brand kit or a preset), then the three fonts (titles, accent words, text) and the five colors. The preview shows the video's title in them. Fixes and client changes keep the same choice."],
   ],
   editor: [
     ["Where do I start my day?", "Pipeline shows every video by phase and what it's waiting on; your videos have your initials."],
     ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
     ["How do I invite someone to a meeting?", "Calendar, Create: add a title and a time, then Invite the team."],
+    ["How do I choose the fonts and colors of an edit?", "On the video's page, step Edit: before Launch the edit, pick a starting point (the client's brand kit or a preset), then the three fonts (titles, accent words, text) and the five colors. The preview shows the video's title in them. Fixes and client changes keep the same choice."],
   ],
   videographer: [
     ["Where are my shoots?", "Shoots lists them with their shot lists; Calendar shows them in orange."],

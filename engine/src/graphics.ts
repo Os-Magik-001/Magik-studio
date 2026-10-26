@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCanvas, GlobalFonts, type SKRSContext2D } from "@napi-rs/canvas";
 import type { EditPlan } from "./plan.ts";
+import { canvasFont, readableOn, type FontRole, type Typography } from "./typefaces.ts";
 
 const FONTS_DIR = fileURLToPath(new URL("../assets/fonts", import.meta.url));
 const FONT_FILES: [string, string][] = [
@@ -31,7 +32,9 @@ const font = (family: string, size: number, brand: string[] = []) =>
   `${Math.round(size)}px ${[...brand.map((f) => `"${f}"`), `"${family}"`, '"Apple Color Emoji"', "sans-serif"].join(", ")}`;
 
 export type Word = { text: string; start: number; end: number };
-export type Brand = { colors: string[]; fonts: string[] };
+// `typography`: the fonts and colors the editor chose for this video (typefaces.ts); they win
+// over the plan's own caption colors and fonts.
+export type Brand = { colors: string[]; fonts: string[]; typography?: Typography | null };
 type Layer = "front" | "behind";
 type Text = EditPlan["on_screen_text"][number];
 type Graphic = EditPlan["graphics"][number];
@@ -186,6 +189,9 @@ function drawRuns(ctx: Ctx, lines: ReturnType<typeof layoutRuns>, cx: number, to
   });
 }
 
+// "#RRGGBB" at an opacity.
+const alpha = (hex: string, a: number) => `rgba(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(",")},${a})`;
+
 const caseOf = (s: string, c: EditPlan["captions"]["case"]) => (c === "lower" ? s.toLowerCase() : c === "upper" ? s.toUpperCase() : s);
 const bare = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}']/gu, "");
 
@@ -198,13 +204,17 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
   const spokenIdx = screen.words.findLastIndex((w) => w.start <= t);
   const builds = c.preset === "bold_pop" || c.preset === "subtitle";
   const shown = builds ? screen.words.slice(0, Math.max(1, spokenIdx + 1)) : screen.words;
+  const type = brand.typography;
+  const ink = type ? type.colors.text : c.color;
+  const hi = type ? type.colors.highlight : c.highlight_color;
+  const text = (family: string, s: number, heavy = false) => (type ? canvasFont(type, "text", s, heavy) : font(family, s, brand.fonts));
   const fonts = {
-    bold_pop: font("Magik Sans Black", size, brand.fonts),
-    editorial: font("Magik Sans SemiBold", size, brand.fonts),
-    karaoke_box: font("Magik Serif", size * 1.1),
-    classic: font("Magik Sans SemiBold", size * 0.85, brand.fonts),
-    minimal: font("Magik Sans Medium", size, brand.fonts),
-    subtitle: font("Magik Sans SemiBold", size, brand.fonts),
+    bold_pop: text("Magik Sans Black", size, true),
+    editorial: text("Magik Sans SemiBold", size),
+    karaoke_box: type ? canvasFont(type, "text", size) : font("Magik Serif", size * 1.1),
+    classic: text("Magik Sans SemiBold", size * 0.85),
+    minimal: text("Magik Sans Medium", size),
+    subtitle: text("Magik Sans SemiBold", size),
   };
   const runs: Run[] = shown.map((w, i) => {
     const hl = highlights.has(bare(w.text));
@@ -212,15 +222,15 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
     const text = caseOf(keepsPunctuation ? w.text : w.text.replace(/[.,;:]+$/, ""), c.case);
     if (c.preset === "karaoke_box") {
       const spoken = i <= spokenIdx;
-      return { text, font: fonts.karaoke_box, color: hl && spoken ? c.highlight_color : spoken ? "#F7F2E8" : "rgba(247,242,232,0.42)" };
+      return { text, font: fonts.karaoke_box, color: hl && spoken ? hi : spoken ? (type ? ink : "#F7F2E8") : type ? alpha(ink, 0.42) : "rgba(247,242,232,0.42)" };
     }
-    if (c.preset === "editorial" && hl) return { text, font: font("Magik Serif Italic", size * 1.18), color: c.highlight_color };
-    return { text, font: fonts[c.preset], color: hl ? c.highlight_color : c.color };
+    if (c.preset === "editorial" && hl) return { text, font: type ? canvasFont(type, "accent", size * 1.18) : font("Magik Serif Italic", size * 1.18), color: hi };
+    return { text, font: fonts[c.preset], color: hl ? hi : ink };
   });
   const lines = layoutRuns(ctx, runs, W * 0.8);
   const lineH = size * 1.22;
   // A subtitle that builds word by word keeps its first line where the whole phrase puts it.
-  const full = c.preset === "subtitle" ? layoutRuns(ctx, screen.words.map((w) => ({ text: w.text, font: fonts.subtitle, color: c.color })), W * 0.8) : lines;
+  const full = c.preset === "subtitle" ? layoutRuns(ctx, screen.words.map((w) => ({ text: w.text, font: fonts.subtitle, color: ink })), W * 0.8) : lines;
   const blockH = lines.length * lineH;
   const top = anchorY(c.position, full.length * lineH, W, H);
 
@@ -229,7 +239,7 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
     const widest = Math.max(...lines.map((l) => l.width));
     const padX = size * 0.6;
     const padY = size * 0.32;
-    ctx.fillStyle = c.preset === "classic" ? "rgba(0,0,0,0.62)" : "rgba(18,38,30,0.86)";
+    ctx.fillStyle = c.preset === "classic" ? (type ? alpha(type.colors.background, 0.78) : "rgba(0,0,0,0.62)") : type ? alpha(type.colors.background, 0.9) : "rgba(18,38,30,0.86)";
     ctx.beginPath();
     ctx.roundRect(W / 2 - widest / 2 - padX, top - padY, widest + padX * 2, blockH + padY * 2, size * 0.35);
     ctx.fill();
@@ -276,22 +286,33 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
   return spokenIdx;
 }
 
-function textRuns(item: Text, family: string, size: number, color: string, accentColor: string, brandFonts: string[]): Run[] {
-  const f = font(family, size, brandFonts);
-  if (!item.accent) return [{ text: item.text, font: f, color }];
-  const at = item.text.indexOf(item.accent);
-  const before = item.text.slice(0, at).trim();
-  const after = item.text.slice(at + item.accent.length).trim();
-  const accent: Run = { text: item.accent, font: font("Magik Serif Italic", size * 1.12), color: accentColor };
-  return [...(before ? [{ text: before, font: f, color }] : []), accent, ...(after ? [{ text: after, font: f, color }] : [])];
+type TextFonts = { main: (size: number) => string; accent: (size: number) => string; upper: boolean; accentUpper: boolean };
+
+// One line of a title as runs: the accent word (if the line has it) in the accent face.
+function textRuns(line: string, accent: string | null, size: number, color: string, accentColor: string, f: TextFonts): Run[] {
+  const up = (s: string, on: boolean) => (on ? s.toUpperCase() : s);
+  const at = accent ? line.toLowerCase().indexOf(accent.toLowerCase()) : -1;
+  if (!accent || at < 0) return [{ text: up(line, f.upper), font: f.main(size), color }];
+  const before = line.slice(0, at).trim();
+  const after = line.slice(at + accent.length).trim();
+  const word: Run = { text: up(line.slice(at, at + accent.length), f.accentUpper), font: f.accent(size * 1.12), color: accentColor };
+  return [...(before ? [{ text: up(before, f.upper), font: f.main(size), color }] : []), word, ...(after ? [{ text: up(after, f.upper), font: f.main(size), color }] : [])];
 }
+
+// With the editor's fonts: which face each text style is set in (drip keeps its own).
+const ROLE: Partial<Record<Text["style"], FontRole>> = { caption: "text", label: "text", boxed: "text", serif: "accent", title: "title", hero: "title", stacked: "title" };
 
 function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
   const { W, H, brand, plan, fps } = input;
   const base = Math.min(W, H);
   const p = phase(t, item.start, item.end, fps);
-  const color = item.color ?? (item.style === "drip" ? "#D9161E" : "#FFFFFF");
-  const accentColor = plan.captions.highlight_color;
+  const type = brand.typography;
+  const role = type ? (ROLE[item.style] ?? null) : null;
+  const color =
+    type && role
+      ? { title: type.colors.title, accent: type.colors.accent, text: item.style === "boxed" ? readableOn(type.colors.background, type.colors.text) : type.colors.text }[role]
+      : (item.color ?? (item.style === "drip" ? "#D9161E" : "#FFFFFF"));
+  const accentColor = type ? type.colors.accent : plan.captions.highlight_color;
   const spec = {
     caption: { family: "Magik Sans SemiBold", size: 0.05, upper: false },
     title: { family: "Magik Sans ExtraBold", size: 0.085, upper: false },
@@ -303,28 +324,34 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
     drip: { family: "Magik Drip", size: 0.22, upper: true },
   }[item.style];
   let size = base * spec.size;
-  const display = { ...item, text: spec.upper ? item.text.toUpperCase() : item.text, accent: item.accent && spec.upper ? item.accent.toUpperCase() : item.accent };
+  // The editor's titles are always in capitals; their accent words keep their case.
+  const fonts: TextFonts = {
+    main: (s) => (type && role ? canvasFont(type, role, s) : font(spec.family, s, brand.fonts)),
+    accent: (s) => (type ? canvasFont(type, "accent", s) : font("Magik Serif Italic", s)),
+    upper: spec.upper || role === "title",
+    accentUpper: spec.upper && !type,
+  };
 
   ctx.save();
   let alpha = item.animation === "none" ? 1 : clamp01(p.introP / 0.45);
   if (p.outro >= 0) alpha *= clamp01(p.outroP);
   ctx.globalAlpha = alpha;
 
-  const lineTexts = item.style === "stacked" || item.style === "drip" ? display.text.split(/\\n|\n/) : [display.text];
+  const lineTexts = item.style === "stacked" || item.style === "drip" ? item.text.split(/\\n|\n/) : [item.text];
   // A drip logo's first line is the logo; any lines under it are a smaller kicker ("EPISODE 10").
   const KICKER = 0.42;
   // Shrink to fit: hero words fill the width but never overflow it.
   const big = item.style === "hero" || item.style === "drip";
   const fitW = W * (big ? 0.9 : 0.82);
   for (let i = 0; i < 8; i++) {
-    ctx.font = font(spec.family, size, brand.fonts);
-    const widest = Math.max(...(item.style === "drip" ? lineTexts.slice(0, 1) : lineTexts).map((l) => ctx.measureText(l).width));
+    ctx.font = fonts.main(size);
+    const widest = Math.max(...(item.style === "drip" ? lineTexts.slice(0, 1) : lineTexts).map((l) => ctx.measureText(fonts.upper ? l.toUpperCase() : l).width));
     if (!big && item.style !== "serif") break;
     if (widest <= fitW) break;
     size *= 0.9;
   }
   const lineH = size * (big ? 1.0 : 1.18);
-  const allLines = lineTexts.flatMap((l, i) => layoutRuns(ctx, textRuns({ ...display, text: l, accent: display.accent && l.includes(display.accent) ? display.accent : null }, spec.family, item.style === "drip" && i > 0 ? size * KICKER : size, color, accentColor, brand.fonts), fitW));
+  const allLines = lineTexts.flatMap((l, i) => layoutRuns(ctx, textRuns(l, item.accent, item.style === "drip" && i > 0 ? size * KICKER : size, color, accentColor, fonts), fitW));
   const kickers = item.style === "drip" ? allLines.length - 1 : 0;
   // Stacked headlines build line by line; typewriter reveals letters.
   const visibleLines = item.style === "stacked" ? allLines.slice(0, Math.max(1, Math.floor((t - item.start) / 0.28) + 1)) : allLines;
@@ -362,13 +389,13 @@ function drawText(ctx: Ctx, input: GraphicsInput, item: Text, t: number) {
     const widest = Math.max(...allLines.map((l) => l.width));
     const padX = size * 0.7;
     const padY = size * 0.4;
-    ctx.fillStyle = item.style === "boxed" ? (brand.colors.find((c) => /^#/.test(c)) ?? "#FFFFFF") : item.style === "label" ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.62)";
+    ctx.fillStyle = item.style === "boxed" ? (type?.colors.background ?? brand.colors.find((c) => /^#/.test(c)) ?? "#FFFFFF") : item.style === "label" ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.62)";
     shadow(ctx, size * 0.5, 0.35);
     ctx.beginPath();
     ctx.roundRect(cx - widest / 2 - padX, top - padY, widest + padX * 2, blockH + padY * 2, size * 0.45);
     ctx.fill();
     noShadow(ctx);
-    if (item.style === "boxed" && !item.color) lines = lines.map((l) => ({ ...l, runs: l.runs.map((r) => ({ ...r, color: luminance(ctx.fillStyle as string) > 0.6 ? "#141413" : "#FFFFFF" })) }));
+    if (item.style === "boxed" && !item.color && !type) lines = lines.map((l) => ({ ...l, runs: l.runs.map((r) => ({ ...r, color: luminance(ctx.fillStyle as string) > 0.6 ? "#141413" : "#FFFFFF" })) }));
   } else {
     shadow(ctx, size * (item.style === "hero" ? 0.25 : item.style === "drip" ? 0.12 : 0.35), item.style === "drip" ? 0.35 : 0.55);
   }
@@ -398,12 +425,12 @@ function formatValue(v: number, like: string) {
 }
 
 function drawGraphic(ctx: Ctx, input: GraphicsInput, g: Graphic, t: number) {
-  const { W, H, fps, plan } = input;
+  const { W, H, fps, plan, brand } = input;
   const base = Math.min(W, H) * g.size;
   const x = g.x * W;
   const y = g.y * H;
   const p = phase(t, g.start, g.end, fps);
-  const accent = plan.captions.highlight_color;
+  const accent = brand.typography?.colors.highlight ?? plan.captions.highlight_color;
   const local = t - g.start;
   const dur = g.end - g.start;
   ctx.save();

@@ -1920,6 +1920,7 @@ export type Database = {
           post_platforms: string[]
           status: Database["public"]["Enums"]["video_status"]
           title: string
+          typography: Json | null
           updated_at: string
           videographer_id: string | null
         }
@@ -1938,6 +1939,7 @@ export type Database = {
           post_platforms?: string[]
           status?: Database["public"]["Enums"]["video_status"]
           title: string
+          typography?: Json | null
           updated_at?: string
           videographer_id?: string | null
         }
@@ -1956,6 +1958,7 @@ export type Database = {
           post_platforms?: string[]
           status?: Database["public"]["Enums"]["video_status"]
           title?: string
+          typography?: Json | null
           updated_at?: string
           videographer_id?: string | null
         }

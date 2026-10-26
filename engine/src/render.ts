@@ -10,6 +10,7 @@ import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 import { pictureShifts } from "./splits.ts";
 import { sfxSource, type SfxEntry } from "./sfx.ts";
+import { canvasFont, motionFaces, readableOn, type Typography } from "./typefaces.ts";
 
 const FPS = 30;
 // The edit's sound: every shot is cut at this rate, to the sample.
@@ -120,7 +121,8 @@ function atempo(speed: number) {
   return parts.map((p) => `atempo=${p.toFixed(4)},`).join("");
 }
 
-export type Brand = { colors: string[]; fonts: string[]; logoFile: string | null };
+// `typography`: the fonts and colors the editor chose for this video (typefaces.ts).
+export type Brand = { colors: string[]; fonts: string[]; logoFile: string | null; typography?: Typography | null };
 
 function fontStack(brand: Brand) {
   const families = [...brand.fonts, "Inter", "Helvetica Neue", "Arial", "DejaVu Sans"];
@@ -150,7 +152,8 @@ function wrap(ctx: SKRSContext2D, text: string, maxWidth: number) {
 async function endCard(plan: EditPlan, W: number, H: number, brand: Brand, file: string) {
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
-  const bg = brand.colors.find(isColor) ?? "#141413";
+  const type = brand.typography;
+  const bg = type?.colors.background ?? brand.colors.find(isColor) ?? "#141413";
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
@@ -158,7 +161,7 @@ async function endCard(plan: EditPlan, W: number, H: number, brand: Brand, file:
   const hex = bg.replace("#", "");
   const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
-  const ink = 0.2126 * r + 0.7152 * g + 0.0722 * b > 150 ? "#141413" : "#ffffff";
+  const ink = type ? readableOn(bg, type.colors.title) : 0.2126 * r + 0.7152 * g + 0.0722 * b > 150 ? "#141413" : "#ffffff";
 
   let y = H * 0.5;
   if (brand.logoFile) {
@@ -176,11 +179,11 @@ async function endCard(plan: EditPlan, W: number, H: number, brand: Brand, file:
   }
   if (plan.end_card.headline) {
     const size = Math.round(Math.min(W, H) * 0.07);
-    ctx.font = `800 ${size}px ${fontStack(brand)}`;
+    ctx.font = type ? canvasFont(type, "title", size) : `800 ${size}px ${fontStack(brand)}`;
     ctx.fillStyle = ink;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    wrap(ctx, plan.end_card.headline, W * 0.8).forEach((l, i) => ctx.fillText(l, W / 2, y + i * size * 1.2));
+    wrap(ctx, type ? plan.end_card.headline.toUpperCase() : plan.end_card.headline, W * 0.8).forEach((l, i) => ctx.fillText(l, W / 2, y + i * size * 1.2));
   }
   await writeFile(file, await canvas.encode("png"));
 }
@@ -444,8 +447,9 @@ export async function render(opts: RenderOptions) {
   // 3D motion graphics sit over the picture and under captions and titles.
   if (plan.motion.length) {
     if (await motionAvailable()) {
-      const accent = opts.brand.colors.find((c, i) => i > 0 && isColor(c)) ?? plan.captions.highlight_color;
-      const layers = await renderMotion({ plan, clips: opts.clips, picture: base, W, H, fps: FPS, accent, workDir, logo: opts.brand.logoFile });
+      const type = opts.brand.typography;
+      const accent = type?.colors.highlight ?? opts.brand.colors.find((c, i) => i > 0 && isColor(c)) ?? plan.captions.highlight_color;
+      const layers = await renderMotion({ plan, clips: opts.clips, picture: base, W, H, fps: FPS, accent, workDir, logo: opts.brand.logoFile, faces: type ? motionFaces(type) : null });
       if (layers.length) {
         // One input for every graphic: separate image-sequence inputs stall ffmpeg's overlay
         // sync now and then (a graphic froze on its 8th frame), a single timed list never does.

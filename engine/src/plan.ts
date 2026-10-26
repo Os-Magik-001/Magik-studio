@@ -318,6 +318,8 @@ export type PlanInput = {
   script: string;
   shots: string[];
   brandKit: BrandKit | null;
+  // The fonts and colours the editor chose for this video, described (typefaces.ts).
+  typography?: string | null;
   instructions: string | null;
   source: "launch" | "editor_fix" | "client_changes";
   skills: Skill[];
@@ -477,6 +479,8 @@ export async function buildContent(input: PlanInput): Promise<Anthropic.Beta.Bet
       ]
         .filter(Boolean)
         .join("\n")}`,
+    input.typography &&
+      `Fonts and colours the editor chose for this video. The engine sets every caption, title, card and the end card in them, so leave text colours unset (null) and don't choose caption colours; titles show in capitals, and a title's accent word shows in the italic accent face:\n${input.typography}`,
     input.memory &&
       `The client's other videos (the studio's memory; this video's own script is above). Keep what recurs consistent with them (intros, titles, captions, music, running jokes) and don't repeat what was asked to change on them:\n${input.memory}`,
     input.source === "launch" && input.instructions && `Editor's notes for this edit:\n${input.instructions}`,

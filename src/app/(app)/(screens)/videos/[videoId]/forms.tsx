@@ -7,8 +7,10 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Input, Select, Textarea } from "@/components/ui";
 import { Field, TzOffset } from "@/components/field";
 import { ScriptField } from "@/components/script-field";
+import { TypographyPicker } from "@/components/typography/typography-picker";
 import { Uploader } from "@/components/uploader";
 import { ASPECTS, FORMAT_LABEL, type ScriptStatus } from "@/lib/workflow";
+import type { Typography } from "@/lib/typography";
 import { markDelivered, scheduleShoot, updateVideo } from "@/app/actions/studio";
 import {
   addDriveFootage,
@@ -336,10 +338,22 @@ export function DraftUpload({ videoId }: { videoId: string }) {
   );
 }
 
-export function LaunchEditForm({ videoId, disabledReason, prompt }: { videoId: string; disabledReason?: string; prompt?: string }) {
+export function LaunchEditForm({
+  videoId,
+  disabledReason,
+  prompt,
+  type,
+}: {
+  videoId: string;
+  disabledReason?: string;
+  prompt?: string;
+  // The fonts and colors to start from: the video's own, the client's last, or the brand kit's.
+  type: { initial: Typography; brandKit: Typography | null; title: string; clientName: string };
+}) {
   return (
-    <ActionForm action={launchEdit} className="flex flex-col gap-3">
+    <ActionForm action={launchEdit} className="flex flex-col gap-4">
       <input type="hidden" name="videoId" value={videoId} />
+      <TypographyPicker {...type} />
       <Field label={prompt ? "Edit prompt (from the scriptwriter)" : "Notes for the edit engine (optional)"}>
         <Textarea name="notes" rows={prompt ? 6 : 2} defaultValue={prompt} placeholder={'"Keep it under 60 seconds", "Open on the product"'} />
       </Field>

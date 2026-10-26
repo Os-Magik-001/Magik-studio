@@ -14,6 +14,7 @@ import { config } from "./config.ts";
 import { run } from "./exec.ts";
 import { probe } from "./media.ts";
 import { launch, serve } from "./motion.ts";
+import type { pageTypography } from "./typefaces.ts";
 
 const DESIGN_DIR = fileURLToPath(new URL("../design", import.meta.url));
 const FONTS_DIR = fileURLToPath(new URL("../assets/fonts", import.meta.url));
@@ -33,7 +34,7 @@ export type DesignInput = {
   subtitles?: Word[];
   shots: { start: number; end: number; beat: string; purpose: string; hold: number }[];
   brief: string;
-  brand: { colors: string[]; fonts: string[] };
+  brand: { colors: string[]; fonts: string[]; typography?: ReturnType<typeof pageTypography> | null };
   assets: DesignAsset[];
   workDir: string;
   output: string;
@@ -203,7 +204,8 @@ export function buildDesignBrief(input: {
   suggestions: unknown;
   kept: { template: string; start: number; end: number; title: string }[];
   music: { title: string; bpm: number | null; bars: number[] } | null;
-  brand: { colors: string[]; fonts: string[]; styleRules: string | null };
+  // `typography`: the fonts and colours the editor chose, described (typefaces.ts).
+  brand: { colors: string[]; fonts: string[]; styleRules: string | null; typography?: string | null };
   assets: { name: string; kind: string; description: string }[];
   // The studio's reference videos, as the motion designer reads them (references.ts).
   references?: string | null;
@@ -228,7 +230,9 @@ export function buildDesignBrief(input: {
       `Already in the cut, drawn by the engine with the person cut out: ${input.kept.map((k) => `${k.template} "${k.title}" ${f(k.start)}–${f(k.end)}`).join("; ")}. Leave those moments clear.`,
     input.music &&
       `Music: "${input.music.title}"${input.music.bpm ? ` at ${Math.round(input.music.bpm)} BPM` : ""}.${input.music.bars.length ? ` Bars (downbeats) on the timeline: ${input.music.bars.map((b) => b.toFixed(2)).join(", ")}. Time scene changes, kinetic type and pulses to them.` : ""}`,
-    `Brand: colours ${input.brand.colors.join(", ") || "not set"}; fonts ${input.brand.fonts.join(", ") || "not set"}.${input.brand.styleRules ? ` Style rules: ${input.brand.styleRules}` : ""}`,
+    input.brand.typography
+      ? `Fonts and colours the editor chose for this video (use exactly these, in place of the brand's; DATA.brand.typography has them):\n${input.brand.typography}${input.brand.styleRules ? `\nStyle rules: ${input.brand.styleRules}` : ""}`
+      : `Brand: colours ${input.brand.colors.join(", ") || "not set"}; fonts ${input.brand.fonts.join(", ") || "not set"}.${input.brand.styleRules ? ` Style rules: ${input.brand.styleRules}` : ""}`,
     input.assets.length && `Assets: ${input.assets.map((a) => `${a.name} (${a.kind}): ${a.description}`).join("; ")}`,
   ]
     .filter(Boolean)

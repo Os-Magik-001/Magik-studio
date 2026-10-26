@@ -106,7 +106,8 @@ const fillBox = (clip: Clip, w: number, h: number, focus: { x: number; y: number
   return `scale=${even(clip.width * fill)}:${even(clip.height * fill)},crop=${w}:${h}:x='clip(${focus.x}*iw-${w / 2},0,iw-${w})':y='clip(${focus.y}*ih-${h / 2},0,ih-${h})',setsar=1`;
 };
 
-export type MotionInput = { plan: EditPlan; clips: Clip[]; picture: string; W: number; H: number; fps: number; accent: string; workDir: string; logo?: string | null };
+// `faces`: @font-face rules that set the templates' fonts to the editor's choice (typefaces.ts).
+export type MotionInput = { plan: EditPlan; clips: Clip[]; picture: string; W: number; H: number; fps: number; accent: string; workDir: string; logo?: string | null; faces?: string | null };
 
 // Renders every motion item into a folder of transparent PNG frames.
 export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
@@ -165,6 +166,7 @@ export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
       spec: {
         template: item.template, W, H, fps,
         duration: item.end - item.start,
+        faces: input.faces ?? "",
         props: { title: item.title, subtitle: item.subtitle, lines: item.lines, people: item.people.map((p) => ({ name: p.name, role: p.role })), accent: item.accent ?? input.accent, position: item.position, index: member },
         assets,
       },

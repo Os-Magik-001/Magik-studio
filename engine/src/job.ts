@@ -23,6 +23,7 @@ import { checkCut } from "./qc.ts";
 import { pictureCuts } from "./splits.ts";
 import { anchorMotion, tighten } from "./tighten.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
+import { describeTypography, pageTypography, parseTypography } from "./typefaces.ts";
 
 export const log = (job: string | null, msg: string) =>
   console.log(`${new Date().toISOString()} ${job ? `[${job.slice(0, 8)}] ` : ""}${msg}`);
@@ -323,7 +324,7 @@ export async function planAndRender(
         suggestions: { captions: plan.captions, on_screen_text: plan.on_screen_text, motion: plan.motion.filter((m) => !KEPT_MOTION.has(m.template)).map(({ people: _, ...m }) => m), look: plan.look },
         kept: plan.motion.filter((m) => KEPT_MOTION.has(m.template)).map((m) => ({ template: m.template, start: m.start, end: m.end, title: m.title })),
         music: t && cut.sound?.track ? { title: t.title, bpm: cut.sound.track.bpm, bars: cut.sound.bars ?? [] } : null,
-        brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [], styleRules: rest.brandKit?.styleRules ?? null },
+        brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [], styleRules: rest.brandKit?.styleRules ?? null, typography: rest.typography ?? null },
         assets,
         references: rest.references?.flatMap((r) => (r.design ? [r.design] : [])).join("\n\n") || null,
       });
@@ -336,7 +337,7 @@ export async function planAndRender(
         subtitles,
         shots: timelineOf(plan).shots.map((s, i, all) => ({ start: cuts[i], end: i + 1 < all.length ? cuts[i + 1] : s.end, beat: s.seg.beat, purpose: s.seg.purpose, hold: s.seg.hold })),
         brief,
-        brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [] },
+        brand: { colors: brand.colors, fonts: rest.brandKit?.fonts ?? [], typography: brand.typography ? pageTypography(brand.typography) : null },
         assets,
         workDir: path.join(dir, "design"),
         output,
@@ -540,6 +541,9 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       logoFile = path.join(dir, "logo" + path.extname(kit.logo_path));
       await download("brand", kit.logo_path, logoFile).catch(() => (logoFile = null));
     }
+    // The fonts and colors the editor chose before launching (typefaces.ts), or none.
+    const typography = parseTypography(video.typography, note);
+    if (typography) note(`fonts and colors: ${Object.values(typography.fonts).join(", ")}; ${Object.values(typography.colors).join(" ")}`);
     const brandKit: BrandKit | null = kit
       ? { colors: kit.colors, fonts: kit.fonts, musicMood: kit.music_mood, styleRules: kit.style_rules, hasLogo: !!logoFile }
       : null;
@@ -572,7 +576,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       {
         formatKey: video.format,
         clean: kit?.edit_style === "clean",
-        brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile },
+        brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile, typography },
         clientName: client?.name ?? "Client",
         title: video.title,
         format: video.format.replace("_", " "),
@@ -581,6 +585,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
         script: script?.body ?? "",
         shots,
         brandKit,
+        typography: typography ? describeTypography(typography) : null,
         memory,
         // The motion director tells the editor where to leave room for its scenes.
         instructions: [job.instructions, design?.direction?.editor_notes && `The motion director's notes for the cut: ${design.direction.editor_notes}`].filter(Boolean).join("\n\n") || null,

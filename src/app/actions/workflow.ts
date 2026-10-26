@@ -17,6 +17,7 @@ import { describeReferences, loadReferences } from "@/lib/references";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatTimecode, parseShotList, videoStatusIndex, type VideoStatus } from "@/lib/workflow";
+import { parseTypography } from "@/lib/typography";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // Moves a video forward, never backwards (e.g. a late footage upload doesn't undo "editing").
@@ -516,6 +517,19 @@ export async function launchEdit(_: ActionResult, formData: FormData): Promise<A
   // For now an edit can start before the client approves the script (or without one).
   const { count: footageCount } = await admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId);
   if (!footageCount) return fail("Add the raw footage first.");
+
+  // The fonts and colors the editor picked: saved on the video, so fixes and client changes
+  // keep them too.
+  if (formData.has("typography")) {
+    let posted: unknown = null;
+    try {
+      posted = JSON.parse(text(formData, "typography"));
+    } catch {}
+    const typography = parseTypography(posted);
+    if (!typography) return fail("Pick the fonts and colors again.");
+    const { error: typeError } = await admin.from("videos").update({ typography }).eq("id", videoId);
+    if (typeError) return fail("Couldn't save the fonts and colors.");
+  }
 
   const { error } = await admin.from("edit_jobs").insert({
     video_id: videoId,

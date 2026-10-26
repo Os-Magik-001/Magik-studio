@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Ban, Check, LoaderCircle } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { ColorField } from "@/components/color-field";
 import { Field } from "@/components/field";
 import { Button, Input, cx } from "@/components/ui";
 import {
@@ -234,49 +235,6 @@ function Switch({ label, checked, onChange }: { label: string; checked: boolean;
         className="relative h-[24px] w-[42px] shrink-0 rounded-full bg-white/[0.16] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent/80 after:absolute after:top-[2px] after:left-[2px] after:size-5 after:rounded-full after:bg-white after:shadow-[0_1px_3px_rgba(0,0,0,0.4)] after:transition-transform peer-checked:after:translate-x-[18px]"
       />
     </label>
-  );
-}
-
-const HEX = /^#?[0-9a-f]{6}$/i;
-
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (hex: string) => void }) {
-  const id = useId();
-  const [text, setText] = useState(value);
-  const [shown, setShown] = useState(value);
-  // A new colour from outside (a palette chip): show it in the hex field.
-  if (shown !== value) {
-    setShown(value);
-    setText(value);
-  }
-  return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-[13px] font-medium text-ink-2">
-        {label}
-      </label>
-      <div className="flex h-9 items-center gap-2 rounded-[10px] border border-white/10 bg-white/[0.055] pr-2 pl-1.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] focus-within:border-accent/70 focus-within:shadow-[0_0_0_3px_rgba(246,212,58,0.22)]">
-        <input
-          id={id}
-          type="color"
-          value={value.toLowerCase()}
-          onChange={(e) => onChange(e.target.value.toUpperCase())}
-          className="size-6 shrink-0 cursor-pointer rounded-[6px] border-0 bg-transparent p-0 [&::-moz-color-swatch]:rounded-[6px] [&::-webkit-color-swatch]:rounded-[6px] [&::-webkit-color-swatch]:border-white/20 [&::-webkit-color-swatch-wrapper]:p-0"
-        />
-        <input
-          type="text"
-          aria-label={`${label}, hex code`}
-          value={text}
-          spellCheck={false}
-          maxLength={7}
-          onChange={(e) => {
-            const v = e.target.value.trim();
-            setText(v);
-            if (HEX.test(v)) onChange(`#${v.replace("#", "")}`.toUpperCase());
-          }}
-          onBlur={() => setText(value)}
-          className="w-full min-w-0 bg-transparent font-mono text-[12.5px] text-ink uppercase outline-none"
-        />
-      </div>
-    </div>
   );
 }
 
