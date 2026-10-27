@@ -17,6 +17,8 @@ style: dynamic
 - **Wordless motion pieces:** act changes as 0.3-0.4 s light sweeps or blooms (`dip_to_white`, `wipe_left`), or a hard cut on a colour flip; never slow 0.6 s dips.
 - A cut used as a rhythm beat (on an action, a word or a hit) must be a true hard cut. Even a short dissolve blurs it.
 
+**The section whip-zoom** (podcast and sofa talks with one camera): the outgoing framing accelerates in by about 24% over its last 0.2 s, the next framing lands from about 20% closer over 0.3 s, with motion blur, a 0.1 white lift on the cut frame and a soft whoosh 0.12 s before. Use it only at a new step or a new idea (one every 10-20 s); hard cuts inside a section. See podcast-motion.
+
 **Use the footage's own movement first** (these read as one move and need no effect)
 - **Camera whip pans:** end the outgoing shot inside its whip and start the incoming one inside a whip going the same way.
 - **Something crossing the lens:** a door swinging open, a body or a car passing. Cut when it fills the frame.

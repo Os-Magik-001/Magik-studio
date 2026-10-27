@@ -42,6 +42,8 @@ agents: sound
 - Dialogue skits and series: no bed under scene dialogue. A `low` bed may enter on a silent comic beat, a montage or a workout and carry through the closing confessional; a series title gets its own section.
 - Clean edits, and skits whose brief asks for dialogue alone: music only under the cold open or the series intro, as a section that ends when the first line starts.
 
+**Check the balance by measuring** (the studio's ears are the client's): render the ducked bed alone and compare it with the voice while she talks. Target 8-11 dB under the voice; the first Sara mixes measured 20 dB under, which reads as "no music". In the gaps the bed comes back up 4-7 dB. A soft, calm track needs a lower bed than a busy one to sit at the same distance.
+
 **Sound effects**
 - Designed edits (titles, pills, cards, counters, 3D type): every graphic that appears gets its own soft effect, and so does every transition. Pop when a word, pill or card lands; whoosh when a title or bar slides in or out, and on each zoom or whip; click on a tick, a counter or a typed word; ding or chime when something is confirmed or ticked off; a deep whoosh under a 3D title dropping in; impact or hit on the reveal.
 - Never on a punchline or its laugh, never on every caption, never on a plain cut.
@@ -50,6 +52,8 @@ agents: sound
 - More: a riser into a drop; ding or coin on a positive result or a price; glitch or rewind for a jump in time; a record scratch for a comic stop.
 - Recorded effects from the libraries sound richer than the built-in ones. Prefer short ones: under 2 s, risers up to 3 s. The engine lands each effect's peak on its time.
 - Gain `soft` under speech and on graphics, `normal` on transitions without speech, `loud` only on a wordless reveal.
+- A palette that worked (Mixkit, Sara naturopathe edits): pills, tags and counters landing: bubble pop 2357; a step or a tick: interface beep 221; the right answer: bell ding 586; the wrong one: a soft 'wrong answer' 946 (never a harsh buzzer); a correction: small vinyl scratch 710; a comic sticker: cartoon spring 736; a reveal: fairy sparkle 871 with the tunnel whoosh 1486; titles: flying swoosh 1469; cutaways and camera moves: cinematic swoosh 1481. Land each effect's peak on the frame its graphic lands, about -10 to -16 dB.
+- A counting number gets a roll: six soft clicks 110 ms apart under the count.
 
 **Trending audio** (from the researcher)
 - The researcher lists the sounds the top reels in the niche use, how many reels use each, and their tempo when measured.

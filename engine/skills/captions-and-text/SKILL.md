@@ -30,6 +30,9 @@ agents: editor, motion
 - **Punctuation:** no full stops or ellipses at the end of a caption, and no em dashes anywhere. Question and exclamation marks are fine. In series subtitles, a dialogue dash marks two speakers sharing a line.
 - **Position:** `bottom` by default (the engine keeps it clear of the app's UI); `center` when the bottom holds hands, a product or text that's already in the shot. Never over a face.
 - **Hide the caption while a title is showing the same words.**
+- **Never end a caption on a small word** (de, le, la, les, un, une, du, à, au, ton, ta, tes, mon, ma, son, pour, avec, que, qui, et, en, je, tu, ce, sur, dans, par, pas, ne, plus, mais, si): move it to the next caption (« différentes / de le solutionner », not « différentes de le / solutionner »). Same in English for "the", "a", "of", "to", "and".
+- Hide the captions while a title, a hero line, a counter or a strike-through says the same thing; bring them back on the next phrase.
+- Fix what the transcript mishears in the client's own speech before captioning: names (« Sarah » → « Sara »), and Québec French it turns into nonsense (« Je tenais de » was « J'suis tannée de », « Je peux-tu » is « J'peux-tu »).
 
 **Premise and POV lines** (skits and memes)
 - The joke's premise is on screen from frame 0 (25 of 25 top meme reels, 8 of 8 top Cluely episodes): one `on_screen_text` line of 3-12 words, small white, no box, a light shadow, lowercase or sentence case, in the style of Instagram's own text tool. Quotes for a line said to the cast ("\"can i check your chat gpt\""), "POV: ..." for a situation, a colon for a template label ("What I actually do:").
@@ -42,6 +45,8 @@ agents: editor, motion
 - Keep a title to 6 words at most, one line, and concrete: name the product, number or benefit. No colon subtitles.
 - Hold a 1-3 word hero word 0.8-1.5 s (a number in a countdown 0.5-1.0 s, a section-closing line up to 2.5 s); hold a longer title long enough to read twice, about 0.5 s plus 0.3 s per word.
 - The premium look in the references mixes faces in one title: a small italic-serif or thin lead-in, a big accent word (bold caps, a serif or a coloured script word). Put 2-4 per reel `behind_subject` in the head band (20-31% of the height) when the head fills the upper frame.
+
+- Titles and hero lines stay on one line (shrink the font to fit 950 px rather than wrap) and sit in the band above the speaker's head; a wrapped second line lands on the hair.
 - Leave about 1 s with no new text before a new section's title.
 - On silent footage, keep a title or caption up at least every 3-4 s, so muted viewers always have something to read. Leave the end card itself clean.
 
