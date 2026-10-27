@@ -34,6 +34,11 @@ agents: editor, motion
 - Hide the captions while a title, a hero line, a counter or a strike-through says the same thing; bring them back on the next phrase.
 - Fix what the transcript mishears in the client's own speech before captioning: names (« Sarah » → « Sara »), and Québec French it turns into nonsense (« Je tenais de » was « J'suis tannée de », « Je peux-tu » is « J'peux-tu »).
 
+- **No emoji, ever**, in captions, titles, pills, stickers or end cards, and no emoji-like icons (✓ ✗ 💬): they make an edit look template- or machine-made. Emphasis comes from type (a Bodoni-style italic word over a heavy condensed line), colour, the brand's own drawn marks (brush underline, hand-drawn circle or arrow, thin rule) and 3D.
+- Follow the client's brand kit to the letter when there is one: its title face in capitals and colour, its accent face for the emotional words, its caption face; check the kit's own examples (« COMMENT J'AI / ouvert / MA CLINIQUE ») and copy the hierarchy.
+- Captions on a light wall: warm white with a soft dark shadow reads; a mid-blue word in a stack does not, so keep stacks white and mark the key word with a drawn underline.
+- Transcripts invent TV credits over silence (« Sous-titrage Société Radio-Canada »): drop them; and fix the clinic's or brand's name as heard (« au Zone Plus » → « OzonePlus »).
+
 **Premise and POV lines** (skits and memes)
 - The joke's premise is on screen from frame 0 (25 of 25 top meme reels, 8 of 8 top Cluely episodes): one `on_screen_text` line of 3-12 words, small white, no box, a light shadow, lowercase or sentence case, in the style of Instagram's own text tool. Quotes for a line said to the cast ("\"can i check your chat gpt\""), "POV: ..." for a situation, a colon for a template label ("What I actually do:").
 - **Position:** 12-25% from the top over a wide; mid-frame (about 50%) over empty floor in a high-angle wide, or for a Cluely-style POV line; never over a face.

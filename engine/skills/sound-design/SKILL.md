@@ -45,15 +45,18 @@ agents: sound
 **Check the balance by measuring** (the studio's ears are the client's): render the ducked bed alone and compare it with the voice while she talks. Target 8-11 dB under the voice; the first Sara mixes measured 20 dB under, which reads as "no music". In the gaps the bed comes back up 4-7 dB. A soft, calm track needs a lower bed than a busy one to sit at the same distance.
 
 **Sound effects**
-- Designed edits (titles, pills, cards, counters, 3D type): every graphic that appears gets its own soft effect, and so does every transition. Pop when a word, pill or card lands; whoosh when a title or bar slides in or out, and on each zoom or whip; click on a tick, a counter or a typed word; ding or chime when something is confirmed or ticked off; a deep whoosh under a 3D title dropping in; impact or hit on the reveal.
-- Never on a punchline or its laugh, never on every caption, never on a plain cut.
-- Dialogue comedy: none, or 0-3 per episode (a hit on a snap zoom, a whoosh into a character intro). Memes: none unless the borrowed clip has its own.
-- Other dynamic edits: 3-6 per 30 s, each with a reason. Clean edits: none.
-- More: a riser into a drop; ding or coin on a positive result or a price; glitch or rewind for a jump in time; a record scratch for a comic stop.
-- Recorded effects from the libraries sound richer than the built-in ones. Prefer short ones: under 2 s, risers up to 3 s. The engine lands each effect's peak on its time.
-- Gain `soft` under speech and on graphics, `normal` on transitions without speech, `loud` only on a wordless reveal.
-- A palette that worked (Mixkit, Sara naturopathe edits): pills, tags and counters landing: bubble pop 2357; a step or a tick: interface beep 221; the right answer: bell ding 586; the wrong one: a soft 'wrong answer' 946 (never a harsh buzzer); a correction: small vinyl scratch 710; a comic sticker: cartoon spring 736; a reveal: fairy sparkle 871 with the tunnel whoosh 1486; titles: flying swoosh 1469; cutaways and camera moves: cinematic swoosh 1481. Land each effect's peak on the frame its graphic lands, about -10 to -16 dB.
-- A counting number gets a roll: six soft clicks 110 ms apart under the count.
+- The owner rejected the stock « UI » palette (bubble pops, bell dings, buzzers, cartoon springs, record scratches, fairy sparkles) as cheap: it is what makes an edit sound template- or machine-made. Effects are one designed family, soft and physical, built to the length of each move:
+  - **air**: a swish of air whose brightness follows the move's speed (dark as it starts, brightest at peak velocity, dark as it lands), panned with the move; for titles and cards sliding in, camera pushes, whip-zooms (0.35-0.8 s);
+  - **thump**: a felt-mallet landing, a low tone dropping in pitch with a warm body at 200-500 Hz so phone speakers hear it; for a 3D title or number settling, a step lighting up (higher and shorter for small things);
+  - **tick**: a quiet wooden knock (a pencil on a desk), never a beep; for a word locking into a list, a tracker tile landing;
+  - **brush**: a dry brush or marker stroke on paper, as long as the stroke draws; for drawn underlines, circles, strike-throughs;
+  - **turn**: a deeper, longer air pass with a soft thump where it settles; for 3D transitions (cube, card flip, slats);
+  - **swell**: a breath that opens into the moment, cut at its peak; before the end card or a reveal.
+  - The engine's built-in kinds are this family: `whoosh` is the air swish, `hit` the felt thump, `click` the wooden tick, `riser` the breath swell, `pop` a soft wooden tap, `ding` a warm low chime (sparingly). A 3D turn is a `whoosh` with a `hit` where it settles; a brush stroke is a paper or brush effect from the libraries when one fits, otherwise a soft `whoosh`. Recorded library effects can join the family when they are just as soft (air, cloth, paper, wood), never cartoon ones (bubble pops, bells, buzzers, springs, scratches, sparkles).
+- Not every graphic gets a sound: titles, 3D numbers, transitions, drawn marks and list items do; captions, labels that track a part, small badges do not. About 30-40 effects in a 90-150 s designed reel.
+- Never on a punchline or its laugh, never on every caption, never on a plain cut. Dialogue comedy: none, or 0-3 per episode. Memes: none unless the borrowed clip has its own. Clean edits: none.
+- Levels, measured: effects peak about 13-16 dB under the voice's peaks (the voice at -16 LUFS, effects around -15 to -19 dBFS); transitions are the loudest, ticks the quietest. Built quieter than that, they disappear on a phone.
+- Land each effect on its frame: an air swish starts with the move, a thump on the landing frame, a brush on the first frame of the stroke, a swell ends on the moment.
 
 **Trending audio** (from the researcher)
 - The researcher lists the sounds the top reels in the niche use, how many reels use each, and their tempo when measured.

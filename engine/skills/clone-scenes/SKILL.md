@@ -22,12 +22,12 @@ The format: the same problem, three versions of the client side by side (the qui
 
 **Direction of the eye**
 - The camera pushes to whoever speaks: zoom 1.32 on her mark in 0.45 s, a slow drift to 1.37 during the line, back to the wide (1.03) on the recap. The two who listen dim to about 76%.
-- A verdict tag pops over the speaker's head 0.15 s into her line: ✗ red « À côté de la plaque », ~ ochre « Pas mauvais », ✓ green « La meilleure approche ». After her line the tag shrinks to its icon badge, so three full tags never collide; the recap shows the three badges.
+- A verdict tag pops over the speaker's head 0.15 s into her line, in words and colour only: red « À côté de la plaque », ochre « Pas mauvais », green « La meilleure approche » (no ✗ / ✓ / emoji glyphs: they read as a template; a hand-drawn tick or cross stroked on is fine). After her line the tag shrinks to a small coloured dot, so three full tags never collide; the recap shows the three.
 - Each topic opens on a numbered title card over the wide (1 s), then the three lines, then a 0.85 s recap.
 - The hook: the client alone says the line; on its key word (« trois ») the two other clones fade in from a flash while the camera pulls out from 1.34 to the wide.
 - A topic's list (« digestion, sommeil, stress ») becomes pills next to the speaker, one per word. One quick cutaway of the quick fix (coffee pouring after « un café de plus ») is funny; more breaks the device.
 
 **Sound**
-- A light, quirky bed about 10 dB under the voice. Effects: a soft 'wrong answer' (Mixkit 946) on ✗, a pop (2357) on ~, a bell ding (586) on ✓, a whoosh (1481) on each camera move, sparkle (871) + deep whoosh (1486) on the reveal.
+- A light bed about 10 dB under the voice. Effects from the designed family (see sound-design): a short air swish on each camera move, a soft felt thump when a verdict lands (lower and duller for the wrong one, brighter for the right one), a breath swell into the reveal. No cartoon sounds (buzzers, dings, boings, record scratches): the owner rejected that palette outright.
 
 **Ending**: a question card (« Pourquoi la 3e approche ? ») and a push into the client's own story on another set, then the call to action.

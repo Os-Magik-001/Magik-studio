@@ -1,5 +1,5 @@
-// Sound effects. Six are synthesized here (no licensing questions, short and subtle by
-// design: whooshes, pops, hits); the sound designer also picks recorded ones from the
+// Sound effects. Six are synthesized here (no licensing questions, soft and physical by design:
+// air, felt thumps, a wooden tick, a breath swell); the sound designer also picks recorded ones from the
 // libraries (sfx/*.json, built by scripts/sound-catalog.ts, and the studio's Drive libraries).
 
 import { createWriteStream } from "node:fs";
@@ -34,14 +34,14 @@ export type SfxEntry = {
 
 export const BUILT_IN: SfxEntry[] = (
   [
-    ["whoosh", "Soft whoosh", "transitions and fast moves"],
-    ["pop", "Pop", "text or a graphic appearing"],
-    ["hit", "Low hit", "a big reveal or punchline"],
-    ["riser", "Riser", "a build into a drop, peaking at its end"],
-    ["click", "Click", "UI and typing"],
-    ["ding", "Ding", "a positive result"],
+    ["whoosh", "Air swish", "titles, cards and camera moves; brightest at the middle of the move"],
+    ["pop", "Soft tap", "something small appearing (a word in a list, a tile)"],
+    ["hit", "Felt thump", "a 3D title or number landing, a reveal"],
+    ["riser", "Breath swell", "into a reveal or the end card, peaking at its end"],
+    ["click", "Wooden tick", "a step, a counter, a word locking in"],
+    ["ding", "Warm low chime", "a positive result, sparingly"],
   ] as const
-).map(([kind, title, use]) => ({ id: kind, title: `${title} (built-in): ${use}`, library: "studio", category: kind, tags: [kind], kind, duration: { whoosh: 0.55, pop: 0.12, hit: 0.9, riser: 1.8, click: 0.04, ding: 0.9 }[kind], url: "", page: "", license: "Synthesized by the engine" }));
+).map(([kind, title, use]) => ({ id: kind, title: `${title} (built-in): ${use}`, library: "studio", category: kind, tags: [kind], kind, duration: { whoosh: 0.55, pop: 0.14, hit: 0.8, riser: 1.8, click: 0.09, ding: 0.9 }[kind], url: "", page: "", license: "Synthesized by the engine" }));
 
 export async function loadSfxCatalog(extra: SfxEntry[] = []): Promise<SfxEntry[]> {
   const library = await readFile(new URL("../sfx/mixkit.json", import.meta.url), "utf8")
@@ -75,51 +75,87 @@ function noise(seed: number) {
   };
 }
 
-// Resonant band-pass (state-variable filter) whose center can move per sample.
-function bandpass() {
+// Pink noise (1/f, Paul Kellet's filter): air and cloth sound pink, white noise sounds like hiss.
+function pink(seed: number) {
+  const white = noise(seed);
+  let b0 = 0, b1 = 0, b2 = 0;
+  return () => {
+    const w = white();
+    b0 = 0.99765 * b0 + w * 0.099046;
+    b1 = 0.963 * b1 + w * 0.2965164;
+    b2 = 0.57 * b2 + w * 1.0526913;
+    return (b0 + b1 + b2 + w * 0.1848) * 0.2;
+  };
+}
+
+// State-variable filter whose cutoff can move per sample: low-pass and band-pass outputs.
+function svf() {
   let low = 0;
   let band = 0;
-  return (x: number, freq: number, q = 1.2) => {
+  return (x: number, freq: number, q = 0.9) => {
     const f = 2 * Math.sin((Math.PI * Math.min(freq, RATE / 6)) / RATE);
     low += f * band;
     const high = x - low - band / q;
     band += f * high;
-    return band;
+    return { low, band };
   };
 }
 
+// The studio's effects are one soft, physical family sized to the move: air that brightens with
+// the move's speed, a felt thump with a body phones can play, a wooden tick, a breath that
+// swells into the moment. No bubble pops, bells or buzzers: those read as template edits.
 function synth(kind: Kind): Float32Array {
-  const dur = { whoosh: 0.55, pop: 0.12, hit: 0.9, riser: 1.8, click: 0.04, ding: 0.9 }[kind];
+  const dur = { whoosh: 0.55, pop: 0.14, hit: 0.8, riser: 1.8, click: 0.09, ding: 0.9 }[kind];
   const n = Math.floor(dur * RATE);
   const out = new Float32Array(n);
-  const rnd = noise(kind.length * 977);
-  const bp = bandpass();
+  const air = pink(kind.length * 977);
+  const rnd = noise(kind.length * 131);
+  const f1 = svf(), f2 = svf(), f3 = svf();
+  let phase = 0;
   for (let i = 0; i < n; i++) {
     const t = i / RATE;
     const p = t / dur;
     let v = 0;
     if (kind === "whoosh") {
-      // Noise swept up then down through a band, swelling in the middle.
-      const env = Math.sin(Math.PI * p) ** 2;
-      v = bp(rnd(), 300 + 3200 * Math.sin(Math.PI * p), 1.6) * env * 1.6;
-    } else if (kind === "pop") {
-      const f = 900 - 500 * p;
-      v = Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 38) * 0.8;
+      // Air past the camera: dark as the move starts, brightest at peak speed, dark as it lands.
+      const speed = Math.sin(Math.PI * p) ** 1.6;
+      const x = air();
+      v = f1(x, 230 + 2400 * speed ** 1.3).low * (0.08 + speed) + f2(x, 220).low * speed * 0.35;
     } else if (kind === "hit") {
-      // A low thump with a short noise transient on top.
-      const f = 70 * Math.exp(-t * 3) + 38;
-      v = Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 4.5) * 0.9 + rnd() * Math.exp(-t * 60) * 0.35;
+      // A felt-mallet landing: a low tone dropping in pitch, softly saturated so a phone plays it,
+      // a warm body around 300 Hz and a muffled transient.
+      const f = 58 + 52 * Math.exp(-t / 0.045);
+      phase += (2 * Math.PI * f) / RATE;
+      const env = (1 - Math.exp(-t / 0.002)) * Math.exp(-t / 0.13);
+      const body = f3(f1(air(), 320, 0.8).band, 900).low;
+      v = (Math.tanh(1.8 * Math.sin(phase)) / Math.tanh(1.8)) * env + body * Math.exp(-t / 0.05) * 1.6 + f2(air(), 1400).low * Math.exp(-t / 0.008) * 0.5;
+    } else if (kind === "pop") {
+      // A soft tap (a fingertip on a wooden box), for something small appearing.
+      const f = 380 + 140 * Math.exp(-t / 0.02);
+      phase += (2 * Math.PI * f) / RATE;
+      v = Math.sin(phase) * Math.exp(-t / 0.025) * 0.7 + f1(rnd(), 1500).low * Math.exp(-t / 0.006) * 0.3;
     } else if (kind === "riser") {
-      const env = p ** 2;
-      v = (bp(rnd(), 400 + 5000 * p ** 2, 2) * 1.2 + Math.sin(2 * Math.PI * (200 + 600 * p ** 2) * t) * 0.25) * env;
+      // A breath that opens into the moment: air getting brighter over a soft open fifth.
+      const rise = p ** 2.2;
+      const tone = (Math.sin(2 * Math.PI * 110 * t) + 0.6 * Math.sin(2 * Math.PI * 165 * t) + 0.35 * Math.sin(2 * Math.PI * 220.5 * t)) * rise ** 1.6 * 0.12;
+      v = f1(air(), 200 + 3000 * rise).low * rise + tone;
     } else if (kind === "click") {
-      v = rnd() * Math.exp(-t * 900) * 0.7 + Math.sin(2 * Math.PI * 2400 * t) * Math.exp(-t * 400) * 0.3;
+      // A quiet wooden tick, never a beep.
+      v = f2(f1(rnd(), 2400, 1.2).band, 3600).low * Math.exp(-t / 0.006) + Math.sin(2 * Math.PI * 1008 * t) * Math.exp(-t / 0.011) * 0.35;
     } else if (kind === "ding") {
-      v = (Math.sin(2 * Math.PI * 1318.5 * t) * 0.6 + Math.sin(2 * Math.PI * 2637 * t) * 0.25) * Math.exp(-t * 5);
+      // A warm, low chime (a soft mallet on wood), not a bell.
+      v = f3(Math.sin(2 * Math.PI * 523.25 * t) * Math.exp(-t * 7) + 0.35 * Math.sin(2 * Math.PI * 784 * t) * Math.exp(-t * 11), 2200).low * Math.min(1, t / 0.006);
     }
-    // 4 ms fade-in avoids a click at the start.
-    out[i] = v * Math.min(1, t / 0.004);
+    out[i] = v;
   }
+  // a 4 ms fade-in and a short fade-out avoid clicks; then a steady peak (-3 dBFS)
+  let peak = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / RATE;
+    out[i] *= Math.min(1, t / 0.004) * Math.min(1, (dur - t) / (kind === "riser" ? 0.004 : 0.03));
+    peak = Math.max(peak, Math.abs(out[i]));
+  }
+  if (peak > 0) for (let i = 0; i < n; i++) out[i] *= 0.708 / peak;
   return out;
 }
 
@@ -141,7 +177,7 @@ function wav(samples: Float32Array) {
   return buf;
 }
 
-const DIR = path.join(os.tmpdir(), "magik-engine-sfx-v1");
+const DIR = path.join(os.tmpdir(), "magik-engine-sfx-v3");
 
 // The effect's WAV file, synthesized once per machine.
 export async function sfxFile(kind: Kind) {

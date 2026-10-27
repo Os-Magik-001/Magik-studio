@@ -23,8 +23,8 @@ Use with podcast-clip and talking-head when the footage is one locked-off 4K wid
 **Graphics that carry the structure**
 - A step tracker at the top (three pills with numbers; the current step in the accent colour, done steps ticked) for a method in steps; it ends where the call to action starts.
 - Counters for the client's numbers (1 h 30, +7 jours, 12 semaines, 15 ans, 35 ans, −30 lb), one card at a time under the tracker, 1.6-2 s, a pop on landing; a counting number gets a roll of clicks.
-- A strike-through for a correction (« RÉGIME » struck in red, then « STRUCTURE ALIMENTAIRE » in green) with a small vinyl scratch.
-- A playful sticker for a local expression (« crise de bacon » 😤) with a spring sound and a stronger zoom.
+- A strike-through for a correction (« RÉGIME » struck, then « STRUCTURE ALIMENTAIRE ») drawn as a brush stroke, with a dry brush sound.
+- A local expression (« crise de bacon ») gets a stronger zoom and the words on screen with a hand-drawn circle; never an emoji or a sticker icon.
 - A name card the first time she appears (her name and « Naturopathe · 15 ans d'expérience »), lower left, 3 s.
 - Titles and hero lines sit in the band above her head (y 220-480 on 1080 x 1920) and always fit on one line.
 

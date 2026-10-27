@@ -35,5 +35,17 @@ formats: all
   - Keep a single filler when it's the only bridge between thoughts, or carries the speaker's warmth.
 - Always keep negations, numbers, names and deliberate repetition, even when tightening hard.
 
+**Scripted sessions with many takes** (a client reading a script, a director calling « parfait »: OzonePlus, October 2026, up to 30 takes of one line)
+- The take the director approves is followed by « parfait » (or « ok, next »): prefer it; otherwise the last complete take.
+- A whole session's transcript blurs repeated takes together: a line's first word can sit seconds before the rest (it belongs to an earlier attempt), a burst of a line squeezed into a few hundredths of a second is not a take, and asides (« Ah, t'as vraiment chaud », « Ah, merde ») hide inside long stretches the transcriber smoothed over.
+- So hear each chosen take again: transcribe each take on its own (a 2 s window around it, all windows in one run), find the line's words there (the best complete match; if the line is said twice, the later one), and cut just before the first word and after the last, on the quiet. Then lay all the lines end to end and transcribe that once more: in context the transcriber hears asides and repeats it skipped on a take alone; move an edge only when a pause separates the extra words from the line.
+- When a take still won't separate (a false start and the clean line in one breath), set its edges by ear (speech onsets measured on the audio) rather than trusting the transcript.
+- A slip in the middle of an otherwise good take (« ...n'est pas nécessairement... Ah, merde ! L'endroit d'où provient le problème ») can be cut out, with the take continuing on the other camera across the cut; lift the quieter half to match.
+- Then read the transcript of the finished voice track against the script before rendering: it is the only check that catches a line said twice, a missing first word or an aside left in.
+
+**Two cameras**
+- Line the second camera up by its sound (cross-correlation of the two tracks, then the waveform around the peak; check the offset at three points along the take: within a few milliseconds). The sound always comes from the main camera's take (the lav), whatever camera is on screen.
+- Switch camera on every line and at the joins inside a split take; never the same framing on the same camera twice in a row. A camera that stopped recording early cannot cover the end of the session: check its coverage before choosing it.
+
 **Flag what you couldn't fix**
 - If no clean take of a line exists, use the best one and say which line in `open_questions`.
