@@ -3,7 +3,7 @@ name: aslaniedits-style
 description: The @aslaniedits look (Milad Aslani, motion designer): the key line of a talking shot as a glowing stack (black brush word on a yellow pill, white line with one bold italic word, a huge glowing yellow word), pixel blocks and swooshes, marks around the head, white flash zooms; for interviews and talking promos, music that stops under the words
 formats: social_short, ad
 style: dynamic
-when: aslaniedits, aslani, dcs61-6mu81
+when: aslaniedits, aslani, dcs61-6mu81, de9dkkssi7a
 agents: editor, sound, motion
 ---
 
@@ -28,6 +28,15 @@ Use this when the brief names @aslaniedits or his reel (instagram.com/reel/Dcs61
   - a faint glowing ring behind
 - **Marks around the head:** two chunky glowing yellow punctuation marks ("?" in the reference) pop in after the big word, one in front left and one right, tucked behind the hair (the person is cut out over it). They bob gently.
 - **Music:** about 90 BPM hip-hop. The drop lands on the flash into the "after".
+
+## The second reference (instagram.com/reel/De9DKKssi7a, 8.1 s, measured Oct 28)
+A man on a stool in a navy studio says three lines; each line gets its own full-frame world and colour.
+- **0–2.0 s, blue:** a tall glass phone frame stands behind him (he is cut out in front); « You are / Growing » writes into its top, a small glass arrow pill at left, a glass badge at top right, a white swoosh arcing around the frame. Out on a blurred whip at 2.0 s.
+- **2.2–3.4 s, red:** a dark glass app icon with a white arrow; on « aren't » the arrow turns down and red, a red chart line falls behind it, the background warms to deep red.
+- **3.4–5.2 s, green:** a push into a 3D moss sphere inside glowing rings; « More customers mean more tasks » builds word by word with yellow-green pixel blocks; task cards with priority tags (« High », « Medium ») fly out and orbit the sphere.
+- **5.2–5.4 s:** a grey, desaturated flash frame back out.
+- **6.2–8.0 s, blue again:** the studio wide, « more operational » small, then « costs » huge, white, out of a blur, sitting behind his head, a small coin icon popping beside it.
+- Lessons: one colour world per line makes 8 s feel like three scenes; the object changes meaning on the word (the arrow turns red on « aren't »); the big word returns behind the head for the payoff. In our work the coin becomes a typographic mark: no emoji.
 
 ## For an interview or talking promo (studio recipe, Oct 2026 Loadedfordays v2)
 - **Structure:** alternate the answers (voice only, no music under any word) with music sections of whole bars cut on the beat over the B-roll.

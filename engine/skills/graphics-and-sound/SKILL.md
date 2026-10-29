@@ -13,12 +13,12 @@ agents: editor, sound
   - **`karaoke_box`:** calm explainers and podcasts. Spoken words light up.
   - **`classic`:** ads that need maximum legibility.
   - **`minimal`:** cinematic pieces with little speech.
-- `highlight_words`: the product name, numbers, the promise and the payoff. Keep it to 5–12 words, so the highlight still means something.
+- `highlight_words`: the product name, numbers, the promise and the payoff. Keep it to 3–4 words per reel (the owner, Oct 28: more reads as machine-made), so the highlight still means something.
 - Highlight color: the brand's accent color if it reads on video; otherwise a warm yellow (#FFD84D). Keep caption text white.
 - Use `manual` only for footage with no speech that still needs on-screen lines, and `off` for pure montage.
 
 **Text you place**
-- **Hero words** (`hero`, 1–3 words): the big idea of each 2–4s, shown as it's said, `pop` in, held 1.5–2.5s. Use one at a time.
+- **Hero words** (`hero`, 1–3 words): the big idea of each 2–4s, shown as it's said, `pop` in, held 0.8–1.5s (the measured references hold 0.5–1.5s). Use one at a time.
 - **`behind_subject`:** put a hero word or title behind the person when a person clearly fills the frame and their head sits in the upper half. This is the premium look; use it for 2–4 key moments, not every title.
   - The head should overlap the bottom 25–30% of the letters, never hide the middle.
   - Use `top` when the head is at about 25–40% of the frame height, `center` when it's lower.
@@ -33,7 +33,7 @@ agents: editor, sound
 - **`follow_pill`:** on "follow me", or in the last 2s of organic reels.
 - **`progress_bar`:** on reels over 30s that people should finish (tutorials, lists). Span the whole video.
 - **`counter`:** on a number that proves something: views, raw length against final length ("1:16|0:55"), a price drop. Hold it 1.5–3s.
-- **`emoji`:** at most 2 per video, on an emotional beat, placed beside the face, never on it.
+- **No emoji, ever** (the owner rejected them in captions and graphics): use typography marks instead (a glowing « ! » or « ? » set in the title font).
 - **`circle`:** to point at something in the frame as it's named.
 - Don't stack more than two graphics at once, and don't cover the face.
 
@@ -56,7 +56,7 @@ agents: editor, sound
 - For montage, place cuts on beats: beat times are `start + firstBeat + n × 60 / bpm`, measured in the track and shifted to the video timeline.
 - No music on podcast clips unless asked, or when the voice is hard to hear.
 
-**Sound effects** (one soft effect per graphic that appears)
+**Sound effects** (about 10 per 40–60 s reel, each tied to an object's move, never one per graphic: see motion-sfx-sync)
 - `pop` when a hero word, pill, card or graphic appears (not on every caption).
 - `whoosh` on slides, zoom transitions, whips and big reframes, and when a title or bar leaves.
 - `click` on typed text, ticks, counters and UI.

@@ -50,12 +50,12 @@ agents: sound
   - **thump**: a felt-mallet landing, a low tone dropping in pitch with a warm body at 200-500 Hz so phone speakers hear it; for a 3D title or number settling, a step lighting up (higher and shorter for small things);
   - **tick**: a quiet wooden knock (a pencil on a desk), never a beep; for a word locking into a list, a tracker tile landing;
   - **brush**: a dry brush or marker stroke on paper, as long as the stroke draws; for drawn underlines, circles, strike-throughs;
-  - **turn**: a deeper, longer air pass with a soft thump where it settles; for 3D transitions (cube, card flip, slats);
+  - **turn**: a deeper, longer air pass with a soft thump where it settles; for a camera travelling between objects in a 3D world, or a dive;
   - **swell**: a breath that opens into the moment, cut at its peak; before the end card or a reveal.
   - The engine's built-in kinds are this family: `whoosh` is the air swish, `hit` the felt thump, `click` the wooden tick, `riser` the breath swell, `pop` a soft wooden tap, `ding` a warm low chime (sparingly). A 3D turn is a `whoosh` with a `hit` where it settles; a brush stroke is a paper or brush effect from the libraries when one fits, otherwise a soft `whoosh`. Recorded library effects can join the family when they are just as soft (air, cloth, paper, wood), never cartoon ones (bubble pops, bells, buzzers, springs, scratches, sparkles).
-- Not every graphic gets a sound: titles, 3D numbers, transitions, drawn marks and list items do; captions, labels that track a part, small badges do not. About 30-40 effects in a 90-150 s designed reel.
+- Not every graphic gets a sound: titles, 3D numbers, transitions, drawn marks and list items do; captions, labels that track a part, small badges do not. About 10 effects in a 40–60 s reel (the owner, Oct 28), each tied to an object's move; never one per graphic.
 - Never on a punchline or its laugh, never on every caption, never on a plain cut. Dialogue comedy: none, or 0-3 per episode. Memes: none unless the borrowed clip has its own. Clean edits: none.
-- Levels, measured: effects peak about 13-16 dB under the voice's peaks (the voice at -16 LUFS, effects around -15 to -19 dBFS); transitions are the loudest, ticks the quietest. Built quieter than that, they disappear on a phone.
+- Levels, measured: effects peak at -8 to -16 dBFS with the voice at -16 LUFS (at -15 to -19 the owner could not hear them, Oct 27), 4–5 dB lower under speech, and the effects bus ducks 8 dB under any voice (12 ms attack). Transitions are the loudest, ticks the quietest. No impact lands on a spoken word: under speech, move the cue to the nearest breath (motion-sfx-sync).
 - Land each effect on its frame: an air swish starts with the move, a thump on the landing frame, a brush on the first frame of the stroke, a swell ends on the moment.
 
 **Trending audio** (from the researcher)

@@ -17,8 +17,8 @@ agents: motion
 - One graphic at a time. Leave the payoff shot clean.
 
 **Placement**
-- Keep clear of the platform's interface: the top 210 px, the bottom 480 px and the right 150 px in the lower half.
+- Keep clear of the platform's interface: the top 220 px, the bottom 400 px and the right 140 px from y 900 to 1700 (text-placement-and-legibility; ads: the top 14% and bottom 35%).
 - 90 px side margins. Nothing over faces or the product's key detail.
 
 **Motion language**
-- One family of moves for the whole video (all slide-ups, or all scale-ins). No glows, lens flares, particle bursts, shine sweeps or bouncy springs.
+- One family of moves for the whole video (all slide-ups, or all scale-ins). No lens flares, particle bursts or bouncy springs. Glow is allowed on one payoff word per stack, in the accent colour (approved: AD1's yellow glow, the @aslaniedits stack); one light sweep per title at most.

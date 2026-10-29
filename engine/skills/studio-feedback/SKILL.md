@@ -24,7 +24,7 @@ These rules come from real rounds of feedback on delivered videos (October 2026)
 **Cuts and transitions**
 - Hard cuts are the default. A transition marks a change of place or scene, nothing else.
 - Approved: a zoom-through (a radial zoom blur from a subject into the matching subject of the next shot); a push-through (push and blur, a 3-frame blend, settle); cutting on the camera's own whip pans; a door or object swinging into the lens used as a wipe; one speed ramp per video; a freeze-frame character intro.
-- Rejected: 3D card-swing transitions ("the 3D transitions are shit"), 3D walk-through endings, flashes and bounces.
+- Rejected: 3D card-swing, cube, card-flip and slats transitions ("the 3D transitions are shit", "PowerPoint"), 3D walk-through endings, bounces. Flashes were rejected for Prospera (its script forbade them); a 1-frame white flash zoom is approved in the @aslaniedits style (Loadedfordays v2).
 - Punch-ins change size by 0.3 or more (1.0 to 1.3-2.0). Smaller changes (1.0, 1.1, 1.15) read as glitches.
 - A cold open can put one clip's line over another clip's picture when it makes a stronger hook (an opening clap, a reaction).
 
@@ -37,7 +37,7 @@ These rules come from real rounds of feedback on delivered videos (October 2026)
 **Motion design and 3D**
 - The owner wants rich motion design ("make better motion designs", "more 3D motion designs"), but each piece serves the story: a glass wishlist that comes back for every ask and gets ticked off in the reveal, a stat card that counts, a gauge, check pills, a call-to-action pill.
 - 3D that read as premium: chrome or black-lacquer extruded letters, gold letters dropping in one after another with a soft pop and the payoff word slamming with a camera knock, buildings with lit window facades and a warm fog. Plain dark boxes with gold bands looked cheap.
-- Every graphic that appears gets a soft sound effect (this owner's preference beats the "sparse effects" rule), never on a joke or a punchline.
+- Sound effects: about 10 per 40–60 s reel, each tied to an object's move (a landing, a strike, a light), varied (never the same library effect as the last delivery), audible (peaks -8 to -16 dBFS) and never on a word, a joke or a punchline (the owner, Oct 27–28; this replaces the older « one per graphic »).
 
 **Colour**
 - Natural by default: "natural video grading is fine". No warm grade and no vignette unless asked.
