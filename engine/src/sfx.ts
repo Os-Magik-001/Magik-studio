@@ -52,13 +52,21 @@ export async function loadSfxCatalog(extra: SfxEntry[] = []): Promise<SfxEntry[]
 
 // Best matches for some words (title, category and tags), an optional built-in kind and a
 // longest length. Recorded effects come before the engine's own on a tie: they sound richer.
+// Plurals match singulars: a "Whooshes" folder answers "whoosh".
+const stem = (w: string) => w.replace(/(es|s)$/, "");
+
 export function searchSfx(entries: SfxEntry[], q: { words?: string; kind?: Kind; maxSeconds?: number }, limit = 15) {
-  const asked = (q.words ?? "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+  const asked = (q.words ?? "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1).map(stem);
   return entries
     .filter((e) => (!q.kind || e.kind === q.kind) && (!q.maxSeconds || e.duration <= q.maxSeconds))
     .map((e) => {
       const hay = `${e.title} ${e.category} ${e.tags.join(" ")}`.toLowerCase();
-      const score = asked.reduce((a, w) => a + (e.tags.includes(w) || e.category === w ? 3 : hay.includes(w) ? 1 : 0), 0) - (e.library === "studio" ? 0.5 : 0);
+      const tags = new Set([...e.tags, ...e.category.toLowerCase().split(/[^a-z0-9]+/)].map(stem));
+      const match = asked.reduce((a, w) => a + (tags.has(w) ? 3 : hay.includes(w) ? 1 : 0), 0);
+      // At equal relevance the studio's own Drive libraries come first (sound-design skill),
+      // the synthesized built-ins last.
+      const own = e.url.startsWith("drive:") && (match > 0 || !asked.length) ? 0.5 : 0;
+      const score = match + own - (e.library === "studio" ? 0.5 : 0);
       return { entry: e, score };
     })
     .filter((m) => m.score > 0 || !asked.length)

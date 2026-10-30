@@ -25,7 +25,7 @@ agents: sound
 - Under speech, prefer instrumental beds without a busy lead melody.
 - The track must carry the video: from where it starts to its end, at least as long as the part it plays under, or lined up so it ends with the video.
 - Credit-free libraries first: the studio's picks, FreePD and the studio's Drive libraries, then Mixkit. Use Incompetech (CC BY) only when it is clearly the best fit; its credit line then goes in the post.
-- Mixkit is being phased out: its terms forbid scripts that download its library, so its catalogue is frozen and will be replaced by a library the studio holds (the Sonniss GDC effects). Until then, a Mixkit effect is still better than a synthesized one; for music, prefer the other libraries.
+- Effects: the Sonniss GDC library first (the studio's Drive: recorded by professional sound designers, grouped as whooshes, impacts, risers, bass drops, transitions, interface, paper and cloth, objects and foley); Mixkit only for a kind of sound Sonniss doesn't have yet; the synthesized built-ins last. Mixkit is being phased out (its terms forbid scripts that download its library), so its catalogue is frozen; for music, prefer the other libraries.
 - Mixkit music is licensed for the web and social media (posts, ads, YouTube), not TV, radio or CDs. For a TV spot use FreePD, Incompetech or the studio's own libraries.
 
 **Lining it up with the cut** (`align`)
