@@ -4,18 +4,14 @@
 //   music/freepd.json       FreePD, CC0. Only tracks listed on freepd.com's own pages (the
 //                           archive.org mirror also holds files from elsewhere).
 //   music/incompetech.json  Kevin MacLeod, CC BY 4.0: the post must credit the track.
-//   music/mixkit.json       Mixkit Stock Music Free License: web and social media, ads and
-//                           podcasts; not TV, radio, CDs or games.
-//   sfx/mixkit.json         Mixkit Sound Effects Free License: any project, never resold alone.
 //
-//   node scripts/sound-catalog.ts                  all of them
-//   node scripts/sound-catalog.ts freepd mixkit    some of them
+//   node scripts/sound-catalog.ts                  both of them
+//   node scripts/sound-catalog.ts freepd           one of them
 //
 // Pages are fetched one at a time with a pause, like a person browsing.
 
 import { writeFile } from "node:fs/promises";
 import { moodOf, slug, type Track } from "../src/music.ts";
-import type { SfxEntry } from "../src/sfx.ts";
 
 const UA = { "user-agent": "MagikStudio-catalog/1.0 (+https://www.magikmanagement.com)" };
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -31,8 +27,6 @@ async function get(url: string, tries = 3): Promise<string> {
   }
 }
 
-const decode = (s: string) =>
-  s.replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
 const seconds = (clock: string) => clock.split(":").reduce((a, n) => a * 60 + Number(n), 0);
 
 async function save(file: string, entries: unknown[]) {
@@ -135,107 +129,11 @@ async function incompetech() {
 
 // ---------------------------------------------------------------- Mixkit
 
-type Card = { id: string; url: string; title: string; author: string; tags: string[]; duration: number };
+// Mixkit (music/mixkit.json, sfx/mixkit.json) is no longer rebuilt here: its terms (mixkit.co/terms,
+// 9.10) forbid scripts or bots that mass-download items or scrape the library. Those two catalogs stay
+// as they are until a library the studio holds itself replaces them.
 
-function cards(html: string): Card[] {
-  return html
-    .split('class="item-grid__item"')
-    .slice(1)
-    .flatMap((c) => {
-      const id = c.match(/data-audio-player-item-id-value="(\d+)"/)?.[1];
-      const url = c.match(/data-audio-player-preview-url-value="([^"]+)"/)?.[1];
-      const title = c.match(/item-grid-card__title"[^>]*>\s*([\s\S]*?)\s*</)?.[1];
-      if (!id || !url || !title) return [];
-      return [{
-        id,
-        url,
-        title: decode(title),
-        author: decode(c.match(/item-grid-music-preview__author"[^>]*>\s*by ([^<]+)</)?.[1] ?? ""),
-        tags: [...c.matchAll(/meta-links__link"[^>]*>([^<]+)<\/a>/g)].map((m) => decode(m[1])),
-        duration: seconds(c.match(/data-test-id="duration"[^>]*>\s*([\d:]+)/)?.[1] ?? "0"),
-      }];
-    });
-}
-
-// Every card on a listing, page after page, until a page adds nothing new.
-async function crawl(path: string, into: Map<string, Card & { pages: string[] }>) {
-  for (let n = 1; n <= 20; n++) {
-    const page = `https://mixkit.co${path}${n > 1 ? `?page=${n}` : ""}`;
-    const found = cards(await get(page).catch(() => ""));
-    let fresh = 0;
-    for (const card of found) {
-      const known = into.get(card.id);
-      if (known) known.tags = [...new Set([...known.tags, ...card.tags])];
-      else {
-        into.set(card.id, { ...card, pages: [`https://mixkit.co${path}`] });
-        fresh++;
-      }
-    }
-    await pause(900);
-    if (!found.length || !fresh) break;
-  }
-}
-
-async function mixkit() {
-  const index = await get("https://mixkit.co/free-stock-music/");
-  const genres = [...new Set([...index.matchAll(/href="\/free-stock-music\/([a-z0-9-]+)\/"/g)].map((m) => m[1]))];
-  const found = new Map<string, Card & { pages: string[] }>();
-  for (const g of genres) await crawl(`/free-stock-music/${g}/`, found);
-  const out: Track[] = [...found.values()].map((c) => ({
-    id: `mixkit-${c.id}`,
-    title: c.title,
-    artist: c.author || "Mixkit",
-    library: "mixkit",
-    mood: moodOf(`${c.title} ${c.tags.join(" ")}`),
-    tags: c.tags.map((t) => t.toLowerCase()),
-    duration: c.duration,
-    url: c.url,
-    page: c.pages[0],
-    license: "Mixkit Stock Music Free License (web and social media; not TV, radio, CDs or games)",
-  }));
-  await save("music/mixkit.json", out.sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true })));
-}
-
-// The effect categories a short-form edit uses, and the built-in effect each falls back to.
-const SFX_CATEGORIES: Record<string, SfxEntry["kind"]> = {
-  whoosh: "whoosh", woosh: "whoosh", swoosh: "whoosh", swish: "whoosh", sweep: "whoosh", transition: "whoosh", zoom: "whoosh", slide: "whoosh", spin: "whoosh", whip: "whoosh",
-  swell: "riser", cinematic: "riser", "suspense-music": "riser",
-  impact: "hit", hit: "hit", boom: "hit", thud: "hit", punch: "hit", drop: "hit", explosion: "hit", cymbal: "hit", stomp: "hit", drum: "hit",
-  pop: "pop", bubbles: "pop", balloon: "pop", cartoon: "pop", funny: "pop", cute: "pop", jump: "pop",
-  click: "click", tap: "click", type: "click", typewriter: "click", keyboard: "click", interface: "click", camera: "click", mouse: "click", laptop: "click", technology: "click", "high-tech": "click", beep: "click",
-  ding: "ding", bell: "ding", chimes: "ding", correct: "ding", win: "ding", notification: "ding", alerts: "ding", coin: "ding", money: "ding", sparkle: "ding", magic: "ding", "game-show": "ding",
-  glitch: null, static: null, "tape-machine": null, rewind: null, "dj-record-scratch": null, wrong: null, error: null, lose: null, buzzer: null,
-  applause: null, clapping: null, cheer: null, crowd: null, laugh: null, gasp: null, wow: null, countdown: null, heartbeat: null, intro: null, "phone-ring": null, phone: null, fireworks: null, party: null,
-};
-
-async function sfx() {
-  const found = new Map<string, Card & { pages: string[] }>();
-  const category = new Map<string, string>();
-  for (const cat of Object.keys(SFX_CATEGORIES)) {
-    const before = new Set(found.keys());
-    await crawl(`/free-sound-effects/${cat}/`, found);
-    for (const id of found.keys()) if (!before.has(id)) category.set(id, cat);
-  }
-  // Longer "effects" (crowd beds, suspense music) are music, not effects: left out.
-  const out: SfxEntry[] = [...found.values()].filter((c) => c.duration > 0 && c.duration <= 30).map((c) => {
-    const cat = category.get(c.id) ?? "misc";
-    return {
-      id: `mixkit-sfx-${c.id}`,
-      title: c.title,
-      library: "mixkit",
-      category: cat,
-      tags: [...new Set([cat, ...c.tags.map((t) => t.toLowerCase())])],
-      kind: SFX_CATEGORIES[cat] ?? null,
-      duration: c.duration,
-      url: c.url,
-      page: c.pages[0],
-      license: "Mixkit Sound Effects Free License",
-    };
-  });
-  await save("sfx/mixkit.json", out.sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true })));
-}
-
-const jobs = { freepd, incompetech, mixkit, sfx };
+const jobs = { freepd, incompetech };
 const asked = process.argv.slice(2).filter((a): a is keyof typeof jobs => a in jobs);
 for (const name of asked.length ? asked : (Object.keys(jobs) as (keyof typeof jobs)[])) {
   console.log(`building ${name}…`);

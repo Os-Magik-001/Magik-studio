@@ -24,7 +24,8 @@ agents: sound
 - The brand's music mood and the client's earlier videos come first. A series keeps its theme, so every episode sounds like the show.
 - Under speech, prefer instrumental beds without a busy lead melody.
 - The track must carry the video: from where it starts to its end, at least as long as the part it plays under, or lined up so it ends with the video.
-- Credit-free libraries first: the studio's picks, FreePD, Mixkit and the studio's Drive libraries. Use Incompetech (CC BY) only when it is clearly the best fit; its credit line then goes in the post.
+- Credit-free libraries first: the studio's picks, FreePD and the studio's Drive libraries, then Mixkit. Use Incompetech (CC BY) only when it is clearly the best fit; its credit line then goes in the post.
+- Mixkit is being phased out: its terms forbid scripts that download its library, so its catalogue is frozen and will be replaced by a library the studio holds (the Sonniss GDC effects). Until then, a Mixkit effect is still better than a synthesized one; for music, prefer the other libraries.
 - Mixkit music is licensed for the web and social media (posts, ads, YouTube), not TV, radio or CDs. For a TV spot use FreePD, Incompetech or the studio's own libraries.
 
 **Lining it up with the cut** (`align`)

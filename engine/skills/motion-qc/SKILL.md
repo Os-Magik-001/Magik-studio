@@ -33,7 +33,8 @@ Distilled from the review steps of HyperFrames (Apache-2.0), extreme-motion-desi
 **Render pitfalls**
 - Full-screen linear gradients on dark grounds band under H.264: use a radial gradient, a solid fill with a local light, or add grain.
 - An accent at 5% opacity disappears in compression: use 15–25% for atmosphere and full saturation for the focal element.
-- Tag every delivered MP4 bt709 (primaries, transfer, matrix, limited range): untagged files look different in Safari and QuickTime than in Chrome, and the owner watches in Safari. Check that a mid-grey patch (128) still reads about 128 after export.
+- Colour on delivery (measured October 30): the engine's renders are tagged BT.709 at limited range and convert colours exactly. Hand pipelines must match: `-colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv` on single-pass encodes (never on a two-pass one: it throws the size off), never yuvj420p or full range (Apple's players crushed the shadows, 20 came out 17), and exact conversion (`-sws_flags bicubic+accurate_rnd+full_chroma_int`, or `sws_flags=…;` as a filter graph's first line), because ffmpeg's fast path reads 1080-wide frames 2–4 levels dark.
+- Measure colour from the raw planes with the BT.709 formula, not ffmpeg's RGB output (it has the same 1080-wide error). Apple's players show any BT.709 video lighter (mid-grey 128 as about 139), tagged or not: judge a brand colour against the footage beside it, not against its hex on a Mac.
 - Footage with keyframes more than about 1 s apart freezes when seeked: re-encode it with a keyframe every second (`-g` at the frame rate) before using it as a design asset.
 - Frame 0 must already be in the right font: load every font before drawing it. Canvas pixel reads need `getContext("2d", { willReadFrequently: true })`, or Chrome can draw the same frame two ways.
 - Fade a caption group or its words, never both: the opacities multiply and read as a pop.
