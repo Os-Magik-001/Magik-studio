@@ -21,4 +21,4 @@ agents: motion
 - 90 px side margins. Nothing over faces or the product's key detail.
 
 **Motion language**
-- One family of moves for the whole video (all slide-ups, or all scale-ins). No lens flares, particle bursts or bouncy springs. Glow is allowed on one payoff word per stack, in the accent colour (approved: AD1's yellow glow, the @aslaniedits stack); one light sweep per title at most.
+- One family of moves for the whole video: the same curves, blur and speeds everywhere (motion-curves). Vary how scenes enter, though: every element fading and sliding up reads as generated. No lens flares, particle bursts or bouncy springs. Glow is allowed on one payoff word per stack, in the accent colour (approved: AD1's yellow glow, the @aslaniedits stack); one light sweep per title at most.

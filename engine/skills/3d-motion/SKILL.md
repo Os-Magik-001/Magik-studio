@@ -17,7 +17,7 @@ First made for Clinique OzonePlus (October 2026), where the owner asked: « if y
 
 **Behind the speaker** (the number motif)
 - The key numbers of a story, extruded large (cap height 250-380 px), standing in the room behind the speaker: drawn after the footage, then the speaker drawn again over them through his person matte (Apple Vision person segmentation, accurate, half resolution, soft edge). Mattes only for the frames that need them.
-- Place them so they read: across the wall above and around the head; a single glyph beside the head (« 6 » at x 300), not hidden behind it; long words (« ABSOLUMENT ») may pass behind the head, the caption says the word anyway.
+- Place them so they read: across the wall above and around the head; a single glyph beside the head (« 6 » at x 300), not hidden behind it; long words (« ABSOLUMENT ») may pass behind the head, the caption says the word anyway. A word behind the head reads best 30–55% covered: under about 15% it floats, over about 65% it is eaten. Measure the rendered word box against the matte over the word's own time window, since heads move (HyperFrames, measured).
 - In a founder story the numbers become a motif (7/7, 10 ANS, 0 $, 5, 10) and the hook's number comes back at the end, struck out with a yellow brush stroke drawn in 3D (behind him too).
 
 **3D transitions** (only at chapter or section changes; whip-zooms or cuts inside)
