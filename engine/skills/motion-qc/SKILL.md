@@ -13,12 +13,15 @@ Distilled from the review steps of HyperFrames (Apache-2.0), extreme-motion-desi
 - A strip across every cut, from -0.2 s to +0.2 s. A jump at a cut means the outgoing and incoming states differ at the seam; a change of speed means the curves are not mirrored (motion-curves).
 - One frame just after each scene starts, and one from its middle.
 - The beat frames at phone width (360 px wide): every line meant to be read must still read. A graphic's key frame at 200 px wide (a feed thumbnail): if the changing thing disappears, make it bigger.
+- A fresh reviewer (a sub-agent with no context) gets only the contact sheet and the brief. It first says in three lines what the video says, to whom and what it asks (if it can't, the text doesn't work muted), then PASS or FIX per frame, no praise.
 - The pictures alone: with the words covered, the beat frames still tell the story. The still test: one frame from the middle of a hold makes its point on its own.
 
 **Measure, don't eyeball**
 - Measure motion against the start frame, never the halfway frame (a sine is back to zero there). A scene that doesn't change for longer than its hold is frozen.
 - Something meaningful moves in every second; after each arrival, 12–24 f of ambient motion only.
 - Text contrast at least 3:1 against what is behind it, over its whole time on screen.
+- Compare scenes as 24 × 24 grey thumbnails: neighbours that correlate above 0.90 share one composition. The busiest scene moves at least 1.5× more than the calmest.
+- At most 3 flashes a second, and no single-frame pops.
 
 **Signs of the generated look** (three or more across the stills means it looks model-made; two is close)
 - A near-black ground with one accent, or only two colours, in most frames.
@@ -30,6 +33,8 @@ Distilled from the review steps of HyperFrames (Apache-2.0), extreme-motion-desi
 **Render pitfalls**
 - Full-screen linear gradients on dark grounds band under H.264: use a radial gradient, a solid fill with a local light, or add grain.
 - An accent at 5% opacity disappears in compression: use 15–25% for atmosphere and full saturation for the focal element.
+- Tag every delivered MP4 bt709 (primaries, transfer, matrix, limited range): untagged files look different in Safari and QuickTime than in Chrome, and the owner watches in Safari. Check that a mid-grey patch (128) still reads about 128 after export.
 - Footage with keyframes more than about 1 s apart freezes when seeked: re-encode it with a keyframe every second (`-g` at the frame rate) before using it as a design asset.
 - Frame 0 must already be in the right font: load every font before drawing it. Canvas pixel reads need `getContext("2d", { willReadFrequently: true })`, or Chrome can draw the same frame two ways.
+- Fade a caption group or its words, never both: the opacities multiply and read as a pop.
 - A fix changes one thing: keep the motion and timing that were liked, change only what the note names, and keep the earlier version.

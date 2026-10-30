@@ -21,7 +21,11 @@ Frames (f) are at 30 fps. Where a number comes from studio practice rather than 
 
 **Stagger**
 - Letters 1–2 f apart (30–55 ms: the @aslaniedits big word lands its letters 55 ms apart).
+- Letters enter from the centre outward and leave from the edges inward (exits 15–25 ms apart, 0.35–0.5 s, accelerating). A mask rise starts from 110% of the line height so descenders stay hidden.
 - Words that are not spoken (a title, a label): 4–6 f apart. A whole build is done within 0.5 s.
+
+**Roles in a stack**
+- An anchor that stays still, support that stays calm, and one active word whose meaning shapes its move (« tombe » drops, « lourd » lands low, « calme » recedes). One per stack, or it turns literal.
 
 **Overshoot and slam**
 - The payoff word only: from 1.5× and blurred to 0.97, then 1.0, within 4–6 f. One overshoot, never a second bounce.

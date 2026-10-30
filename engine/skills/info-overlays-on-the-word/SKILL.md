@@ -29,3 +29,9 @@ A person talks to camera and lists concrete things (colours, prices of a menu, s
 - Swatches: in over 6 f (scale 0.85 to 1, a small rise, expo-out), 3 f apart when two come together; out together over 4 f when the example ends.
 - The recolour: 10–14 f, a soft wipe or a cross-dissolve through a glow, never a cut.
 - Sound: a soft paper tick for each swatch at the quietest level, a short swell under the recolour, nothing else (motion-sfx-sync).
+
+## Timing classes and checks
+From iart.ai's talking-head B-roll skill (MIT, October 2026), with reel lengths.
+- Structure (an axis, an empty card, a frame) arrives 6 f before its word. A new fact is readable and settled on its word: a count-up ends on the spoken figure. A withheld answer waits for the word that reveals it.
+- In and out points fall in the gaps between words. An overlay covers at most 40% of the frame; a full cover is at least 98.5% opaque once its 0.5 s entry is done. Text stays out of the outer 3% of the frame, and text boxes never overlap by more than 15%.
+- A card up for more than 0.6 s with none of its words said reads as a glitch. A figure the transcript misheard that doesn't add up stays off screen.

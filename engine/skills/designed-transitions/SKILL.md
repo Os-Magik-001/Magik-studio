@@ -7,7 +7,7 @@ agents: motion
 
 # Designed transitions
 
-For scene changes inside a designed piece (one-world-explainer, the motion-design scenes, paper-explainer). Cuts between footage follow transitions and camera-moves-and-ramps. Distilled from HyperFrames' measured launch films (Apache-2.0) and extreme-motion-design (MIT), October 2026. The owner rejected cubes, card flips and slats as PowerPoint: every transition here is caused by something already on screen.
+For scene changes inside a designed piece (one-world-explainer, the motion-design scenes, paper-explainer). Cuts between footage follow transitions and camera-moves-and-ramps. Distilled from HyperFrames' measured launch films (Apache-2.0), extreme-motion-design and diffusionstudio's transition grammar (MIT), October 2026. The owner rejected cubes, card flips and slats as PowerPoint: every transition here is caused by something already on screen.
 
 **Kinds** (2–4 kinds in one piece; at most a third of the seams between beats are hard cuts; two worlds never crossfade)
 - **Zoom through an object**: the camera tracks to a button, a word or an object with blur (0.6 s), then the object scales from about 8% to about 250% of the frame in 0.35 s with a strong ease-in; its fill becomes the next frame.
@@ -23,5 +23,8 @@ For scene changes inside a designed piece (one-world-explainer, the motion-desig
 **Rules**
 - The glance rule: where the eye is on the last frame of A is where B begins.
 - A match cut falls mid-move on the fastest frame: same axis and direction on both sides, the outgoing move accelerating and the incoming one decelerating.
+- A cut on motion aims the outgoing move at an end point past the cut (the scene ends at f100, the move would land around f120–140). A move that reaches its target on the seam frame is a settle cut, not a cut on motion.
+- A move cut off mid-flight reads as meant only inside a repeated layout of 3–4 beats or more; once, it looks broken. Pick one structure per piece: a repeated layout where only the content swaps, or an evolving layout where objects carry across.
+- Across a match cut the focus point stays within 5% of the frame. A smash cut gets 2–4 f of silence before it.
 - Keep the background opaque under every transition so nothing flashes.
 - Sound: one air pass peaking on the fastest frame (motion-sfx-sync).

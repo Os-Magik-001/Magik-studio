@@ -56,7 +56,7 @@ agents: editor, motion
 - On silent footage, keep a title or caption up at least every 3-4 s, so muted viewers always have something to read. Leave the end card itself clean.
 
 **Name cards**
-- Dialogue comedy: a flat name card at each character's first confessional in the episode: bold white name over a small white role ("Ling Long / Systems Engineer"), no box, lower left at about 72-78% of the height, fading in 0.1-0.5 s after the cut and held 2-3 s (Cluely, 5 of 8). A `lower_third_3d` is the dynamic version; a series may use parody credits or a freeze-frame intro instead.
+- Dialogue comedy: a flat name card at each character's first confessional in the episode: bold white name over a small white role ("Ling Long / Systems Engineer"), no box, lower left at about 72-78% of the height, fading in 0.1-0.5 s after the cut and held 2-3 s (Cluely, 5 of 8). A designed lower third cascades bar, name, role, 3–6 f apart, in over 12–18 f and out over 8–12 f, the role at 45–60% of the name's size, anchored left so a long name grows right. A `lower_third_3d` is the dynamic version; a series may use parody credits or a freeze-frame intro instead.
 
 **End card**
 - The headline is a specific call to action or payoff in 2 to 5 words: "Book your free tasting", not "Learn more". Use one call to action only.

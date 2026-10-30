@@ -19,6 +19,8 @@ Distilled from Charlie Hills' vox-explainer skill (MIT, October 2026). Use it wh
 - Torn-edge paper cards with small, tight shadows on a paper ground; halftone dots, paper grain and fine film grain over the whole frame; a soft vignette. Colour fringing at the frame's edges only, never on the text.
 - The brand's palette (a red, a cream, a navy and one yellow accent is the classic one), bold condensed type set as solid blocks (Anton, Bebas Neue, Oswald).
 - Motion on twos: every pose holds 2 frames at 24 fps (in a 30 fps edit, update the drawing at 12–15 poses per second). Never smooth corporate easing in this look. No typewriter text, glow, bounce or gradients on type.
+- Texture values: paper in multiply at 8–20%; halftone dots 6–12 px at 45°; risograph inks offset 1–3 px; one deliberate imperfection per piece. Cut-outs show a paper edge of 4–10 px and a short shadow of 2–6 px in one direction (frame-design).
+- Drawn lines boil: redraw outlines about 12 times a second with a jitter seeded by floor(t × 12), so the drawing lives while it holds and every render matches (HyperFrames).
 
 **Shot types**
 - **Statement**: three short lines of bold type on a torn strip, the line you want remembered.

@@ -20,7 +20,8 @@ agents: editor, motion
 **Sizes and contrast**
 - Caption cap height 48–64 px; nothing smaller than 28 px; labels at least 36 px.
 - At least 4.5:1 contrast against the measured background. Otherwise a shadow (12–16 px blur, 60% black) or a 2–4 px dark stroke painted under the fill.
-- Bright overcast or grass backgrounds: add a soft dark scrim behind the text block rather than darkening the video.
+- Bright overcast or grass backgrounds: add a soft dark scrim behind the text block rather than darkening the video. Size the scrim to the text (30–40% opacity), never a full-width bar.
+- Glass cards over bright footage go white on white: a dark glass base (about 78% opacity, 22 px blur) or a scrim behind them (HyperFrames).
 
 **How much at once**
 - One title block, the captions and one tag. A stack replaces the caption while it is up.
