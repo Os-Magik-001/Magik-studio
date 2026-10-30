@@ -157,6 +157,56 @@ test("white balance: warmth trades blue for red, tint trades green for magenta, 
   assert.ok(Math.abs(0.2126 * r + 0.7152 * g + 0.0722 * b - 128) <= 2);
 });
 
+test("colour: footage, a white balance and the end card keep their values, and the file is tagged BT.709", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const ff = (args: string[]) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args], { maxBuffer: 1 << 28 });
+  const bands = ["#808080", "#0FA67A", "#E53935", "#141414", "#EBEBEB"];
+  const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  // Flat colour bands, 720 x 1280: one clip untagged, one full range (like phone copies).
+  const png = path.join(dir, "bands.png");
+  ff(["-f", "lavfi", "-i", bands.map((c, i) => `color=c=0x${c.slice(1)}:s=720x256:d=1,format=rgb24[b${i}]`).join(";") + `;${bands.map((_, i) => `[b${i}]`).join("")}vstack=inputs=5`, "-frames:v", "1", png]);
+  const sources = [
+    { id: "U", range: "tv", tags: [] },
+    { id: "F", range: "pc", tags: ["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "pc"] },
+  ];
+  const bandClips: Clip[] = [];
+  for (const s of sources) {
+    const file = path.join(dir, `bands-${s.id}.mp4`);
+    ff(["-loop", "1", "-framerate", "30", "-t", "2", "-i", png, "-vf", `scale=out_color_matrix=bt709:out_range=${s.range},format=${s.range === "pc" ? "yuvj420p" : "yuv420p"}`, "-c:v", "libx264", "-crf", "8", ...s.tags, file]);
+    const p = await probe(file);
+    bandClips.push({ id: s.id, fileName: path.basename(file), file, preview: file, duration: p.duration, width: p.width, height: p.height, fps: p.fps, hasAudio: false, sheets: [], interval: 1, transcript: null });
+  }
+  const plan: EditPlan = {
+    ...EXTRAS,
+    look: "natural",
+    summary: "colour",
+    // A barely-there white balance still sends the shot through RGB and back, like every look.
+    segments: [shot("U", 0.2, 1.2, "untagged", { adjust: { brightness: 0, contrast: 1, saturation: 1, warmth: 0.01, tint: 0 } }), shot("F", 0.2, 1.2, "full range")],
+    on_screen_text: [],
+    end_card: { include: true, headline: "", seconds: 1, transition: CUT },
+    open_questions: [],
+  };
+  const { plan: valid } = validatePlan(plan, bandClips);
+  const output = path.join(dir, "colour.mp4");
+  await render({ plan: valid, clips: bandClips, aspect: "9:16", brand: { colors: ["#0FA67A"], fonts: [], logoFile: null }, workDir: path.join(dir, "colour"), output });
+
+  const tags = execFileSync("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=pix_fmt,color_range,color_space,color_primaries,color_transfer", "-of", "json", output], { encoding: "utf8" });
+  assert.deepEqual(JSON.parse(tags).streams[0], { pix_fmt: "yuv420p", color_range: "tv", color_space: "bt709", color_transfer: "bt709", color_primaries: "bt709" });
+  // What a correct HD player shows: the raw planes decoded with the BT.709 formula by hand.
+  const at = (t: number, x: number, y: number) => {
+    const raw = ff(["-ss", String(t), "-i", output, "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"]);
+    const [W, H] = [1080, 1920];
+    const Y = (raw[y * W + x] - 16) / 219;
+    const [cb, cr] = [raw[W * H + (y >> 1) * (W / 2) + (x >> 1)], raw[W * H * 1.25 + (y >> 1) * (W / 2) + (x >> 1)]].map((c) => (c - 128) / 224);
+    return [Y + 1.5748 * cr, Y - 0.1873 * cb - 0.4681 * cr, Y + 1.8556 * cb].map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255));
+  };
+  const near = (got: number[], want: string, what: string) => assert.ok(got.every((c, k) => Math.abs(c - hex(want)[k]) <= 2), `${what}: ${want} came out ${got}`);
+  for (const [i, s] of sources.entries()) {
+    bands.forEach((c, k) => near(at(0.5 + i, 540, Math.round((256 * k + 128) * 1.5)), c, `${s.id} band ${k}`));
+  }
+  near(at(2.5, 80, 80), "#0FA67A", "end card");
+});
+
 test("validatePlan reins in moves", () => {
   const plan: EditPlan = {
     ...EXTRAS,

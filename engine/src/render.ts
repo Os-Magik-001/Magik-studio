@@ -3,7 +3,7 @@ import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
-import { clipLoudness, frameSize } from "./media.ts";
+import { BT709, clipLoudness, fillColorTags, frameSize, SWS } from "./media.ts";
 import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
 import { overlapOf, sameTake, shotLength, type Clip, type EditPlan } from "./plan.ts";
 import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
@@ -256,6 +256,11 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     const lufs = clip?.hasAudio ? await clipLoudness(clip.preview) : null;
     if (lufs !== null) level.set(id, Math.max(-9, Math.min(9, DIALOGUE_LUFS - lufs)));
   }
+  // Clips with blank colour tags are read as HD video, like the tagged ones (media.ts).
+  const tagFill = new Map<string, string>();
+  for (const id of new Set([...plan.segments.map((s) => s.clip), ...plan.overlays.map((o) => o.clip)])) {
+    tagFill.set(id, await fillColorTags(byId.get(id)!.file));
+  }
   plan.segments.forEach((seg, i) => {
     const clip = byId.get(seg.clip)!;
     const seconds = shotLength(seg);
@@ -274,7 +279,7 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     const vTrim = `trim=start=${(vStart - from).toFixed(6)}:duration=${(vEnd - vStart).toFixed(6)},setpts=PTS-STARTPTS,`;
     // A freeze repeats its first frame for the hold; any push still plays over it.
     const freeze = seg.hold > 0 ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB,trim=duration=${seconds.toFixed(3)},` : "";
-    filters.push(`[${v}:v]${vTrim}${freeze}${shotVideo(seg, clip, W, H, plan.look, frameCount)}[v${i}]`);
+    filters.push(`[${v}:v]${tagFill.get(seg.clip)}${vTrim}${freeze}${shotVideo(seg, clip, W, H, plan.look, frameCount)}[v${i}]`);
     if (clip.hasAudio && seg.audio === "keep" && seg.hold === 0) {
       // 15 ms fades at both ends: a hard audio cut clicks and jumps in room tone. Where the
       // shot carries on the same take as its neighbour there is no edit, so no fade either:
@@ -340,9 +345,9 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
     args.push("-ss", o.start.toFixed(3), "-t", (o.still ? 0.2 : seconds).toFixed(3), "-i", clip.file);
     const v = input++;
     // A still repeats its first frame for the card's whole time.
-    const timing = o.still
+    const timing = tagFill.get(o.clip) + (o.still
       ? `trim=end_frame=1,loop=loop=${Math.ceil(seconds * FPS)}:size=1:start=0,setpts=N/${FPS}/TB`
-      : `setpts=PTS-STARTPTS,fps=${FPS}`;
+      : `setpts=PTS-STARTPTS,fps=${FPS}`);
     if (o.kind === "cutaway") {
       filters.push(`[${v}:v]${timing},${fillBox(clip, W, H, o.focus)}${look},format=yuv420p,setpts=PTS+${at}/TB[ov${k}]`);
       filters.push(`[${vc}][ov${k}]overlay=0:0:eof_action=pass:enable='between(t,${at},${until})'[oc${k}]`);
@@ -369,11 +374,11 @@ async function pictureEdit(opts: RenderOptions, W: number, H: number, file: stri
   }
 
   const graph = path.join(workDir, "picture.txt");
-  await writeFile(graph, filters.join(";\n"));
+  await writeFile(graph, [`sws_flags=${SWS}`, ...filters].join(";\n"));
   args.push(
     "-/filter_complex", graph,
     "-map", `[${vc}]`, "-map", `[${ac}]`,
-    "-c:v", "libx264", "-preset", "veryfast", "-crf", "15", "-pix_fmt", "yuv420p", "-r", String(FPS),
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "15", "-pix_fmt", "yuv420p", ...BT709, "-r", String(FPS),
     "-c:a", "aac", "-b:a", "256k",
     file,
   );
@@ -499,11 +504,11 @@ export async function render(opts: RenderOptions) {
   );
 
   const graph = path.join(workDir, "finish.txt");
-  await writeFile(graph, filters.join(";\n"));
+  await writeFile(graph, [`sws_flags=${SWS}`, ...filters].join(";\n"));
   args.push(
     "-/filter_complex", graph,
     "-map", "[vout]", "-map", "[aout]",
-    "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", String(FPS),
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", ...BT709, "-r", String(FPS),
     "-c:a", "aac", "-b:a", "192k",
     "-t", length.toFixed(3),
     "-movflags", "+faststart",

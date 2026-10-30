@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, type Browser } from "playwright-core";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
+import { SWS } from "./media.ts";
 import type { Clip, EditPlan } from "./plan.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 
@@ -79,7 +80,7 @@ const exists = (f: string) => access(f).then(() => true, () => false);
 
 // A still from a video file, as a PNG.
 async function still(file: string, time: number, out: string, filter?: string) {
-  await run(config.ffmpeg, ["-v", "error", "-y", "-ss", time.toFixed(3), "-i", file, "-frames:v", "1", ...(filter ? ["-vf", filter] : []), out]);
+  await run(config.ffmpeg, ["-v", "error", "-y", "-ss", time.toFixed(3), "-i", file, "-frames:v", "1", ...(filter ? ["-vf", filter] : []), "-sws_flags", SWS, out]);
 }
 
 // The person in a PNG, cut out with Apple Vision; the PNG itself when that isn't available.
@@ -151,7 +152,7 @@ export async function renderMotion(input: MotionInput): Promise<MotionLayer[]> {
         await mkdir(dir, { recursive: true });
         await run(config.ffmpeg, [
           "-v", "error", "-y", "-ss", item.screen.start.toFixed(3), "-t", (item.end - item.start + 0.1).toFixed(3), "-i", clip.file,
-          "-vf", `fps=${fps},scale='min(1440,iw)':-2`, "-q:v", "3", "-start_number", "0", path.join(dir, "%05d.jpg"),
+          "-vf", `fps=${fps},scale='min(1440,iw)':-2`, "-sws_flags", SWS, "-q:v", "3", "-start_number", "0", path.join(dir, "%05d.jpg"),
         ]);
         assets.screen = { base: `/assets/${path.basename(dir)}`, count: (await readdir(dir)).length };
       }

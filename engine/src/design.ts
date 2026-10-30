@@ -12,7 +12,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
-import { probe } from "./media.ts";
+import { BT709, probe, SWS } from "./media.ts";
 import { launch, serve } from "./motion.ts";
 import type { pageTypography } from "./typefaces.ts";
 
@@ -105,7 +105,7 @@ async function prepareAssets(assets: DesignAsset[], dir: string, fps: number) {
     if (a.kind === "video") {
       const d = path.join(dir, a.name);
       await mkdir(d, { recursive: true });
-      await run(config.ffmpeg, ["-v", "error", "-y", "-i", a.file, "-vf", `fps=${fps},scale='min(1170,iw)':-2`, "-q:v", "3", "-start_number", "0", path.join(d, "%05d.jpg")]);
+      await run(config.ffmpeg, ["-v", "error", "-y", "-i", a.file, "-vf", `fps=${fps},scale='min(1170,iw)':-2`, "-sws_flags", SWS, "-q:v", "3", "-start_number", "0", path.join(d, "%05d.jpg")]);
       const frames = (await readdir(d)).length;
       out.push({ name: a.name, kind: a.kind, url: `/assets/${a.name}`, fps, frames, duration: frames / fps, description: a.description });
     } else {
@@ -365,8 +365,8 @@ export async function designPass(input: DesignInput) {
   }
   await run(config.ffmpeg, [
     "-v", "error", "-y", "-i", video, "-framerate", String(fps), "-i", path.join(framesDir, "%05d.png"),
-    "-filter_complex", "[1:v]format=rgba[g];[0:v][g]overlay=eof_action=pass:format=auto,format=yuv420p[v]",
-    "-map", "[v]", "-map", "0:a?", "-c:v", "libx264", "-crf", "17", "-preset", "medium", "-c:a", "copy", "-movflags", "+faststart", input.output,
+    "-filter_complex", `sws_flags=${SWS};[1:v]format=rgba[g];[0:v][g]overlay=eof_action=pass:format=auto,format=yuv420p[v]`,
+    "-map", "[v]", "-map", "0:a?", "-c:v", "libx264", "-crf", "17", "-preset", "medium", ...BT709, "-c:a", "copy", "-movflags", "+faststart", input.output,
   ]);
   await rm(framesDir, { recursive: true, force: true });
   return { comp, log };

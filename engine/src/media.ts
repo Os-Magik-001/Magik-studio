@@ -15,6 +15,37 @@ export type Probe = {
   hasAudio: boolean;
 };
 
+// Every video the engine writes is tagged as HD colour (BT.709, TV range). Without the
+// primaries and transfer tags, Safari and QuickTime show it differently from Chrome, and
+// ffmpeg reads it back two or three levels darker: a freeze frame, a cut-out or a design
+// frame taken from the cut then sat darker than the picture around it.
+export const BT709 = ["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"];
+
+// Exact colour conversion. ffmpeg's fast YUV-to-RGB path is off by two levels (up to four in
+// the shadows) on 1080-wide frames, our reel width, so looks, cards, cut-outs, freeze frames
+// and design frames came out darker than the picture they sit in. As `-sws_flags` for a
+// simple command; a complex graph needs it as its first line (`sws_flags=…;`).
+export const SWS = "bicubic+accurate_rnd+full_chroma_int";
+
+// A clip whose colour tags are blank is read as HD video, like the tagged clips around it:
+// a setparams filter to put first on its stream, or "" when there is nothing to fill (fully
+// tagged, HDR, or an SD or other matrix, which stay as they are).
+export async function fillColorTags(file: string) {
+  const { stdout } = await run(config.ffprobe, [
+    "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,color_space,color_transfer,color_primaries", "-of", "json", file,
+  ]);
+  const s = (JSON.parse(stdout) as { streams?: { width?: number; height?: number; color_space?: string; color_transfer?: string; color_primaries?: string }[] }).streams?.[0] ?? {};
+  const blank = (v?: string) => !v || v === "unknown" || v === "unspecified";
+  const matrix = blank(s.color_space) ? (Math.min(s.width ?? 0, s.height ?? 0) >= 720 ? "bt709" : null) : s.color_space;
+  if (matrix !== "bt709" || /arib-std-b67|smpte2084/.test(s.color_transfer ?? "")) return "";
+  const fill = [
+    blank(s.color_space) && "colorspace=bt709",
+    blank(s.color_primaries) && "color_primaries=bt709",
+    blank(s.color_transfer) && "color_trc=bt709",
+  ].filter(Boolean);
+  return fill.length ? `setparams=${fill.join(":")},` : "";
+}
+
 export async function download(bucket: string, objectPath: string, dest: string) {
   const { data, error } = await db.storage.from(bucket).createSignedUrl(objectPath, 60 * 60);
   if (error || !data) throw new Error(`Couldn't open ${bucket}/${objectPath}: ${error?.message}`);
@@ -77,6 +108,8 @@ export async function fitUnder(file: string, out: string, maxBytes: number) {
   const video = Math.floor(((maxBytes * 8) / duration) * 0.96 - audio);
   if (video < 500_000) throw new Error(`The draft is too long to fit the ${Math.round(maxBytes / 1e6)} MB upload limit.`);
   const passlog = `${out}.pass`;
+  // No colour options here: the draft's BT.709 tags carry over by themselves, and naming them
+  // throws a two-pass encode's aim off (a 1.4 MB target came out at 2.2 MB).
   const encode = ["-v", "error", "-y", "-i", file, "-c:v", "libx264", "-preset", "veryfast", "-b:v", String(video), "-pix_fmt", "yuv420p", "-passlogfile", passlog];
   try {
     await run(config.ffmpeg, [...encode, "-pass", "1", "-an", "-f", "null", "-"]);
