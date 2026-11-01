@@ -14,6 +14,7 @@ import { config } from "./config.ts";
 import { run } from "./exec.ts";
 import { BT709, probe, SWS } from "./media.ts";
 import { launch, serve } from "./motion.ts";
+import { personMatte, segmentationAvailable } from "./segment.ts";
 import type { pageTypography } from "./typefaces.ts";
 
 const DESIGN_DIR = fileURLToPath(new URL("../design", import.meta.url));
@@ -134,6 +135,10 @@ async function openComposition(comp: Comp, data: unknown, assetsDir: string, W: 
       await page.screenshot({ path: file, omitBackground: true, type: "png" });
       errors.push(...(await page.evaluate(() => (window as unknown as { __errors: string[] }).__errors.splice(0))));
     },
+    // "front" hides the .behind elements, "behind" shows only them, null shows everything.
+    pass: (p: "front" | "behind" | null) => page.evaluate((p) => (window as unknown as { setPass: (p: string | null) => void }).setPass(p), p),
+    // Whether a .behind element shows in the frame rendered last.
+    behindShown: () => page.evaluate(() => (window as unknown as { behindShown: () => boolean }).behindShown()),
     async close() {
       await browser.close();
       server.close();
@@ -148,13 +153,28 @@ async function reviewFrames(comp: Comp, data: { length: number }, assetsDir: str
   const at = spread ? [...comp.checkpoints, ...[0.15, 0.5, 0.85].map((p) => p * data.length)] : comp.checkpoints;
   const times = [...new Set(at.map((t) => Math.round(Math.min(data.length - 0.2, Math.max(0, t)) * 100) / 100))].sort((a, b) => a - b).slice(0, spread ? 12 : 60);
   const page = await openComposition(comp, data, assetsDir, W, H);
+  const cutOut = await segmentationAvailable();
+  await page.pass(cutOut ? "front" : null);
   const frames: { t: number; file: string }[] = [];
   try {
     for (const t of times) {
       const overlay = path.join(dir, `o-${t}.png`);
       await page.shoot(t, overlay);
       const file = path.join(dir, `f-${t}.jpg`);
-      await run(config.ffmpeg, ["-v", "error", "-y", "-ss", t.toFixed(3), "-i", video, "-i", overlay, "-filter_complex", "[0:v][1:v]overlay=format=auto,scale=720:-2", "-frames:v", "1", "-q:v", "3", file]);
+      if (cutOut && (await page.behindShown())) {
+        // Text behind the person: the behind pass, the person cut out over it, then the front.
+        const back = path.join(dir, `b-${t}.png`);
+        const mask = path.join(dir, `m-${t}.mov`);
+        await page.pass("behind");
+        await page.shoot(t, back);
+        await page.pass("front");
+        await personMatte(video, t, 1 / 30, 30, mask);
+        await run(config.ffmpeg, [
+          "-v", "error", "-y", "-ss", t.toFixed(3), "-i", video, "-i", back, "-i", mask, "-i", overlay,
+          "-filter_complex", `[0:v]split[a][b];[a][1:v]overlay=format=auto[ab];[2:v]format=gray,scale=${W}:${H}[m];[b]format=rgba[bb];[bb][m]alphamerge[p];[ab][p]overlay=format=auto[abp];[abp][3:v]overlay=format=auto,scale=720:-2`,
+          "-frames:v", "1", "-q:v", "3", file,
+        ]);
+      } else await run(config.ffmpeg, ["-v", "error", "-y", "-ss", t.toFixed(3), "-i", video, "-i", overlay, "-filter_complex", "[0:v][1:v]overlay=format=auto,scale=720:-2", "-frames:v", "1", "-q:v", "3", file]);
       frames.push({ t, file });
     }
   } finally {
@@ -174,6 +194,7 @@ const RUBRIC = `Review these frames of your composition over the video like the 
 - Banned things (glows, flares, particles, shine sweeps, drip fonts, rainbow gradients, blobs, bouncy motion, corner text, tiny text).
 - Full-frame scenes: are devices and cards big enough to read, is the frame balanced, is it beautiful?
 - Captions: right words at the right time, phrases not single jumping words, never over faces.
+- Text behind the person (class behind): does the head hide more than 40% of a word, or any of the face? Move the word or take it out of .behind.
 Be harsh: list every issue. Then return the complete revised composition (all css, html and js, not a diff), or verdict ship with the same code if nothing is left to fix.`;
 
 // The motion director's design for a video (written in the app with the script).
@@ -342,32 +363,90 @@ export async function designPass(input: DesignInput) {
   await mkdir(framesDir, { recursive: true });
   const total = Math.round(p.duration * fps);
   const page = await openComposition(comp, data, assetsDir, W, H);
+  // Text behind the person needs the cut-out tool; without it, .behind elements draw in front.
+  const cutOut = await segmentationAvailable();
+  const behindDir = path.join(workDir, "behind");
+  let spans: [number, number][] = [];
   try {
-    const sub = path.join(workDir, "sub");
-    for (let from = 0; from < total; from += BATCH) {
-      await mkdir(sub, { recursive: true });
-      const to = Math.min(total, from + BATCH);
-      for (let f = from; f < to; f++) {
-        for (let k = 0; k < SUB; k++) {
-          const t = Math.max(0, (f + ((k - (SUB - 1) / 2) * SHUTTER) / SUB) / fps);
-          await page.shoot(t, path.join(sub, `${String((f - from) * SUB + k).padStart(5, "0")}.png`));
-        }
-      }
-      await run(config.ffmpeg, [
-        "-v", "error", "-y", "-framerate", String(fps * SUB), "-i", path.join(sub, "%05d.png"),
-        "-vf", `format=rgba,premultiply=inplace=1,tmix=frames=${SUB},unpremultiply=inplace=1,select='eq(mod(n\\,${SUB})\\,${SUB - 1})'`,
-        "-fps_mode", "passthrough", "-start_number", String(from), path.join(framesDir, "%05d.png"),
-      ]);
-      await rm(sub, { recursive: true, force: true });
+    await page.pass(cutOut ? "front" : null);
+    const shown = await renderFrames(page, 0, total, fps, framesDir, path.join(workDir, "sub"), cutOut);
+    spans = cutOut ? frameSpans(shown, total) : [];
+    if (spans.length) {
+      await rm(behindDir, { recursive: true, force: true });
+      await mkdir(behindDir, { recursive: true });
+      await page.pass("behind");
+      for (const [from, to] of spans) await renderFrames(page, from, to, fps, behindDir, path.join(workDir, "sub"), false);
     }
   } finally {
     await page.close();
   }
+  const args = ["-v", "error", "-y", "-i", video, "-framerate", String(fps), "-i", path.join(framesDir, "%05d.png")];
+  const filters = [`[1:v]format=rgba[g]`];
+  let v = "0:v";
+  if (spans.length) {
+    log.push(`text behind the person: ${spans.map(([a, b]) => `${(a / fps).toFixed(2)}-${(b / fps).toFixed(2)}s`).join(", ")}`);
+    filters.push(`[0:v]split=${spans.length}${spans.map((_, i) => `[c${i}]`).join("")}`);
+    for (const [i, [from, to]] of spans.entries()) {
+      const [s, e] = [from / fps, to / fps];
+      const mask = path.join(workDir, `matte-${i}.mov`);
+      await personMatte(video, s, e - s, fps, mask);
+      const [bi, mi] = [2 + i * 2, 3 + i * 2];
+      args.push("-framerate", String(fps), "-start_number", String(from), "-i", path.join(behindDir, "%05d.png"), "-i", mask);
+      const on = `enable='between(t,${s.toFixed(4)},${e.toFixed(4)})'`;
+      filters.push(
+        `[${bi}:v]format=rgba,setpts=PTS+${s.toFixed(4)}/TB[b${i}]`,
+        `[${v}][b${i}]overlay=eof_action=pass:format=auto:${on}[vb${i}]`,
+        `[c${i}]trim=start=${s.toFixed(4)}:end=${e.toFixed(4)},setpts=PTS-STARTPTS,format=rgba[cs${i}]`,
+        `[${mi}:v]format=gray,scale=${W}:${H}[m${i}]`,
+        `[cs${i}][m${i}]alphamerge,setpts=PTS+${s.toFixed(4)}/TB[p${i}]`,
+        `[vb${i}][p${i}]overlay=eof_action=pass:format=auto:${on}[vp${i}]`,
+      );
+      v = `vp${i}`;
+    }
+  }
+  filters.push(`[${v}][g]overlay=eof_action=pass:format=auto,format=yuv420p[v]`);
   await run(config.ffmpeg, [
-    "-v", "error", "-y", "-i", video, "-framerate", String(fps), "-i", path.join(framesDir, "%05d.png"),
-    "-filter_complex", `sws_flags=${SWS};[1:v]format=rgba[g];[0:v][g]overlay=eof_action=pass:format=auto,format=yuv420p[v]`,
+    ...args,
+    "-filter_complex", `sws_flags=${SWS};${filters.join(";")}`,
     "-map", "[v]", "-map", "0:a?", "-c:v", "libx264", "-crf", "17", "-preset", "medium", ...BT709, "-c:a", "copy", "-movflags", "+faststart", input.output,
   ]);
   await rm(framesDir, { recursive: true, force: true });
+  await rm(behindDir, { recursive: true, force: true });
   return { comp, log };
+}
+
+// Renders frames [from, to) with motion blur (SUB renders per frame across the shutter) into
+// dir as %05d.png numbered by frame. With `check`, returns which frames show a .behind element.
+async function renderFrames(page: Awaited<ReturnType<typeof openComposition>>, from: number, to: number, fps: number, dir: string, sub: string, check: boolean) {
+  const shown: number[] = [];
+  for (let a = from; a < to; a += BATCH) {
+    await mkdir(sub, { recursive: true });
+    const b = Math.min(to, a + BATCH);
+    for (let f = a; f < b; f++) {
+      for (let k = 0; k < SUB; k++) {
+        const t = Math.max(0, (f + ((k - (SUB - 1) / 2) * SHUTTER) / SUB) / fps);
+        await page.shoot(t, path.join(sub, `${String((f - a) * SUB + k).padStart(5, "0")}.png`));
+        if (check && k === SUB - 1 && (await page.behindShown())) shown.push(f);
+      }
+    }
+    await run(config.ffmpeg, [
+      "-v", "error", "-y", "-framerate", String(fps * SUB), "-i", path.join(sub, "%05d.png"),
+      "-vf", `format=rgba,premultiply=inplace=1,tmix=frames=${SUB},unpremultiply=inplace=1,select='eq(mod(n\\,${SUB})\\,${SUB - 1})'`,
+      "-fps_mode", "passthrough", "-start_number", String(a), path.join(dir, "%05d.png"),
+    ]);
+    await rm(sub, { recursive: true, force: true });
+  }
+  return shown;
+}
+
+// Frames that show text behind the person, as ranges [from, to) padded by 2 frames and joined
+// across gaps under 6 frames (each range gets one cut-out pass).
+export function frameSpans(frames: number[], total: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (const f of [...new Set(frames)].sort((x, y) => x - y)) {
+    const last = out.at(-1);
+    if (last && f - 2 <= last[1] + 6) last[1] = Math.min(total, f + 3);
+    else out.push([Math.max(0, f - 2), Math.min(total, f + 3)]);
+  }
+  return out;
 }

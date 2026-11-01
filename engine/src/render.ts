@@ -1,10 +1,10 @@
-import { mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { config } from "./config.ts";
 import { run } from "./exec.ts";
 import { BT709, clipLoudness, fillColorTags, frameSize, SWS } from "./media.ts";
-import { hasLayer, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
+import { hasLayer, heroBoxes, layerSpans, renderLayer, type GraphicsInput, type Word } from "./graphics.ts";
 import { overlapOf, sameTake, shotLength, type Clip, type EditPlan } from "./plan.ts";
 import { motionAvailable, renderMotion, type MotionLayer } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
@@ -417,9 +417,10 @@ export async function render(opts: RenderOptions) {
   const length = await pictureEdit(opts, W, H, base);
 
   // Without the cut-out tool, text meant to sit behind people is drawn in front.
-  const matte = opts.plan.on_screen_text.some((t) => t.behind_subject) && (await segmentationAvailable());
+  const lockups = opts.plan.captions.preset === "mixed_type" && opts.plan.captions.mode !== "off";
+  const matte = (opts.plan.on_screen_text.some((t) => t.behind_subject) || lockups) && (await segmentationAvailable());
   const plan = matte ? opts.plan : { ...opts.plan, on_screen_text: opts.plan.on_screen_text.map((t) => ({ ...t, behind_subject: false })) };
-  const gfx: GraphicsInput = { plan, words: opts.words ?? [], W, H, length, fps: FPS, brand: opts.brand };
+  const gfx: GraphicsInput = { plan, words: opts.words ?? [], W, H, length, fps: FPS, brand: opts.brand, behindCaptions: matte && lockups };
   const args: string[] = ["-v", "error", "-y", "-i", base];
   const filters: string[] = [];
   let input = 1;
@@ -427,17 +428,24 @@ export async function render(opts: RenderOptions) {
 
   // Text behind the person: draw it, then lay a cut-out of the person back on top
   // wherever it shows.
-  if (matte) {
+  const spans = matte ? mergeSpans(layerSpans(gfx, "behind"), length) : [];
+  if (spans.length) {
+    const masks: string[] = [];
+    for (const [i, span] of spans.entries()) {
+      const mask = path.join(workDir, `matte-${i}.mov`);
+      await personMatte(base, span.start, span.end - span.start, FPS, mask);
+      masks.push(mask);
+    }
+    // A key word the person would hide too much of goes in front instead.
+    if (gfx.behindCaptions) gfx.heroFront = await coveredHeroes(gfx, spans, masks, workDir);
     const layer = await renderLayer(gfx, "behind", path.join(workDir, "gfx"));
     args.push("-f", "concat", "-safe", "0", "-i", layer.list);
     filters.push(`[${input}:v]fps=${FPS},format=rgba[bl]`, `[${v}][bl]overlay=0:0:eof_action=pass:format=auto[vb]`);
     input++;
     v = "vb";
-    const spans = mergeSpans(layerSpans(gfx, "behind"), length);
     filters.push(`[0:v]split=${spans.length}${spans.map((_, i) => `[bc${i}]`).join("")}`);
     for (const [i, span] of spans.entries()) {
-      const mask = path.join(workDir, `matte-${i}.mov`);
-      await personMatte(base, span.start, span.end - span.start, FPS, mask);
+      const mask = masks[i];
       args.push("-i", mask);
       filters.push(
         `[bc${i}]trim=start=${span.start.toFixed(4)}:end=${span.end.toFixed(4)},setpts=PTS-STARTPTS,format=rgba[bs${i}]`,
@@ -549,6 +557,38 @@ function musicLevel(music: EditPlan["music"], length: number, fadeOut: number) {
 }
 
 // Overlapping or touching ranges become one, so each needs a single cut-out pass.
+// How much of a mixed_type key word the person may cover (of its box, at the worst of three
+// moments) before it goes in front of them instead: past that it stops reading.
+const COVER = 0.4;
+
+// The lockups whose key word the person would cover too much, read from the cut-out masks.
+async function coveredHeroes(gfx: GraphicsInput, spans: { start: number; end: number }[], masks: string[], workDir: string) {
+  const front = new Set<number>();
+  const [w, h] = [Math.round(gfx.W / 8), Math.round(gfx.H / 8)];
+  const raw = path.join(workDir, "cover.gray");
+  for (const hero of heroBoxes(gfx)) {
+    let worst = 0;
+    for (const p of [0.25, 0.55, 0.85]) {
+      const t = hero.start + (hero.end - hero.start) * p;
+      const k = spans.findIndex((s) => t >= s.start && t < s.end);
+      if (k < 0) continue;
+      await run(config.ffmpeg, ["-v", "error", "-y", "-ss", (t - spans[k].start).toFixed(3), "-i", masks[k], "-frames:v", "1", "-vf", `scale=${w}:${h},format=gray`, "-f", "rawvideo", raw]);
+      const px = await readFile(raw).catch(() => null);
+      if (!px || px.length < w * h) continue;
+      const x0 = Math.max(0, Math.floor(hero.box.x / 8));
+      const x1 = Math.min(w, Math.ceil((hero.box.x + hero.box.w) / 8));
+      const y0 = Math.max(0, Math.floor(hero.box.y / 8));
+      const y1 = Math.min(h, Math.ceil((hero.box.y + hero.box.h) / 8));
+      let covered = 0;
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (px[y * w + x] > 127) covered++;
+      worst = Math.max(worst, covered / Math.max(1, (x1 - x0) * (y1 - y0)));
+    }
+    if (worst > COVER) front.add(hero.index);
+  }
+  await rm(raw, { force: true });
+  return front;
+}
+
 function mergeSpans(spans: { start: number; end: number }[], length: number) {
   const sorted = spans.map((s) => ({ start: Math.max(0, s.start), end: Math.min(length, s.end) })).sort((a, b) => a.start - b.start);
   const out: { start: number; end: number }[] = [];

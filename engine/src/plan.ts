@@ -68,7 +68,7 @@ export const PLAIN_SHOT = {
 
 export const TEXT_STYLES = ["caption", "title", "hero", "serif", "stacked", "boxed", "label", "drip"] as const;
 export const TEXT_ANIMATIONS = ["none", "pop", "fade", "slide_up", "typewriter"] as const;
-export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal", "subtitle"] as const;
+export const CAPTION_PRESETS = ["bold_pop", "editorial", "karaoke_box", "classic", "minimal", "subtitle", "mixed_type"] as const;
 export const GRAPHICS = ["comment_cta", "follow_pill", "progress_bar", "counter", "emoji", "circle"] as const;
 export const SFX = ["whoosh", "pop", "hit", "riser", "click", "ding"] as const;
 export const MOTION_TEMPLATES = ["character_intro", "cast_lineup", "title_3d", "stat_card", "lower_third_3d", "phone_3d", "browser_3d", "pill_flow", "kinetic_type", "logo_reveal"] as const;
@@ -102,13 +102,13 @@ const Captions = z.object({
     .describe("auto = the engine captions every kept spoken word, timed exactly from the audio (use whenever there is speech); translate = subtitles in another language than the one spoken: you write each translated line as an on_screen_text item with style caption, timed on the finished timeline to when that line is said, and the engine reveals its words as the person speaks, in the preset's look; manual = only the caption items you write, shown whole; off = none"),
   preset: z
     .enum(CAPTION_PRESETS)
-    .describe("bold_pop = heavy white sans, words pop in one by one, keywords in the highlight color (energetic creator reels); editorial = clean white sans with italic serif keywords (premium, brand); karaoke_box = serif in a dark box, spoken words light up (calm, readable); classic = boxed white subtitle lines; minimal = small white text with a soft shadow; subtitle = TV-series subtitles: whole phrases in small white sentence-case text with a soft shadow, built up word by word as they're spoken (sitcoms, mockumentaries, skits, dialogue)"),
+    .describe("bold_pop = heavy white sans, words pop in one by one, keywords in the highlight color (energetic creator reels); editorial = clean white sans with italic serif keywords (premium, brand); karaoke_box = serif in a dark box, spoken words light up (calm, readable); classic = boxed white subtitle lines; minimal = small white text with a soft shadow; subtitle = TV-series subtitles: whole phrases in small white sentence-case text with a soft shadow, built up word by word as they're spoken (sitcoms, mockumentaries, skits, dialogue); mixed_type = every phrase a type lockup at head height: a thin lead-in, one key word set big in a heavy geometric or black italic serif face with a colour gradient (behind the person when one fills the frame), the rest small under it, words coming out of a blur as they're spoken; short phrases are a small bold italic line (premium walk-and-talks, real estate, coaches, lifestyle; the key word is the highlight word, else the longest word of the phrase)"),
   words_per_screen: z.number().describe("1 to 4 words on screen at a time; 2 to 3 for vertical social. The subtitle preset shows whole phrases: 4 to 8."),
   case: z.enum(["as_spoken", "lower", "upper"]),
-  position: z.enum(["top", "center", "bottom"]).describe("center = chest height, the creator-reel standard"),
+  position: z.enum(["top", "center", "bottom"]).describe("center = chest height, the creator-reel standard (mixed_type: the key word at head height)"),
   size: z.enum(["small", "medium", "large"]),
   color: Hex,
-  highlight_color: Hex.describe("Color for highlight words and the word being spoken"),
+  highlight_color: Hex.describe("Color for highlight words and the word being spoken (mixed_type: the key words' gradient colour; pick one that sits well on the footage)"),
   highlight_words: z.array(z.string()).describe("Keywords to emphasize whenever they're spoken (product, numbers, payoffs), as spoken"),
 });
 

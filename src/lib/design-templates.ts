@@ -126,6 +126,14 @@ export const DESIGN_TEMPLATES: DesignTemplate[] = [
     direction: `A magazine page in motion: a serif headline (Playfair Display, Instrument Serif or Cormorant, 120-180 px) with one italic accent word in the accent colour, thin 2 px rules drawing across the frame, small capital labels with wide tracking, and section numbers like 01 / 03. Generous margins and plenty of space. Calm motion: 0.6-0.8 s slides and fades with expo-out, nothing bouncy. For premium, luxury, real estate, fashion and personal brands.`,
   },
   {
+    id: "mixed-type-captions",
+    title: "Mixed-type caption lockups",
+    category: "Kinetic type",
+    summary: "Every phrase a type lockup at head height: thin lead-in, one big gradient key word behind the person, small tail.",
+    needs: "Footage of a person talking to camera (walk-and-talk, seated, medium shot).",
+    direction: `The captions are the design (learned from @blackmedia.ve's real-estate reels). Each spoken phrase is a lockup centred on the person at head height (y 640-860): a small thin lead-in (Poppins Light, Inter Light Italic or Great Vibes script, 44-70 px, white) left-aligned just inside the key word and sitting on its cap line; one key word set big (60-80% of the width, 100-270 px) in a heavy face, Poppins ExtraBold, Playfair Display Black Italic, Inter Black Italic or Archivo Expanded ExtraBold Italic capitals, filled with a horizontal two-stop gradient of one colour family chosen against the footage (light tint to full colour, or two neighbouring hues like violet to pink), with the class "behind" so the head overlaps it (the head may hide 20-40% of it, never the face); the tail small under it, right-aligned to it (serif lockups keep a serif tail at half size). Use 2-3 of these families in a video, the same ones throughout. Every word appears on its own syllable out of a blur (0.18 s small words, 0.26 s the key word: opacity, blur 15% of its size to 0, scale 110% to 100%, expo-out); the lockup stays until the next phrase, drifting 2-3% larger, then cuts. Phrases with no strong word are a small bold italic white line at chest height. A key word every one or two phrases. For one or two moments: a list as black pills with a thin amber rim popping beside the person, platform icons lining up under "platforms", a gradient ring behind the head, a one-frame white silhouette of the person on a cut. No outline strokes, no glow, no third hue.`,
+  },
+  {
     id: "brand-end-card",
     title: "Brand end card",
     category: "Brand",

@@ -14,7 +14,7 @@ agents: strategist, motion
 - Bold, condensed or display fonts read best for short hooks; a clean sans for captions.
 
 **Captions and motion**
-- Choose the caption preset by niche and energy: bold_pop or karaoke_box for energetic and young, editorial or minimal for premium and calm, subtitle for talking heads in two languages.
+- Choose the caption preset by niche and energy: bold_pop or karaoke_box for energetic and young, editorial or minimal for premium and calm, mixed_type for premium presenters who carry the video (real estate, coaches, beauty: mixed fonts and gradient key words behind the person), subtitle for talking heads in two languages.
 - Describe the motion energy in one line (calm and warm, punchy and fast) and the templates that fit (title_3d, stat_card, kinetic_type, logo_reveal…).
 
 **Logo, tone and rules**

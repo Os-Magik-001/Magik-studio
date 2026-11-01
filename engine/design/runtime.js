@@ -76,6 +76,25 @@ async function settled() {
   await Promise.all(imgs.map((i) => (i.complete ? i.decode().catch(() => {}) : new Promise((r) => { i.onload = i.onerror = r; }))));
 }
 
+// Which elements a screenshot shows: "front" (all but .behind), "behind" (only .behind) or
+// everything (null), when the person can't be cut out.
+window.setPass = (pass) => {
+  const stage = document.getElementById("stage");
+  if (pass) stage.dataset.pass = pass;
+  else delete stage.dataset.pass;
+};
+
+// Whether any .behind element shows right now (laid out, not display: none, not transparent).
+window.behindShown = () =>
+  [...document.querySelectorAll("#stage .behind")].some((el) => {
+    if (!el.getClientRects().length) return false;
+    for (let e = el; e && e.id !== "stage"; e = e.parentElement) {
+      const cs = getComputedStyle(e);
+      if (cs.display === "none" || Number(cs.opacity) < 0.01) return false;
+    }
+    return true;
+  });
+
 window.renderAt = async (t) => {
   try {
     await draw?.(t);

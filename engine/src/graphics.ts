@@ -9,6 +9,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCanvas, GlobalFonts, type SKRSContext2D } from "@napi-rs/canvas";
+import { drawLockup, layoutLockup, lockupPalette, lockupScreens, lockupsFromScreens, type Layout, type Lockup } from "./lockups.ts";
 import type { EditPlan } from "./plan.ts";
 import { canvasFont, readableOn, type FontRole, type Typography } from "./typefaces.ts";
 
@@ -39,7 +40,9 @@ type Layer = "front" | "behind";
 type Text = EditPlan["on_screen_text"][number];
 type Graphic = EditPlan["graphics"][number];
 
-export type GraphicsInput = { plan: EditPlan; words: Word[]; W: number; H: number; length: number; fps: number; brand: Brand };
+// `behindCaptions`: mixed_type key words go behind the person (render.ts sets it when the cut-out
+// tool is there); `heroFront`: lockups whose key word the person would cover too much, drawn in front.
+export type GraphicsInput = { plan: EditPlan; words: Word[]; W: number; H: number; length: number; fps: number; brand: Brand; behindCaptions?: boolean; heroFront?: Set<number> };
 
 // ---------------------------------------------------------------- timing helpers
 
@@ -215,6 +218,8 @@ function drawCaption(ctx: Ctx, input: GraphicsInput, screen: Screen, t: number) 
     classic: text("Magik Sans SemiBold", size * 0.85),
     minimal: text("Magik Sans Medium", size),
     subtitle: text("Magik Sans SemiBold", size),
+    // Drawn as lockups (lockups.ts); here only as a plain fallback.
+    mixed_type: text("Magik Sans SemiBold", size),
   };
   const runs: Run[] = shown.map((w, i) => {
     const hl = highlights.has(bare(w.text));
@@ -558,6 +563,18 @@ function drawGraphic(ctx: Ctx, input: GraphicsInput, g: Graphic, t: number) {
 
 // ---------------------------------------------------------------- layers
 
+// Mixed-type captions (lockups.ts), from the spoken words or from translated subtitle lines.
+export function lockupsFor(input: GraphicsInput): Lockup[] {
+  const c = input.plan.captions;
+  if (c.preset !== "mixed_type") return [];
+  if (c.mode === "auto") return lockupScreens(input.words, c.highlight_words);
+  if (c.mode === "translate") return lockupsFromScreens(translatedScreens(input.plan.on_screen_text.filter((t) => t.style === "caption"), input.words), c.highlight_words);
+  return [];
+}
+
+// Whether a lockup's key word is drawn on the behind layer.
+const heroBehind = (input: GraphicsInput, l: Lockup, i: number) => !!input.behindCaptions && !!l.hero && !input.heroFront?.has(i);
+
 function itemsFor(input: GraphicsInput, layer: Layer) {
   const { mode, preset, words_per_screen } = input.plan.captions;
   // In translate mode the caption items are the subtitles, drawn in the caption preset's look.
@@ -565,20 +582,48 @@ function itemsFor(input: GraphicsInput, layer: Layer) {
   const texts = input.plan.on_screen_text.filter((t) => (layer === "behind") === t.behind_subject && !(translated && t.style === "caption"));
   const graphics = layer === "front" ? input.plan.graphics : [];
   const maxChars = input.W < input.H ? (preset === "subtitle" ? 34 : 22) : preset === "subtitle" ? 60 : 42;
+  const all = lockupsFor(input);
+  // Lockups on this layer, by their index among all the video's lockups.
+  const lockups = all.map((l, i) => ({ l, i })).filter(({ l, i }) => (layer === "front" ? true : heroBehind(input, l, i)));
   const captions =
-    layer !== "front" ? [] : mode === "auto" ? captionScreens(input.words, words_per_screen, maxChars) : translated ? translatedScreens(input.plan.on_screen_text.filter((t) => t.style === "caption"), input.words) : [];
-  return { texts, graphics, captions };
+    layer !== "front" || all.length || preset === "mixed_type"
+      ? []
+      : mode === "auto"
+        ? captionScreens(input.words, words_per_screen, maxChars)
+        : translated
+          ? translatedScreens(input.plan.on_screen_text.filter((t) => t.style === "caption"), input.words)
+          : [];
+  return { texts, graphics, captions, lockups };
 }
 
 export function hasLayer(input: GraphicsInput, layer: Layer) {
-  const { texts, graphics, captions } = itemsFor(input, layer);
-  return texts.length + graphics.length + captions.length > 0;
+  const { texts, graphics, captions, lockups } = itemsFor(input, layer);
+  return texts.length + graphics.length + captions.length + lockups.length > 0;
 }
 
 // Time ranges the layer draws anything (the matte for text behind people is only needed there).
 export function layerSpans(input: GraphicsInput, layer: Layer) {
-  const { texts } = itemsFor(input, layer);
-  return texts.map((t) => ({ start: t.start, end: t.end }));
+  const { texts, lockups } = itemsFor(input, layer);
+  return [...texts.map((t) => ({ start: t.start, end: t.end })), ...(layer === "behind" ? lockups.map(({ l }) => ({ start: l.start, end: l.end })) : [])];
+}
+
+// Each lockup's layout, measured once.
+function lockupLayouts(input: GraphicsInput, lockups: Lockup[], ctx: Ctx) {
+  const palette = lockupPalette(input.plan.captions, input.brand);
+  return lockups.map((l) => layoutLockup(ctx, l, { W: input.W, H: input.H, captions: input.plan.captions, palette, typography: input.brand.typography }));
+}
+
+// Where each lockup's key word sits and when it shows, for checking how much of it the person
+// would cover (render.ts).
+export function heroBoxes(input: GraphicsInput) {
+  const all = lockupsFor(input);
+  const ctx = createCanvas(8, 8).getContext("2d");
+  const layouts = lockupLayouts(input, all, ctx);
+  return all.flatMap((l, i) => {
+    const box = layouts[i].box;
+    const at = layouts[i].pieces.find((p) => p.hero)?.at ?? l.start;
+    return box ? [{ index: i, start: at, end: l.end, box }] : [];
+  });
 }
 
 // Draws the layer and writes a concat list (images with durations) that ffmpeg plays
@@ -586,13 +631,14 @@ export function layerSpans(input: GraphicsInput, layer: Layer) {
 export async function renderLayer(input: GraphicsInput, layer: Layer, dir: string) {
   await mkdir(dir, { recursive: true });
   const { W, H, fps, length } = input;
-  const { texts, graphics, captions } = itemsFor(input, layer);
+  const { texts, graphics, captions, lockups } = itemsFor(input, layer);
   // A caption hides while a title (in front or behind) shows the same words.
   const titleWords = (t: number) =>
     new Set(input.plan.on_screen_text.filter((x) => x.style !== "caption" && t >= x.start && t < x.end).flatMap((x) => x.text.split(/\s+/)).map(bare));
 
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
+  const layouts: Layout[] = lockupLayouts(input, lockups.map(({ l }) => l), ctx);
   const frames = Math.ceil(length * fps);
   const entries: { file: string; frames: number }[] = [];
   let lastKey = "";
@@ -610,6 +656,17 @@ export async function renderLayer(input: GraphicsInput, layer: Layer, dir: strin
         const newest = s.words[Math.max(0, spoken)];
         const pop = input.plan.captions.preset === "bold_pop" && newest ? Math.min(4, Math.floor((t - newest.start) * fps)) : 0;
         keys.push(`c${screen}:${spoken}:${pop}`);
+      }
+    }
+    const k = lockups.findIndex(({ l }) => t >= l.start && t < l.end);
+    if (k >= 0) {
+      const { l, i } = lockups[k];
+      const hidden = titleWords(t);
+      if (!l.words.every((w) => hidden.has(bare(w.text)))) {
+        // The front layer draws the key word too when it doesn't go behind the person.
+        drawLockup(ctx, l, layouts[k], t, layer === "behind" ? "hero" : heroBehind(input, l, i) ? "rest" : "all");
+        // Lockups move every frame (entrances and a slow drift).
+        keys.push(`l${i}:${f}`);
       }
     }
     for (const [i, g] of graphics.entries()) if (t >= g.start && t < g.end) keys.push(`g${i}:${drawGraphic(ctx, input, g, t)}`);

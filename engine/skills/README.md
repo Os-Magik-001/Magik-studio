@@ -31,7 +31,7 @@ A skill with broken front matter is skipped, and the engine log says why. The lo
 - **Write only what the engine can do.**
   - **Picture:** cut, add transitions (crossfade, dip to black or white, slide, wipe, zoom, circle, glitch), change speed, punch in or push in, reframe on a focus point, fix white balance, exposure and color per shot, apply an overall look.
   - **Text:**
-    - word-timed automatic captions in six styles, including TV-series subtitles
+    - word-timed automatic captions in seven styles, including TV-series subtitles and mixed-type lockups (a big gradient key word behind the person)
     - English subtitles translated from speech in another language, built up word by word
     - animated titles, hero words, serif accents, stacked or boxed headlines, and dripping series logos, optionally behind the person
   - **Graphics:** comment bubbles, follow buttons, progress bars, counters, emojis, drawn circles.
@@ -55,6 +55,7 @@ The starting set was distilled, not copied, from these sources:
 - **[iart-ai skill packs](https://github.com/iart-ai)** (MIT): timing classes for overlays on a talking head, odometer digits, closed-form particles, the beat offset and delivery colour tags (info-overlays-on-the-word, numbers-and-screens, 3d-scene-craft, motion-curves, motion-qc).
 - **[diffusionstudio/lottie](https://github.com/diffusionstudio/lottie)** and **[LottieFiles/motion-design-skill](https://github.com/LottieFiles/motion-design-skill)** (MIT): curves by role, single-property overshoot, cuts on motion, stagger from the trigger, counter-motion, cap-height alignment, data drawn along a line (motion-curves, designed-transitions, kinetic-type, frame-design, numbers-and-screens).
 - **[remotion-dev/skills](https://github.com/remotion-dev/skills)** (no licence file: ideas only, no text or code): the map plate and the fly-through camera path (numbers-and-screens, 3d-scene-craft).
+- **[@blackmedia.ve's showreel](https://www.instagram.com/p/DetzPtXAG8t/)** (Instagram, measured frame by frame on 2026-10-31): the mixed-type caption lockups, their free font equivalents, colours, layout and timing (mixed-type-captions). No footage or artwork kept.
 - **About 35 more open-source editing skill repos.** They cover talking-head editors (cut-video, ghost-editor, naive-video-skill, JJKoubo, jtxvideo-skill), short-form and ad editors (favstash, video-editor-agent, tiktok-video-skills, remotion-ads, qingyun-cine-skill), vlog and clipping tools (ai-video-editing-skill, newcut, smart-video-editor, easyedit) and full editors (OpenMontage, OpenChatCut, vex, cartcut). Where they disagreed, the rule kept is the one that most of them, or the measured examples, supported.
 
 Several of those repos are non-commercial or copyleft (CC BY-NC, PolyForm Noncommercial, AGPL, GPL). Only general editing practice was taken from them, rewritten in our own words, and none of their text or code is included here.

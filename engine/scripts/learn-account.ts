@@ -177,7 +177,7 @@ const ENGINE = `What the edit engine can do (map every technique to these, or sa
 - Shots: in/out points snapped to word edges (the editor quotes the kept words, code times the cut), speed 0.25-4x, mute, punch-in or slow push (zoom 1-2.5), reframe on a focus point, per-shot brightness/contrast/saturation, an overall look (natural, warm, cool, punchy, cinematic, black_and_white, vintage), freeze frames ("hold" shots), each shot labelled setup/punchline/reaction/other.
 - Automatic: split edits (L-cut 6 frames onto reactions, J-cut 4 frames into a new speaker), silence and filler trimming with natural gaps (0.25-0.45 s), retakes grouped and the last take preferred, dialogue loudness matched across clips (-20 LUFS, final -14), 15 ms audio fades at cuts.
 - Transitions: cut, crossfade, dip_to_black, dip_to_white, slide_left, slide_up, wipe_left, zoom_in, circle_open, glitch.
-- Captions: auto word-timed (presets bold_pop, editorial, karaoke_box, classic, minimal, subtitle), translate mode (English subtitles of other languages), highlight words, position, size, words per screen.
+- Captions: auto word-timed (presets bold_pop, editorial, karaoke_box, classic, minimal, subtitle, mixed_type), translate mode (English subtitles of other languages), highlight words, position, size, words per screen.
 - Text: title, hero, serif, stacked, boxed, label, drip, caption; animations pop, fade, slide_up, typewriter; text behind the person.
 - Graphics: comment_cta, follow_pill, progress_bar, counter, emoji, circle.
 - Overlays: cutaway (B-roll over the voice), card (floating clip or screenshot).

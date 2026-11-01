@@ -13,6 +13,7 @@ agents: editor, sound
   - **`karaoke_box`:** calm explainers and podcasts. Spoken words light up.
   - **`classic`:** ads that need maximum legibility.
   - **`minimal`:** cinematic pieces with little speech.
+  - **`mixed_type`:** premium talking heads and walk-and-talks (real estate, coaches, beauty). Each phrase is a lockup: thin lead-in, one big key word in a colour gradient behind the person, small tail (see mixed-type-captions). Settings: `center`, medium, `as_spoken`; the highlight colour chosen against the footage; `highlight_words` become the big words. Don't also add hero titles over the same words.
 - `highlight_words`: the product name, numbers, the promise and the payoff. Keep it to 3–4 words per reel (the owner, Oct 28: more reads as machine-made), so the highlight still means something.
 - Highlight color: the brand's accent color if it reads on video; otherwise a warm yellow (#FFD84D). Keep caption text white.
 - Use `manual` only for footage with no speech that still needs on-screen lines, and `off` for pure montage.
