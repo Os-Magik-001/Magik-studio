@@ -5,6 +5,7 @@ import { WindowPage } from "@/components/desktop/window-page";
 import { SettingsGroup, SettingsRow, SettingsShell } from "@/components/settings/settings-shell";
 import { markNotificationsRead } from "@/app/actions/workflow";
 import { NotificationSettings } from "./notification-settings";
+import { getBrand } from "@/lib/brand-server";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -21,7 +22,7 @@ export default async function NotificationSettingsPage() {
   const viewer = await getViewer();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="notifications" title="Notifications" description="Choose what Magik OS tells you about.">
+      <SettingsShell role={viewer.role} active="notifications" title="Notifications" description={`Choose what ${(await getBrand()).product} tells you about.`}>
         <NotificationSettings initial={viewer.preferences.muted ?? []} categories={CATEGORIES[viewer.role]} />
         <SettingsGroup>
           <SettingsRow label="Mark everything as read" hint="Clears the badge on the bell.">

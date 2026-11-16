@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          brand: Json
+          created_at: string
+          domains: string[]
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: Json
+          created_at?: string
+          domains?: string[]
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: Json
+          created_at?: string
+          domains?: string[]
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_runs: {
         Row: {
           agent: string

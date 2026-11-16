@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SetupFrame, Hello } from "@/components/setup/setup-frame";
 import { ReferralForm } from "./referral-form";
+import { getBrand } from "@/lib/brand-server";
 
 export const instant = false;
 
-export const metadata: Metadata = { title: "You're invited to Magik", robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `You're invited to ${(await getBrand()).short}`, robots: { index: false, follow: false } };
+}
 
 // Someone's referral link: the people they refer leave their details for the studio. Public.
 export default async function ReferralPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
+  const brand = await getBrand();
   const valid = /^[0-9a-z]{4,16}$/i.test(code);
   const { data: referrer } = valid
     ? await createAdminClient().from("profiles").select("full_name, email, paused_at").eq("referral_code", code.toLowerCase()).maybeSingle()
@@ -22,9 +26,9 @@ export default async function ReferralPage({ params }: { params: Promise<{ code:
         <Hello word="welcome" />
         {first ? (
           <>
-            <h1 className="mt-2 font-display text-[30px] leading-tight font-bold tracking-tight text-ink">{first} thinks Magik can help your business.</h1>
+            <h1 className="mt-2 font-display text-[30px] leading-tight font-bold tracking-tight text-ink">{first} thinks {brand.short} can help your business.</h1>
             <p className="mt-3 max-w-lg text-[15px] text-ink-2">
-              Magik Studio makes the videos that bring businesses their clients: strategy, scripts, shoots and editing. Leave your details and the studio will reach out.
+              {brand.studio} makes the videos that bring businesses their clients: strategy, scripts, shoots and editing. Leave your details and the studio will reach out.
             </p>
             <div className="mt-8 w-full max-w-md text-left">
               <ReferralForm code={code.toLowerCase()} />

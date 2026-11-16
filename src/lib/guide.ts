@@ -1,24 +1,25 @@
 import { APPS } from "@/lib/apps";
 import type { Role } from "@/lib/auth";
+import { brandText, type Brand } from "@/lib/brand";
 
-// What Magik OS says about itself to the people using it: the questions people ask most (the Help
+// What the app says about itself to the people using it: the questions people ask most (the Help
 // window) and the guide Motchi answers from. Only what a user needs to know: nothing about how the
 // app is built or run. Clients' answers never mention how the studio works inside.
 
 export type QA = [string, string];
 
-export const FAQ: Record<Role, QA[]> = {
+const FAQ: Record<Role, QA[]> = {
   client: [
     ["Where do I see my videos?", "Open Your videos in the Dock. Each video shows its latest cut; click it to watch, comment on the exact moment you'd like changed, then approve it or ask for changes."],
     ["How do I follow where each video is?", "Open Pipeline: every video is in a column, from the script to the shoot, the edit, your review and posting. Anything waiting for you is marked."],
     ["How do I approve a script?", "In Pipeline or Your videos, open the video: its script is at the top. Read it, then approve it or ask for changes in a few words."],
     ["When will my videos be posted?", "Open Calendar: posting dates are in gold, shoots in orange. You can also add your own events and share them with the studio."],
     ["Where are my invoices and my contract?", "In Settings, under Documents."],
-    ["How do referrals work?", "Open Referrals: share your link with a business that needs videos. When they sign with Magik, you earn credits."],
+    ["How do referrals work?", "Open Referrals: share your link with a business that needs videos. When they sign with {short}, you earn credits."],
   ],
   admin: [
     ["How do I start a new client?", "Onboarding, then New client: their details, the pack, the invoice, the contract, then send them their link. They finish their setup on their own."],
-    ["A client can't get in. Why?", "Clients use Magik OS once their onboarding is finished. In their client folder you can open their setup, or mark them onboarded if they started before onboarding existed."],
+    ["A client can't get in. Why?", "Clients use {product} once their onboarding is finished. In their client folder you can open their setup, or mark them onboarded if they started before onboarding existed."],
     ["How do I pause or remove someone?", "Team, then Manage on their row: pause stops them signing in until you resume them; delete removes their account for good (their work stays)."],
     ["How do posting dates reach clients?", "Set the posting date on a video's page, or drag it in Calendar. The client sees it in their calendar."],
     ["Where do referral credits come from?", "Referrals: when you mark a referral signed, its referrer gets the credits set in Settings, Studio."],
@@ -38,7 +39,7 @@ export const FAQ: Record<Role, QA[]> = {
   ],
   seller: [
     ["How do I start a new client?", "Onboarding, then New client: details, pack, invoice, contract, then send the link."],
-    ["Where do referrals come in?", "Referrals: every business referred to Magik, with who referred it. Follow them up and mark them signed."],
+    ["Where do referrals come in?", "Referrals: every business referred to {short}, with who referred it. Follow them up and mark them signed."],
   ],
 };
 
@@ -64,11 +65,11 @@ const DETAILS: Record<string, string> = {
   prompts: "The team's library of motion prompts.",
   shoots: "Every shoot with its date, place and shot list. Open a shoot to upload the footage or link its Drive folder, then mark the footage complete.",
   brand: "Your logo, your colours and fonts, and your answers to the brand questions.",
-  website: "Your website made with Magik opens right here when it's live. While it's being built you'll see that; if you don't have one with Magik yet, ask the studio from Help.",
-  team: "Everyone who uses Magik OS, with their role. Manage on a row lets you set a new password, pause the account (they can't sign in until you resume it) or delete it for good (their work stays).",
-  referrals: "Your referral link and your credits: share the link with a business that needs videos; when they sign with Magik, you earn credits.",
+  website: "Your website made with {short} opens right here when it's live. While it's being built you'll see that; if you don't have one with {short} yet, ask the studio from Help.",
+  team: "Everyone who uses {product}, with their role. Manage on a row lets you set a new password, pause the account (they can't sign in until you resume it) or delete it for good (their work stays).",
+  referrals: "Your referral link and your credits: share the link with a business that needs videos; when they sign with {short}, you earn credits.",
   notifications: "The bell in the menu bar: new versions, comments, approvals and answers from the studio. Click one to open it, or mark everything as read.",
-  help: "The question mark in the menu bar: how Magik OS works, the questions people ask most, and a message to the studio (they answer in your notifications, usually the same day).",
+  help: "The question mark in the menu bar: how {product} works, the questions people ask most, and a message to the studio (they answer in your notifications, usually the same day).",
 };
 
 const DESKTOP = `- Every app opens in its own window, and several can be open at once. Drag a window by its top bar, resize it from any edge or corner, double-click the top bar to fill the screen, or drag it to the left or right edge of the screen to fill half (two windows side by side).
@@ -77,19 +78,19 @@ const DESKTOP = `- Every app opens in its own window, and several can be open at
 - Search (⌘K, or the search field at the top right of the menu bar) finds an app, a client, a video or an event.
 - ⌘-click a link to open it in a new window. Option-W closes the window in front, Option-M puts it in the Dock.
 - Right-click an app in the Dock to see its windows, open a new one, or close them all.
-- Home (the first icon in the Dock, or the Magik OS name at the top left) shows the desktop: your day, your numbers and what needs you.
+- Home (the first icon in the Dock, or the {product} name at the top left) shows the desktop: your day, your numbers and what needs you.
 - Open windows come back where you left them the next time you sign in.`;
 
 const SETTINGS: { label: string; text: string; roles?: Role[] }[] = [
-  { label: "General", text: "your name (how you appear on comments, assignments and the calendar), your account, and what you can do in Magik OS" },
+  { label: "General", text: "your name (how you appear on comments, assignments and the calendar), your account, and what you can do in {product}" },
   { label: "Appearance", text: "your wallpaper (including Dynamic, which follows the time of day, and a live Matrix), the Dock's size, the app names under the icons, and solid windows; saved to your account, so they follow you to any computer" },
-  { label: "Notifications", text: "choose what Magik OS tells you about, and mark everything as read" },
+  { label: "Notifications", text: "choose what {product} tells you about, and mark everything as read" },
   { label: "Calendar", text: "how your calendar looks, and a private link to see it in Google Calendar or on your iPhone" },
   { label: "Password & security", text: "change your password (at least 8 characters), or sign out everywhere if you used a computer that isn't yours" },
   { label: "Documents", text: "your invoices and your contract", roles: ["client"] },
   { label: "Referrals & credits", text: "your referral link and your credits" },
   { label: "Studio", text: "the studio's invoice details, its packs and the credits a signed referral gives", roles: ["admin"] },
-  { label: "About Magik OS", text: "what Magik OS is, Motchi, and every keyboard shortcut" },
+  { label: "About {product}", text: "what {product} is, Motchi, and every keyboard shortcut" },
 ];
 
 const ROLE_NAMES: Record<Role, string> = {
@@ -102,12 +103,19 @@ const ROLE_NAMES: Record<Role, string> = {
 
 export const roleName = (role: Role) => ROLE_NAMES[role];
 
+// The questions for one role, in the studio's own names.
+export const faqFor = (role: Role, brand: Brand): QA[] => FAQ[role].map(([q, a]) => [brandText(q, brand), brandText(a, brand)]);
+
 // Everything Motchi knows, for one role: only that role's apps and answers.
-export function guideFor(role: Role): string {
+export function guideFor(role: Role, brand: Brand): string {
+  return brandText(guideText(role, brand), brand);
+}
+
+function guideText(role: Role, brand: Brand): string {
   const apps = APPS.filter((a) => a.id !== "home" && a.roles.includes(role));
   return [
-    "# Magik OS",
-    "Magik OS is the workspace of Magik Studio, the content studio of Magik Management. Clients follow their videos from the script to the day they're posted, review and approve them; the studio team plans, shoots, edits and delivers them. It looks and works like a Mac desktop: a menu bar at the top, a Dock at the bottom, and every app in its own window.",
+    "# {product}",
+    `{product} is the workspace of {studio}${brand.parent ? `, the content studio of ${brand.parent}` : ""}. Clients follow their videos from the script to the day they're posted, review and approve them; the studio team plans, shoots, edits and delivers them. It looks and works like a Mac desktop: a menu bar at the top, a Dock at the bottom, and every app in its own window.`,
     `## The apps this person has (as ${ROLE_NAMES[role]})`,
     apps.map((a) => `- ${a.name}: ${a.hint}.${DETAILS[a.id] ? ` ${DETAILS[a.id]}` : ""}`).join("\n"),
     "## Using the desktop",
@@ -151,8 +159,12 @@ const terms = (text: string) =>
 // What Motchi never talks about, whatever the guide says.
 const PRIVATE = /\b(api|secrets?|tokens?|database|bases? de donn\w*|env|environment|environnement|supabase|vercel|anthropic|claude|apify|servers?|serveurs?|source code|code source|cl[eé]s?)\b/i;
 
-export function answerFromGuide(role: Role, question: string): string {
-  if (PRIVATE.test(question)) return "That's private to the studio, so I can't share it. I'm here to help with how Magik OS works: ask me about your apps, your windows or your settings.";
+export function answerFromGuide(role: Role, question: string, brand: Brand): string {
+  return brandText(answerText(role, question), brand);
+}
+
+function answerText(role: Role, question: string): string {
+  if (PRIVATE.test(question)) return "That's private to the studio, so I can't share it. I'm here to help with how {product} works: ask me about your apps, your windows or your settings.";
   const asked = new Set(terms(question));
   const passages = [
     ...FAQ[role].map(([q, a]) => ({ text: a, words: new Set(terms(`${q} ${a}`)), boost: new Set(terms(q)) })),

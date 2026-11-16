@@ -20,7 +20,7 @@ export function ColorField({ label, hint, value, onChange }: { label: string; hi
       <label htmlFor={id} className="text-[13px] font-medium text-ink-2">
         {label}
       </label>
-      <div className="flex h-9 items-center gap-2 rounded-[10px] border border-white/10 bg-white/[0.055] pr-2 pl-1.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] focus-within:border-accent/70 focus-within:shadow-[0_0_0_3px_rgba(246,212,58,0.22)]">
+      <div className="flex h-9 items-center gap-2 rounded-[10px] border border-white/10 bg-white/[0.055] pr-2 pl-1.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] focus-within:border-accent/70 focus-within:shadow-[0_0_0_3px_rgb(var(--accent-rgb)/0.22)]">
         <input
           id={id}
           type="color"

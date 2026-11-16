@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { notifySales } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
+import { getBrand } from "@/lib/brand-server";
 
 // A client tells the studio they'd like a website, or a change to theirs.
 export async function requestWebsite(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -17,13 +18,13 @@ export async function requestWebsite(_: ActionResult, formData: FormData): Promi
   const name = client?.name ?? "A client";
   await notifySales(viewer.clientId, {
     kind: "website_request",
-    title: kind === "change" ? `${name} would like a change to their website` : `${name} would like a website with Magik`,
+    title: kind === "change" ? `${name} would like a change to their website` : `${name} would like a website with ${(await getBrand()).short}`,
     body: message,
   });
   return done(kind === "change" ? "Sent. The studio will get back to you." : "Thanks! The studio will reach out about your website.");
 }
 
-// The studio manager records the client's website made with Magik.
+// The studio manager records the client's website made by the studio.
 export async function saveClientWebsite(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin");
   const clientId = text(formData, "clientId");

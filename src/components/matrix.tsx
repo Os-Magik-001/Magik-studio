@@ -2,22 +2,23 @@
 
 import { useEffect, useRef } from "react";
 import { cx } from "@/components/ui";
+import { useBrand } from "@/components/brand";
 
-// Vertical "matrix" glyph streams in Magik Gold.
+// Vertical "matrix" glyph streams in the studio's accent colour, with the letters of its name.
 //  - tunnel: a 3D corridor of falling columns rushing toward the viewer (login)
 //  - rain:   flat vertical rain for narrow surfaces
 //  - field:  slow full-page rain behind the app's glass
 // Glyphs are pre-rendered into a sprite atlas and drawn with drawImage, capped
 // at 30 fps, paused in background tabs, and frozen for reduced-motion users.
 
-const GLYPHS = "0123456789MAGIKOS0123456789";
-const GOLD = "246,212,58";
+const DIGITS = "0123456789";
 const CELL = 48;
 
 type Atlas = { canvas: HTMLCanvasElement; count: number };
 
-function buildAtlas(): Atlas {
-  const chars = [...new Set(GLYPHS)];
+function buildAtlas(letters: string): Atlas {
+  const chars = [...new Set(DIGITS + letters.replace(/[^A-Z0-9]/g, ""))];
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#f6d43a";
   const canvas = document.createElement("canvas");
   canvas.width = CELL * chars.length;
   canvas.height = CELL * 2;
@@ -26,10 +27,10 @@ function buildAtlas(): Atlas {
   ctx.textBaseline = "middle";
   ctx.font = `500 ${CELL * 0.78}px ui-monospace, "Geist Mono", Menlo, monospace`;
   chars.forEach((ch, i) => {
-    // Row 0: bright head glyph (white-gold). Row 1: trail glyph (gold).
-    ctx.fillStyle = "rgb(255,246,200)";
+    // Row 0: bright head glyph (near white). Row 1: trail glyph (the accent).
+    ctx.fillStyle = `color-mix(in srgb, ${accent} 22%, white)`;
     ctx.fillText(ch, i * CELL + CELL / 2, CELL / 2);
-    ctx.fillStyle = `rgb(${GOLD})`;
+    ctx.fillStyle = accent;
     ctx.fillText(ch, i * CELL + CELL / 2, CELL * 1.5);
   });
   return { canvas, count: chars.length };
@@ -68,6 +69,7 @@ function glow(c: Column, i: number) {
 type Variant = "tunnel" | "rain" | "field";
 
 export function Matrix({ variant = "tunnel", className }: { variant?: Variant; className?: string }) {
+  const letters = useBrand().wordmark.join("").toUpperCase();
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export function Matrix({ variant = "tunnel", className }: { variant?: Variant; c
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const atlas = buildAtlas();
+    const atlas = buildAtlas(letters);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     let W = 0;
@@ -238,7 +240,7 @@ export function Matrix({ variant = "tunnel", className }: { variant?: Variant; c
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [variant]);
+  }, [variant, letters]);
 
   return <canvas ref={ref} aria-hidden className={cx("pointer-events-none block h-full w-full", className)} />;
 }

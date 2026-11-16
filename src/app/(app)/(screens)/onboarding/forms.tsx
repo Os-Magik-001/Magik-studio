@@ -17,6 +17,7 @@ import {
   saveStudioSettings,
   uploadContract,
 } from "@/app/actions/onboarding";
+import { useBrand } from "@/components/brand";
 
 type ClientInfos = {
   id: string;
@@ -39,22 +40,22 @@ export function ClientInfosForm({ client }: { client?: ClientInfos }) {
     <ActionForm action={client ? saveClientInfos : createOnboardingClient} className="grid gap-4 @min-[40rem]:grid-cols-2">
       {client && <input type="hidden" name="clientId" value={client.id} />}
       <Field label="Business name" className="@min-[40rem]:col-span-2">
-        <Input name="name" required defaultValue={client?.name} placeholder="Kapsalon MTL" autoFocus={!client} />
+        <Input name="name" required defaultValue={client?.name} placeholder="Corner Bakery" autoFocus={!client} />
       </Field>
       <Field label="Contact person">
-        <Input name="contactName" required defaultValue={client?.contact_name ?? ""} placeholder="Karim Salon" autoComplete="off" />
+        <Input name="contactName" required defaultValue={client?.contact_name ?? ""} placeholder="Alex Martin" autoComplete="off" />
       </Field>
       <Field label="Email" hint="The link to open their account goes here.">
-        <Input name="email" type="email" required defaultValue={client?.email ?? ""} placeholder="karim@kapsalon.ca" autoComplete="off" />
+        <Input name="email" type="email" required defaultValue={client?.email ?? ""} placeholder="alex@cornerbakery.com" autoComplete="off" />
       </Field>
       <Field label="Phone">
         <Input name="phone" type="tel" defaultValue={client?.phone ?? ""} placeholder="514 555 0123" autoComplete="off" />
       </Field>
       <Field label="Instagram">
-        <Input name="instagram" defaultValue={client?.instagram ? `@${client.instagram}` : ""} placeholder="@kapsalon.mtl" autoComplete="off" />
+        <Input name="instagram" defaultValue={client?.instagram ? `@${client.instagram}` : ""} placeholder="@cornerbakery" autoComplete="off" />
       </Field>
       <Field label="Website">
-        <Input name="website" defaultValue={client?.website ?? ""} placeholder="kapsalon.ca" autoComplete="off" />
+        <Input name="website" defaultValue={client?.website ?? ""} placeholder="cornerbakery.com" autoComplete="off" />
       </Field>
       <div className="flex flex-col gap-1.5">
         <span className="text-[13px] font-medium text-ink-2">Language</span>
@@ -268,12 +269,13 @@ export function LinkPanel({
   const [copied, setCopied] = useState(false);
   const [, startTransition] = useTransition();
   const first = contactName.split(/\s+/)[0] || contactName;
+  const brand = useBrand();
 
   const message = (url: string) =>
     language === "en"
-      ? `Hi ${first},\n\nWelcome to Magik! Here is your personal link to open your account and finish setting up (your brand and the videos you like):\n${url}\n\nThe link works for ${days} days.\n\nTalk soon,\n${sellerName}`
-      : `Bonjour ${first},\n\nBienvenue chez Magik ! Voici votre lien personnel pour ouvrir votre compte et compléter votre intégration (votre marque et les vidéos que vous aimez) :\n${url}\n\nLe lien est valide ${days} jours.\n\nÀ très vite,\n${sellerName}`;
-  const subject = language === "en" ? "Your Magik account" : "Votre compte Magik";
+      ? `Hi ${first},\n\nWelcome to ${brand.short}! Here is your personal link to open your account and finish setting up (your brand and the videos you like):\n${url}\n\nThe link works for ${days} days.\n\nTalk soon,\n${sellerName}`
+      : `Bonjour ${first},\n\nBienvenue chez ${brand.short} ! Voici votre lien personnel pour ouvrir votre compte et compléter votre intégration (votre marque et les vidéos que vous aimez) :\n${url}\n\nLe lien est valide ${days} jours.\n\nÀ très vite,\n${sellerName}`;
+  const subject = language === "en" ? `Your ${brand.short} account` : `Votre compte ${brand.short}`;
 
   const sent = (via: "copy" | "email" | "sms" | "share") => {
     setSentVia(via);
@@ -394,7 +396,7 @@ export function StudioSettingsForm({ settings }: { settings: Settings }) {
         <Input name="businessName" defaultValue={settings.business_name} />
       </Field>
       <Field label="Email">
-        <Input name="email" type="email" defaultValue={settings.email ?? ""} placeholder="factures@magik.studio" />
+        <Input name="email" type="email" defaultValue={settings.email ?? ""} placeholder="billing@yourstudio.com" />
       </Field>
       <Field label="Phone">
         <Input name="phone" defaultValue={settings.phone ?? ""} />

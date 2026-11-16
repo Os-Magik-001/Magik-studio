@@ -21,6 +21,7 @@ import { ResetPasswordButton } from "@/components/password-tools";
 import { ProductionPanel } from "@/components/production/panel";
 import { WindowPage } from "@/components/desktop/window-page";
 import { AccessActions, WebsiteForm } from "./access-forms";
+import { getBrand } from "@/lib/brand-server";
 
 export async function generateMetadata({ params }: { params: Promise<{ clientId: string }> }): Promise<Metadata> {
   return clientTitle((await params).clientId, "Client");
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ clientId:
 export default async function ClientPage({ params }: { params: Promise<{ clientId: string }> }) {
   const { clientId } = await params;
   const viewer = await requireRole("admin", "editor");
+  const brand = await getBrand();
   if (!/^[0-9a-f-]{36}$/i.test(clientId)) notFound();
 
   const supabase = await createClient();
@@ -236,13 +238,13 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
           {viewer.role === "admin" && (
             <Card>
               <CardHeader
-                title="Access to Magik OS"
+                title={`Access to ${brand.product}`}
                 description={
                   onboarding?.completed_at
-                    ? "Onboarded: their people use Magik OS."
+                    ? `Onboarded: their people use ${brand.product}.`
                     : onboarding
-                      ? "Setting up: their people finish the setup assistant before using Magik OS."
-                      : "Not onboarded yet: their people can't use Magik OS until you open their setup or mark them onboarded."
+                      ? `Setting up: their people finish the setup assistant before using ${brand.product}.`
+                      : `Not onboarded yet: their people can't use ${brand.product} until you open their setup or mark them onboarded.`
                 }
               />
               {!onboarding?.completed_at && (
@@ -255,7 +257,7 @@ export default async function ClientPage({ params }: { params: Promise<{ clientI
 
           {viewer.role === "admin" && (
             <Card>
-              <CardHeader title="Website" description="The website Magik made for them, shown in their Website app." />
+              <CardHeader title="Website" description={`The website ${brand.short} made for them, shown in their Website app.`} />
               <div className="p-5">
                 <WebsiteForm clientId={client.id} status={client.site_status} url={client.site_url ?? ""} adminUrl={client.site_admin_url ?? ""} />
               </div>

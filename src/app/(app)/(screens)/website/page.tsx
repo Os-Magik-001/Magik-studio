@@ -6,12 +6,14 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui";
 import { WindowPage } from "@/components/desktop/window-page";
 import { ChangeRequest, InterestButton } from "./website-forms";
+import { getBrand } from "@/lib/brand-server";
 
 export const metadata: Metadata = { title: "Website" };
 
-// The client's website made with Magik: a live preview when there is one, or what's coming.
+// The client's website made with the studio: a live preview when there is one, or what's coming.
 export default async function WebsitePage() {
   const viewer = await requireRole("client");
+  const brand = await getBrand();
   const supabase = await createClient();
   const { data: client } = viewer.clientId ? await supabase.from("clients").select("name, site_url, site_admin_url, site_status").eq("id", viewer.clientId).maybeSingle() : { data: null };
   const status = siteStatus(client?.site_status);
@@ -24,7 +26,7 @@ export default async function WebsitePage() {
       <WindowPage>
         <PageHeader
           title="Your website"
-          description={`${client?.name}'s website, made with Magik.`}
+          description={`${client?.name}'s website, made with ${brand.short}.`}
           actions={
             <>
               {client?.site_admin_url && (
@@ -94,7 +96,7 @@ export default async function WebsitePage() {
         <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-[18px] bg-info-soft text-[#64b5ff]">
           <Globe size={30} aria-hidden />
         </span>
-        <h2 className="mt-5 font-display text-[26px] font-bold tracking-tight text-ink">You don&apos;t have a website with Magik yet.</h2>
+        <h2 className="mt-5 font-display text-[26px] font-bold tracking-tight text-ink">You don&apos;t have a website with {brand.short} yet.</h2>
         <p className="mx-auto mt-2 max-w-lg text-[14px] text-ink-2">A website made to match your videos: your clients find you, see your work and book you, on any phone.</p>
         <ul className="mx-auto mt-7 grid max-w-2xl gap-3 text-left @min-[40rem]:grid-cols-3">
           {[

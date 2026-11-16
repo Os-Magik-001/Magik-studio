@@ -5,6 +5,7 @@ import type { Role } from "@/lib/auth";
 import { useDesktop } from "@/components/desktop/context";
 import type { MotchiMove, MotchiScene } from "./scene";
 import { MotchiChat, MotchiFace } from "./chat";
+import { useBrand } from "@/components/brand";
 
 // Motchi, the assistant of Magik OS, in the bottom-right corner: he peeks over the screen's edge,
 // follows the pointer with his eyes, and now and then comes up to check on things (a hop, a look
@@ -54,6 +55,7 @@ const write = (store: () => Storage, key: string, value: string) => {
 
 export function Motchi() {
   const { viewer } = useDesktop();
+  const brand = useBrand();
   const firstName = viewer.name.includes("@") ? null : viewer.name.split(" ")[0];
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<MotchiScene | null>(null);
@@ -175,7 +177,7 @@ export function Motchi() {
             if (mode === "rest") play("wiggle");
           }}
           onPointerLeave={() => setHover(false)}
-          aria-label={mode === "chat" ? "Close Motchi" : "Motchi, the Magik OS assistant: ask a question"}
+          aria-label={mode === "chat" ? "Close Motchi" : `Motchi, the ${brand.product} assistant: ask a question`}
           aria-expanded={mode === "chat"}
           className="pointer-events-auto absolute top-[14%] left-[16%] h-[62%] w-[68%] cursor-pointer rounded-[45%] focus-visible:outline-2 focus-visible:outline-accent"
         />

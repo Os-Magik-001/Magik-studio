@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getViewer } from "@/lib/auth";
+import { BrandMark } from "@/components/brand";
 import { WindowPage } from "@/components/desktop/window-page";
 import { SettingsGroup, SettingsRow, SettingsShell } from "@/components/settings/settings-shell";
+import { getBrand } from "@/lib/brand-server";
 
-export const metadata: Metadata = { title: "About Magik OS" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `About ${(await getBrand()).product}` };
+}
 
 const SHORTCUTS: [string, string][] = [
   ["⌘ K", "Search apps, clients, videos and events"],
@@ -19,25 +23,28 @@ const SHORTCUTS: [string, string][] = [
 
 export default async function AboutPage() {
   const viewer = await getViewer();
+  const brand = await getBrand();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="about" title="About Magik OS">
+      <SettingsShell role={viewer.role} active="about" title={`About ${brand.product}`}>
         <div className="frost flex items-center gap-5 rounded-[18px] p-6">
-          <Image src="/brand/magik-monogram.svg" alt="" width={70} height={48} unoptimized className="h-12 w-auto" />
+          <BrandMark brand={brand} className="h-12 w-auto" />
           <div>
             <p className="font-display text-[22px] font-bold tracking-[0.2em] text-ink">
-              MAGIK <span className="text-accent">OS</span>
+              {brand.wordmark[0]} <span className="text-accent">{brand.wordmark[1]}</span>
             </p>
-            <p className="text-[13px] text-muted">The workspace of Magik Studio: plan, script, shoot, edit, review and approve.</p>
+            <p className="text-[13px] text-muted">The workspace of {brand.studio}: plan, script, shoot, edit, review and approve.</p>
           </div>
         </div>
+        {brand.mascot && (
         <div className="frost flex items-center gap-5 rounded-[18px] p-6">
           <Image src="/motchi/motchi.webp" alt="Motchi" width={80} height={90} unoptimized className="h-[90px] w-auto drop-shadow-[0_8px_14px_rgba(0,0,0,0.45)]" />
           <div>
             <p className="text-[17px] font-semibold text-ink">Meet Motchi</p>
-            <p className="text-[13px] text-muted">The assistant of Magik OS. He lives in the bottom-right corner of your screen: click him and ask him anything about how Magik OS works.</p>
+            <p className="text-[13px] text-muted">The assistant of {brand.product}. He lives in the bottom-right corner of your screen: click him and ask him anything about how {brand.product} works.</p>
           </div>
         </div>
+        )}
         <SettingsGroup title="Keyboard shortcuts">
           {SHORTCUTS.map(([keys, what]) => (
             <SettingsRow key={keys} label={what}>

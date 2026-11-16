@@ -40,7 +40,7 @@ export async function ClientPipeline({ viewer }: { viewer: Viewer }) {
               return (
                 <li key={s.key} className="relative flex flex-col items-center text-center">
                   {i > 0 && <span aria-hidden className="absolute top-[18px] right-1/2 hidden h-px w-full bg-white/10 @min-[44rem]:block" />}
-                  <span className={cx("relative z-10 flex h-9 w-9 items-center justify-center rounded-full", n ? "bg-accent text-black" : "bg-white/[0.08] text-muted")}>
+                  <span className={cx("relative z-10 flex h-9 w-9 items-center justify-center rounded-full", n ? "bg-accent text-accent-ink" : "bg-white/[0.08] text-muted")}>
                     <Icon size={16} aria-hidden />
                   </span>
                   <span className="mt-1.5 text-[12.5px] font-semibold text-ink">{s.label}</span>

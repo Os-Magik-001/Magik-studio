@@ -65,7 +65,7 @@ export type LogoSpec = {
 
 // Ready-made color pairs the creator offers next to the color pickers.
 export const LOGO_PALETTES: { name: string; primary: string; accent: string }[] = [
-  { name: "Magik", primary: "#111111", accent: "#F6D43A" },
+  { name: "Black & gold", primary: "#111111", accent: "#F6D43A" },
   { name: "Ink & red", primary: "#141414", accent: "#E0222B" },
   { name: "Navy & gold", primary: "#14213D", accent: "#FCA311" },
   { name: "Forest", primary: "#1B4332", accent: "#95D5B2" },

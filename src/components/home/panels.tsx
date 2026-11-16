@@ -142,8 +142,8 @@ function AreaChart({ points, money }: { points: { label: string; value: number }
     <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 h-auto w-full" role="img" aria-label="The last 8 weeks">
       <defs>
         <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f6d43a" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#f6d43a" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
         </linearGradient>
       </defs>
       {[0.5, 1].map((f) => (
@@ -155,9 +155,9 @@ function AreaChart({ points, money }: { points: { label: string; value: number }
         </g>
       ))}
       <path d={area} fill="url(#chartFill)" />
-      <path d={line} fill="none" stroke="#f6d43a" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={last[0]} cy={last[1]} r="9" fill="#f6d43a" opacity="0.18" />
-      <circle cx={last[0]} cy={last[1]} r="4.5" fill="#f6d43a" stroke="#1a1a1d" strokeWidth="2" />
+      <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last[0]} cy={last[1]} r="9" fill="var(--accent)" opacity="0.18" />
+      <circle cx={last[0]} cy={last[1]} r="4.5" fill="var(--accent)" stroke="#1a1a1d" strokeWidth="2" />
       {points.map((p, i) =>
         i % 2 === 1 || i === points.length - 1 ? (
           <text key={i} x={x(i)} y={H - 4} textAnchor="middle" fill="rgba(235,235,245,0.45)" fontSize="11">
@@ -219,7 +219,7 @@ export function VideoList({ rows, empty }: { rows: VideoRow[]; empty: string }) 
               <span className={cx("rounded-full px-2 py-0.5 text-[11px] font-semibold", STATUS_TONE[v.status] ?? "bg-white/10 text-ink-2")}>{v.statusLabel}</span>
               <span className="flex w-full items-center gap-2">
                 <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-white/10">
-                  <span className="block h-full rounded-full bg-gradient-to-r from-[#d9a60c] to-accent" style={{ width: `${v.progress}%` }} />
+                  <span className="block h-full rounded-full bg-gradient-to-r from-[var(--accent-deep)] to-accent" style={{ width: `${v.progress}%` }} />
                 </span>
                 <span className="w-8 text-right text-[11px] text-muted tabular-nums">{v.progress}%</span>
               </span>

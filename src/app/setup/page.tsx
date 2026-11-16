@@ -10,6 +10,7 @@ import { cleanSpec } from "@/lib/logo-templates";
 import { SetupFrame } from "@/components/setup/setup-frame";
 import { Button } from "@/components/ui";
 import { BrandStep, ContractStep, DoneStep, QuestionsStep, ReferencesStep } from "./steps";
+import { ShortName } from "@/components/brand";
 
 export const instant = false;
 
@@ -37,7 +38,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
     admin.from("reference_videos").select("id, url, platform, title, note, library_id").eq("client_id", clientId).is("video_id", null).order("created_at"),
     supabase.from("brand_kits").select("logo_path, logo_spec").eq("client_id", clientId).maybeSingle(),
   ]);
-  // No onboarding yet: the studio hasn't opened this client's setup. Magik OS waits for it.
+  // No onboarding yet: the studio hasn't opened this client's setup. The app waits for it.
   if (!progress || !client) return <BeingPrepared name={displayName(viewer)} />;
   // Finished (the brand step finishes it, so production starts): the desktop, except right
   // after the last step, which shows that they're all set.
@@ -89,14 +90,14 @@ function BeingPrepared({ name }: { name: string }) {
   return (
     <SetupFrame>
       <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-        <span className="app-icon h-20 w-20" style={{ background: "linear-gradient(180deg,#ffe36e,#d9a60c)" }}>
+        <span className="app-icon h-20 w-20" style={{ background: "linear-gradient(180deg,var(--accent-light),var(--accent-deep))" }}>
           <span className="text-[34px]" aria-hidden>
             ✦
           </span>
         </span>
         <h1 className="mt-8 font-display text-[32px] leading-tight font-bold tracking-tight text-ink">Your space is being prepared, {name.split(/\s+/)[0]}.</h1>
         <p className="mt-3 max-w-lg text-[15px] text-ink-2">
-          Your Magik contact is finishing your onboarding. As soon as it&apos;s ready, you&apos;ll find your videos, your brand and your documents here.
+          Your <ShortName /> contact is finishing your onboarding. As soon as it&apos;s ready, you&apos;ll find your videos, your brand and your documents here.
         </p>
         <form action="/auth/signout" method="post" className="mt-9">
           <Button variant="secondary">Sign out</Button>

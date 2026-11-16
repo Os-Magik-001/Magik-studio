@@ -5,10 +5,13 @@ import { formatMoney } from "@/lib/onboarding";
 import { LinkButton } from "@/components/ui";
 import { SetupFrame } from "@/components/setup/setup-frame";
 import { JoinFlow } from "./join-flow";
+import { getBrand } from "@/lib/brand-server";
 
 export const instant = false;
 
-export const metadata: Metadata = { title: "Welcome to Magik", robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `Welcome to ${(await getBrand()).short}`, robots: { index: false, follow: false } };
+}
 
 // The link a seller sends a new client. Public: it opens before the client has an account.
 export default async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
@@ -26,7 +29,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
           <p className="mt-3 max-w-md text-[14.5px] text-ink-2">
             {used
               ? "This link was used to open your account. Sign in to pick up where you left off."
-              : "For your security, links stop working after a while. Ask your contact at Magik for a new one: it takes them a second."}
+              : `For your security, links stop working after a while. Ask your contact at ${(await getBrand()).short} for a new one: it takes them a second.`}
           </p>
           <LinkButton href={used ? "/login?next=/setup" : "/login"} variant={used ? "primary" : "secondary"} className="mt-7">
             Sign in

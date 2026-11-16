@@ -1,8 +1,8 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { cx } from "@/components/ui";
 import { Wallpaper } from "@/components/shell/wallpaper";
+import { BrandLockup } from "@/components/brand";
 
 // The client's setup, in the manner of the macOS Setup Assistant: one large glass panel over
 // the wallpaper, the steps along the top.
@@ -23,7 +23,7 @@ export function SetupFrame({
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-black/40" />
       <div className={cx("glass-pop animate-rise-in flex w-full flex-col rounded-[28px] sm:rounded-[34px]", wide ? "max-w-[1180px]" : "max-w-[860px]")}>
         <header className="flex items-center justify-between gap-4 px-6 pt-5 sm:px-9 sm:pt-7">
-          <Image src="/brand/magik-horizontal.svg" alt="Magik Management" width={120} height={26} unoptimized priority className="h-auto w-[112px]" />
+          <BrandLockup className="h-auto w-[112px]" />
           {steps && (
             <ol className="hidden items-center gap-1 sm:flex" aria-label="Setup steps">
               {steps.map((s, i) => (

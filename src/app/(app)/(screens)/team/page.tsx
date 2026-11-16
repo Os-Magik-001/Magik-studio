@@ -9,6 +9,7 @@ import { LocalDate } from "@/components/local-date";
 import { WindowPage } from "@/components/desktop/window-page";
 import { AddMemberForm } from "./add-member-form";
 import { MemberActions } from "./member-actions";
+import { getBrand } from "@/lib/brand-server";
 
 export const metadata: Metadata = { title: "Team" };
 
@@ -32,7 +33,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
 
   return (
     <WindowPage>
-      <PageHeader title="Team" description="Everyone who uses Magik OS. Each role sees only what that person needs. Pause an account to stop someone signing in for a while, or delete it for good." />
+      <PageHeader title="Team" description={`Everyone who uses ${(await getBrand()).product}. Each role sees only what that person needs. Pause an account to stop someone signing in for a while, or delete it for good.`} />
       <div className="mb-5">
         <SegmentedNav
           active={show}

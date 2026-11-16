@@ -5,6 +5,7 @@ import { readBeats } from "@/lib/script-view";
 import { renderScriptPdf } from "@/lib/script-pdf";
 import { parseShotList } from "@/lib/workflow";
 import { createClient } from "@/lib/supabase/server";
+import { getBrand } from "@/lib/brand-server";
 
 // A video's script as a PDF (@/lib/script-pdf). RLS decides what the viewer may read: the studio
 // every version, the client and the videographer the script once it has gone to the client.
@@ -20,9 +21,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ videoId: s
   ]);
   if (!script?.body.trim()) return new Response("This script isn't ready yet.", { status: 404 });
 
-  const name = client?.name ?? "Magik Studio";
+  const brand = await getBrand();
+  const name = client?.name ?? brand.studio;
   const pdf = await renderScriptPdf({
     client: name,
+    studio: brand.studio,
     title: video.title,
     status: script.status,
     updatedAt: script.updated_at,

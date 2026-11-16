@@ -9,6 +9,7 @@ import { Badge, Card, CardHeader, EmptyState } from "@/components/ui";
 import { LocalDate } from "@/components/local-date";
 import { WindowPage } from "@/components/desktop/window-page";
 import { SettingsShell } from "@/components/settings/settings-shell";
+import { getBrand } from "@/lib/brand-server";
 
 export const metadata: Metadata = { title: "Documents" };
 
@@ -29,7 +30,7 @@ export default async function DocumentsPage() {
 
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="documents" title="Documents" description="Your invoices and your contract with Magik.">
+      <SettingsShell role={viewer.role} active="documents" title="Documents" description={`Your invoices and your contract with ${(await getBrand()).short}.`}>
         <Card>
           <CardHeader title="Invoices" />
           {invoices?.length ? (

@@ -8,6 +8,7 @@ import { Button, Input } from "@/components/ui";
 import { Field } from "@/components/field";
 import { Hello } from "@/components/setup/setup-frame";
 import { createAccountFromInvite, markInviteOpened } from "@/app/actions/setup";
+import { useBrand } from "@/components/brand";
 
 export function JoinFlow({
   token,
@@ -28,6 +29,7 @@ export function JoinFlow({
 }) {
   const [step, setStep] = useState<"hello" | "account">("hello");
   const first = contactName.split(/\s+/)[0];
+  const brand = useBrand();
 
   useEffect(() => {
     markInviteOpened(token).catch(() => {});
@@ -38,7 +40,7 @@ export function JoinFlow({
       <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
         <Hello word={language === "fr" ? "bonjour" : "hello"} />
         <h1 className="animate-rise-in mt-2 font-display text-[30px] leading-tight font-bold tracking-tight text-ink [animation-delay:1.8s] sm:text-[36px]">
-          Welcome to Magik{first ? `, ${first}` : ""}.
+          Welcome to {brand.short}{first ? `, ${first}` : ""}.
         </h1>
         <p className="animate-rise-in mt-3 max-w-lg text-[15px] text-ink-2 [animation-delay:2s]">
           Let&apos;s set up {clientName}&apos;s space: your account, a few questions about your business, the videos you love, and your brand. It takes about ten minutes.

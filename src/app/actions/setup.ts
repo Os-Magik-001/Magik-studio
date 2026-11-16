@@ -16,6 +16,7 @@ import { passwordProblem } from "@/lib/passwords";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { done, fail, text, type ActionResult } from "@/lib/action-result";
+import { getBrand } from "@/lib/brand-server";
 
 // The client's lane of onboarding: the link -> an account -> the contract -> the questions ->
 // references -> the brand. Everything here acts for the signed-in client's own company only.
@@ -46,9 +47,10 @@ export async function markInviteOpened(token: string) {
 
 export async function createAccountFromInvite(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const invite = await inviteByToken(text(formData, "token"));
-  if (!invite) return fail("This link isn't valid. Ask your contact at Magik for a new one.");
+  const { short } = await getBrand();
+  if (!invite) return fail(`This link isn't valid. Ask your contact at ${short} for a new one.`);
   if (invite.state === "used") return fail("This link has already been used to open an account. Sign in instead.");
-  if (invite.state !== "active") return fail("This link has expired. Ask your contact at Magik for a new one.");
+  if (invite.state !== "active") return fail(`This link has expired. Ask your contact at ${short} for a new one.`);
 
   const fullName = text(formData, "fullName").slice(0, 120);
   const email = text(formData, "email").toLowerCase();

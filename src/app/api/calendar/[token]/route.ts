@@ -2,43 +2,47 @@ import type { NextRequest } from "next/server";
 import { feedOwner } from "@/lib/calendar-feed";
 import { feedEvents } from "@/lib/calendar-data";
 import type { CalEvent } from "@/lib/calendar";
+import { getBrand } from "@/lib/brand-server";
 
 const DAY = 86_400_000;
 
-// A person's Magik calendar as an iCalendar feed (RFC 5545), for Google or Apple Calendar to
+// A person's calendar as an iCalendar feed (RFC 5545), for Google or Apple Calendar to
 // subscribe to. Public: the link's signed token is the key (lib/calendar-feed.ts).
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const userId = await feedOwner(token.replace(/\.ics$/i, ""));
   if (!userId) return new Response("Not found", { status: 404 });
   const now = Date.now();
+  const brand = await getBrand();
+  // In iCalendar text, commas, semicolons and backslashes are escaped.
+  const product = brand.product.replace(/[\\;,]/g, (c) => `\\${c}`);
   const events = await feedEvents(userId, new Date(now - 60 * DAY).toISOString(), new Date(now + 400 * DAY).toISOString());
   const origin = request.nextUrl.origin;
   const stamp = utc(new Date(now).toISOString());
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Magik Studio//Magik OS//EN",
+    `PRODID:-//${brand.studio.replace(/[\\;,\/]/g, " ")}//${brand.product.replace(/[\\;,\/]/g, " ")}//EN`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Magik OS",
-    "X-WR-CALDESC:Your events\\, shoots\\, deadlines and posting dates from Magik OS",
+    `X-WR-CALNAME:${product}`,
+    `X-WR-CALDESC:Your events\\, shoots\\, deadlines and posting dates from ${product}`,
     "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
     "X-PUBLISHED-TTL:PT1H",
-    ...events.flatMap((e) => vevent(e, stamp, origin)),
+    ...events.flatMap((e) => vevent(e, stamp, origin, brand.slug)),
     "END:VCALENDAR",
   ];
   return new Response(lines.map(fold).join("\r\n") + "\r\n", {
     headers: {
       "content-type": "text/calendar; charset=utf-8",
-      "content-disposition": 'inline; filename="magik-os.ics"',
+      "content-disposition": `inline; filename="${brand.slug}-os.ics"`,
       "cache-control": "private, max-age=300",
     },
   });
 }
 
-function vevent(e: CalEvent, stamp: string, origin: string) {
-  const out = ["BEGIN:VEVENT", `UID:${e.id.replace(":", "-")}@magik-os`, `DTSTAMP:${stamp}`];
+function vevent(e: CalEvent, stamp: string, origin: string, slug: string) {
+  const out = ["BEGIN:VEVENT", `UID:${e.id.replace(":", "-")}@${slug}-os`, `DTSTAMP:${stamp}`];
   if (e.allDay) {
     out.push(`DTSTART;VALUE=DATE:${e.start.slice(0, 10).replaceAll("-", "")}`, `DTEND;VALUE=DATE:${e.end.slice(0, 10).replaceAll("-", "")}`);
   } else {

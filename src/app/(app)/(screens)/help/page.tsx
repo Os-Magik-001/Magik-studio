@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { CircleHelp, Inbox, Keyboard, LayoutGrid, MousePointer2 } from "lucide-react";
 import { displayName, getViewer } from "@/lib/auth";
-import { FAQ, TIPS } from "@/lib/guide";
+import { TIPS, faqFor } from "@/lib/guide";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { LocalDate } from "@/components/local-date";
 import { WindowPage } from "@/components/desktop/window-page";
 import { AnswerForm, AskForm } from "./help-forms";
+import { getBrand } from "@/lib/brand-server";
 
 export const metadata: Metadata = { title: "Help" };
 
@@ -19,6 +20,7 @@ const TIP_CARDS: { icon: typeof LayoutGrid; title: string; text: string }[] = [
 
 export default async function HelpPage() {
   const viewer = await getViewer();
+  const brand = await getBrand();
   const supabase = await createClient();
   const [{ data: mine }, { data: inbox }] = await Promise.all([
     supabase.from("help_requests").select("id, topic, body, status, created_at").eq("user_id", viewer.id).order("created_at", { ascending: false }).limit(10),
@@ -28,7 +30,7 @@ export default async function HelpPage() {
   ]);
   return (
     <WindowPage>
-      <PageHeader title="Help" description="How Magik OS works, the questions people ask most, and a way to reach the studio." />
+      <PageHeader title="Help" description={`How ${brand.product} works, the questions people ask most, and a way to reach the studio.`} />
 
       {inbox && (
         <Card className="mb-6">
@@ -71,7 +73,7 @@ export default async function HelpPage() {
         <Card>
           <CardHeader title="Questions people ask" />
           <div className="divide-y divide-white/[0.07]">
-            {FAQ[viewer.role].map(([q, a]) => (
+            {faqFor(viewer.role, brand).map(([q, a]) => (
               <details key={q} className="group px-5 py-3.5">
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-[14px] font-medium text-ink">
                   <CircleHelp size={15} className="shrink-0 text-accent" aria-hidden />

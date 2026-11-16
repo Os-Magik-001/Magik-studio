@@ -7,6 +7,7 @@ import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui
 import { LocalDate } from "@/components/local-date";
 import { WindowPage } from "@/components/desktop/window-page";
 import { AdjustCredits, ReferSomeone, ReferralLink, ReferralStatus } from "./referral-tools";
+import { getBrand } from "@/lib/brand-server";
 
 export const metadata: Metadata = { title: "Referrals" };
 
@@ -20,6 +21,7 @@ const STATUS: Record<string, { label: string; tone: "neutral" | "accent" | "succ
 // Everyone's referral link and credits; for sales, every referral to follow up.
 export default async function ReferralsPage() {
   const viewer = await getViewer();
+  const brand = await getBrand();
   const sales = viewer.role === "admin" || viewer.role === "seller";
   const supabase = await createClient();
   const h = await headers();
@@ -42,17 +44,17 @@ export default async function ReferralsPage() {
 
   return (
     <WindowPage>
-      <PageHeader title="Referrals" description="Know a business that needs videos? Share your link. When they sign with Magik, you earn credits." />
+      <PageHeader title="Referrals" description={`Know a business that needs videos? Share your link. When they sign with ${brand.short}, you earn credits.`} />
 
       <div className="grid gap-5 @min-[56rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <section className="relative overflow-hidden rounded-[22px] p-6 shadow-[inset_0_0_0_1px_rgba(246,212,58,0.35)]" style={{ background: "linear-gradient(135deg, rgba(246,212,58,0.22), rgba(217,166,12,0.06) 55%, rgba(0,0,0,0.2))" }}>
+        <section className="relative overflow-hidden rounded-[22px] p-6 shadow-[inset_0_0_0_1px_rgb(var(--accent-rgb)/0.35)]" style={{ background: "linear-gradient(135deg, rgb(var(--accent-rgb)/0.22), color-mix(in srgb, var(--accent-deep) 6%, transparent) 55%, rgba(0,0,0,0.2))" }}>
           <Coins size={120} className="pointer-events-none absolute -right-6 -bottom-8 text-accent/10" aria-hidden />
           <p className="text-[13px] font-medium text-accent">Your credits</p>
           <p className="mt-1 font-display text-[54px] leading-none font-bold tracking-tight text-ink tabular-nums">{balance.toLocaleString()}</p>
           <p className="mt-3 text-[13.5px] text-ink-2">
             {signed ? `${signed} referral${signed > 1 ? "s" : ""} signed so far. Thank you!` : reward ? `Each business you refer that signs earns you ${reward} credits.` : "Each business you refer that signs earns you credits."}
           </p>
-          <p className="mt-1 text-[12.5px] text-muted">Your credits are kept by the studio; ask your Magik contact how to use them.</p>
+          <p className="mt-1 text-[12.5px] text-muted">Your credits are kept by the studio; ask your {brand.short} contact how to use them.</p>
         </section>
 
         <Card>

@@ -15,7 +15,12 @@
   --muted: rgba(235, 235, 245, 0.56);
   --accent: #f6d43a;
   --accent-ink: #000000;
-  --accent-soft: rgba(246, 212, 58, 0.14);
+  --accent-rgb: 246 212 58;
+  /* Shades of the accent: a deeper one, a lighter one, and the sheen on tinted glass. */
+  --accent-deep: color-mix(in srgb, var(--accent) 84%, black);
+  --accent-light: color-mix(in srgb, var(--accent) 70%, white);
+  --accent-sheen: color-mix(in srgb, var(--accent) 22%, rgba(255, 255, 255, 0.55));
+  --accent-soft: rgb(var(--accent-rgb) / 0.14);
   --success: #30d158;
   --success-ink: #000000;
   --success-soft: rgba(48, 209, 88, 0.15);
@@ -67,6 +72,13 @@
   --font-mono: ui-monospace, "SF Mono", var(--font-geist-mono), Menlo, monospace;
 }
 
+/* Magik Gold, exactly as in the studio's charter. */
+html[data-brand="magik"] {
+  --accent-deep: #d9a60c;
+  --accent-light: #ffe36e;
+  --accent-sheen: rgba(255, 246, 200, 0.55);
+}
+
 html {
   color-scheme: dark;
   background: var(--bg);
@@ -93,7 +105,7 @@ body {
 }
 
 ::selection {
-  background: rgba(246, 212, 58, 0.32);
+  background: rgb(var(--accent-rgb) / 0.32);
   color: #fff;
 }
 
@@ -203,12 +215,12 @@ input::-webkit-calendar-picker-indicator {
     color: #000;
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     backdrop-filter: blur(16px) saturate(160%);
-    background-color: rgba(246, 212, 58, 0.94);
-    background-image: linear-gradient(180deg, rgba(255, 246, 200, 0.55), rgba(246, 212, 58, 0) 58%);
+    background-color: rgb(var(--accent-rgb) / 0.94);
+    background-image: linear-gradient(180deg, var(--accent-sheen), rgb(var(--accent-rgb) / 0) 58%);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.75),
       inset 0 -2px 6px rgba(120, 90, 0, 0.3),
-      0 8px 22px -10px rgba(246, 212, 58, 0.6);
+      0 8px 22px -10px rgb(var(--accent-rgb) / 0.6);
   }
   .glass-tint::after {
     background: radial-gradient(90% 80% at 30% -20%, rgba(255, 255, 255, 0.45), transparent 60%);
@@ -324,8 +336,8 @@ input::-webkit-calendar-picker-indicator {
 .wallpaper {
   background-color: var(--wall-base, #050403);
   background-image:
-    var(--wall-url, url("/wallpapers/magik.webp")),
-    radial-gradient(120% 90% at 18% 8%, var(--wall-glow, rgba(246, 212, 58, 0.28)), transparent 55%),
+    var(--wall-url, var(--wall-default, url("/wallpapers/magik.webp"))),
+    radial-gradient(120% 90% at 18% 8%, var(--wall-glow, rgb(var(--accent-rgb) / 0.28)), transparent 55%),
     radial-gradient(90% 80% at 85% 90%, rgba(196, 112, 22, 0.22), transparent 60%);
   background-size: cover;
   background-position: center;
@@ -351,7 +363,7 @@ html[data-wallpaper="ember"]:not([style*="--wall-url"]) .wallpaper {
 }
 html[data-wallpaper="matrix"] .wallpaper {
   background-image:
-    radial-gradient(80% 70% at 30% 20%, rgba(246, 212, 58, 0.14), transparent 60%),
+    radial-gradient(80% 70% at 30% 20%, rgb(var(--accent-rgb) / 0.14), transparent 60%),
     radial-gradient(70% 60% at 80% 90%, rgba(200, 140, 30, 0.14), transparent 60%);
 }
 
@@ -435,7 +447,7 @@ html[data-solid="1"] .material-window {
   backdrop-filter: blur(36px) saturate(180%);
   background: linear-gradient(180deg, rgba(30, 28, 24, 0.55), rgba(10, 10, 10, 0.62));
   box-shadow:
-    inset 0 0 0 1px rgba(246, 212, 58, 0.16),
+    inset 0 0 0 1px rgb(var(--accent-rgb) / 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     0 24px 60px -18px rgba(0, 0, 0, 0.85);
   scrollbar-width: none;
@@ -631,8 +643,8 @@ html[data-solid="1"] .material-window {
   top: 0;
   left: 0;
   border-radius: 18px;
-  background: rgba(246, 212, 58, 0.1);
-  box-shadow: inset 0 0 0 1.5px rgba(246, 212, 58, 0.55);
+  background: rgb(var(--accent-rgb) / 0.1);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--accent-rgb) / 0.55);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   pointer-events: none;
@@ -803,13 +815,13 @@ html[data-wm-busy] * {
 .hud-card:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 .hud-card[data-state="done"] { border-color: rgba(95, 196, 138, 0.42); }
 .hud-card[data-state="failed"] { border-color: rgba(242, 104, 95, 0.65); }
-.hud-card[data-state="busy"] { border-color: rgba(246, 212, 58, 0.75); box-shadow: 0 0 0 1px rgba(246, 212, 58, 0.22), 0 0 30px rgba(246, 212, 58, 0.2), inset 0 1px 0 rgba(255, 240, 180, 0.16); }
+.hud-card[data-state="busy"] { border-color: rgb(var(--accent-rgb) / 0.75); box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.22), 0 0 30px rgb(var(--accent-rgb) / 0.2), inset 0 1px 0 rgba(255, 240, 180, 0.16); }
 .hud-card[data-state="busy"]::before, .hud-card[data-state="busy"]::after { border-color: var(--accent); }
-.hud-card[data-selected] { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(246, 212, 58, 0.55), 0 0 36px rgba(246, 212, 58, 0.22), inset 0 1px 0 rgba(255, 240, 180, 0.16); }
+.hud-card[data-selected] { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.55), 0 0 36px rgb(var(--accent-rgb) / 0.22), inset 0 1px 0 rgba(255, 240, 180, 0.16); }
 .hud-card[data-dim] { opacity: 0.32; }
 .hud-kind-label { font-family: var(--font-geist-mono), monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #6f9bb3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hud-icon { display: inline-flex; width: 24px; height: 24px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 8px; color: #7fe3ff; background: rgba(84, 214, 255, 0.12); box-shadow: inset 0 0 0 1px rgba(84, 214, 255, 0.3); }
-.hud-card[data-state="busy"] .hud-icon, .hud-icon[data-state="busy"] { color: var(--accent); background: rgba(246, 212, 58, 0.16); box-shadow: inset 0 0 0 1px rgba(246, 212, 58, 0.45); }
+.hud-card[data-state="busy"] .hud-icon, .hud-icon[data-state="busy"] { color: var(--accent); background: rgb(var(--accent-rgb) / 0.16); box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.45); }
 .hud-card[data-state="done"] .hud-icon, .hud-icon[data-state="done"] { color: #7fe0a8; background: rgba(95, 196, 138, 0.14); box-shadow: inset 0 0 0 1px rgba(95, 196, 138, 0.35); }
 .hud-card[data-state="failed"] .hud-icon, .hud-icon[data-state="failed"] { color: #ff9b94; background: rgba(242, 104, 95, 0.14); box-shadow: inset 0 0 0 1px rgba(242, 104, 95, 0.4); }
 .hud-led, .hud-led-idle { display: inline-block; width: 7px; height: 7px; flex-shrink: 0; border-radius: 999px; background: #2b6f88; }
@@ -817,19 +829,19 @@ html[data-wm-busy] * {
 .hud-led[data-state="done"] { background: #5fc48a; box-shadow: 0 0 8px #5fc48a; }
 .hud-led[data-state="failed"] { background: #f2685f; box-shadow: 0 0 8px #f2685f; }
 @keyframes hud-blink { 50% { opacity: 0.35; } }
-.hud-scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 40%, rgba(246, 212, 58, 0.1) 50%, transparent 60%); animation: hud-scan 2.6s linear infinite; }
+.hud-scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 40%, rgb(var(--accent-rgb) / 0.1) 50%, transparent 60%); animation: hud-scan 2.6s linear infinite; }
 @keyframes hud-scan { from { transform: translateY(-60%); } to { transform: translateY(60%); } }
 .hud-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent) no-repeat; background-size: 45% 100%; animation: hud-bar 1.4s linear infinite; }
 @keyframes hud-bar { from { background-position: -60% 0; } to { background-position: 160% 0; } }
 /* What a track carries, shown on the focused card's tracks. */
 .hud-pill { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: max-content; white-space: normal; padding: 2px 6px; border-radius: 9px; pointer-events: none; text-align: center; font: 500 10px/1.2 var(--font-geist-mono), monospace; letter-spacing: 0.01em; color: #d8f6ff; background: rgba(3, 12, 22, 0.94); border: 1px solid rgba(84, 214, 255, 0.5); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6); }
-.hud-pill.hot { color: #ffe680; border-color: rgba(246, 212, 58, 0.6); }
+.hud-pill.hot { color: var(--accent-light); border-color: rgb(var(--accent-rgb) / 0.6); }
 @media (prefers-reduced-motion: reduce) { .hud-packet, .hud-scan, .hud-bar { display: none; } .hud-led[data-state="busy"] { animation: none; } }
 
 /* The setup assistant's "hello": the outline is drawn, then the letters fill in gold. */
 .hello-word {
-  fill: rgba(246, 212, 58, 0);
-  stroke: #f6d43a;
+  fill: rgb(var(--accent-rgb) / 0);
+  stroke: var(--accent);
   stroke-width: 1.4;
   stroke-dasharray: 1400;
   stroke-dashoffset: 1400;
@@ -841,7 +853,7 @@ html[data-wm-busy] * {
   to { stroke-dashoffset: 0; }
 }
 @keyframes hello-fill {
-  to { fill: rgba(246, 212, 58, 1); stroke-width: 0; }
+  to { fill: rgb(var(--accent-rgb) / 1); stroke-width: 0; }
 }
 
 /* Printed documents (invoices): white paper, no desktop. */

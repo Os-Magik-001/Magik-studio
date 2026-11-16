@@ -6,6 +6,7 @@ import { Input, Select } from "@/components/ui";
 import { Field } from "@/components/field";
 import { setClientAccess } from "@/app/actions/studio";
 import { saveClientWebsite } from "@/app/actions/website";
+import { useBrand } from "@/components/brand";
 
 export function AccessActions({ clientId, hasSetup }: { clientId: string; hasSetup: boolean }) {
   return (
@@ -32,10 +33,11 @@ export function AccessActions({ clientId, hasSetup }: { clientId: string; hasSet
 
 export function WebsiteForm({ clientId, status, url, adminUrl }: { clientId: string; status: string; url: string; adminUrl: string }) {
   const [s, setS] = useState(status);
+  const brand = useBrand();
   return (
     <ActionForm action={saveClientWebsite} className="flex flex-col gap-3">
       <input type="hidden" name="clientId" value={clientId} />
-      <Field label="Their website with Magik">
+      <Field label={`Their website with ${brand.short}`}>
         <Select name="status" value={s} onChange={(e) => setS(e.target.value)}>
           <option value="none">None yet</option>
           <option value="building">Being built</option>

@@ -44,7 +44,7 @@ export function LinkButton({
 
 // macOS text fields: a soft well, a gold focus ring.
 const fieldClass =
-  "w-full rounded-[10px] border border-white/10 bg-white/[0.055] px-3 text-[14px] text-ink shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] placeholder:text-muted/70 transition-[border-color,box-shadow] duration-150 hover:border-white/20 focus:border-accent/70 focus:shadow-[0_0_0_3px_rgba(246,212,58,0.22)] focus:outline-none";
+  "w-full rounded-[10px] border border-white/10 bg-white/[0.055] px-3 text-[14px] text-ink shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] placeholder:text-muted/70 transition-[border-color,box-shadow] duration-150 hover:border-white/20 focus:border-accent/70 focus:shadow-[0_0_0_3px_rgb(var(--accent-rgb)/0.22)] focus:outline-none";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cx(fieldClass, className?.includes("h-") ? undefined : "h-9", className)} {...props} />;
@@ -91,7 +91,7 @@ type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
 
 const toneClass: Record<Tone, string> = {
   neutral: "bg-white/8 text-ink-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
-  accent: "bg-accent-soft text-accent shadow-[inset_0_0_0_1px_rgba(246,212,58,0.22)]",
+  accent: "bg-accent-soft text-accent shadow-[inset_0_0_0_1px_rgb(var(--accent-rgb)/0.22)]",
   success: "bg-success-soft text-success",
   warning: "bg-warning-soft text-warning",
   danger: "bg-danger-soft text-danger",

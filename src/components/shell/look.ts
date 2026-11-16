@@ -20,7 +20,8 @@ const hexToRgba = (hex: string, a: number) => {
 
 export function applyLook(look: Look) {
   const html = document.documentElement;
-  const w = resolveWallpaper(look.wallpaper);
+  // Before a person picks one: the studio's own (data-wall, set by the root layout).
+  const w = resolveWallpaper(look.wallpaper ?? html.dataset.wall);
   const url = wallpaperUrl(w);
   const resolved = { id: w.id, url: url ? `url(${url})` : "none", base: w.base, glow: hexToRgba(w.glow, w.live ? 0.14 : 0.3) };
   html.dataset.wallpaper = w.id;

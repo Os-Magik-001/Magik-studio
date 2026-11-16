@@ -5,6 +5,7 @@ import { getViewer, requireRole } from "@/lib/auth";
 import { deliver } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
+import { getBrand } from "@/lib/brand-server";
 
 // Referrals: everyone has a link (/r/<code>); the businesses they refer become leads for sales,
 // and a referral that signs earns the referrer credits (studio_settings.referral_reward).
@@ -108,7 +109,7 @@ export async function setReferralStatus(_: ActionResult, formData: FormData): Pr
   const { error } = await admin.from("referrals").update(patch).eq("id", id);
   if (error) return fail("Couldn't save the referral.");
   if (given > 0 && ref.referrer_id) {
-    await deliver([{ user_id: ref.referrer_id, kind: "referral_signed", title: `${ref.company ?? ref.name} signed with Magik: +${given} credits`, body: "Thank you for the referral." }]);
+    await deliver([{ user_id: ref.referrer_id, kind: "referral_signed", title: `${ref.company ?? ref.name} signed with ${(await getBrand()).short}: +${given} credits`, body: "Thank you for the referral." }]);
   }
   refresh();
   return done(given > 0 ? `Marked signed: ${given} credits given.` : "Saved.");

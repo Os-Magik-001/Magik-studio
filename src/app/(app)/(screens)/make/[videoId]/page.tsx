@@ -21,6 +21,7 @@ import { cancelEditJob, deleteFootage, retryEditJob } from "@/app/actions/workfl
 import { FootageDrop } from "@/app/(app)/(screens)/videos/[videoId]/forms";
 import { madeStatus } from "../status";
 import { MakeForm } from "./forms";
+import { getBrand } from "@/lib/brand-server";
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   const { videoId } = await params;
@@ -81,7 +82,7 @@ export default async function MadeVideoPage({ params, searchParams }: { params: 
     initial: parseTypography((typed ?? []).find((t) => t.id === videoId)?.typography) ?? parseTypography(typed?.[0]?.typography) ?? kitTypography ?? typographyFromKit(null),
     brandKit: kitTypography,
     title: video.title,
-    clientName: client?.name ?? "Magik Studio",
+    clientName: client?.name ?? (await getBrand()).studio,
   };
   const portrait = video.aspect === "9:16";
 

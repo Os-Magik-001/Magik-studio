@@ -138,7 +138,7 @@ export function CreateVideosForm({
                     on ? "border-accent/50 bg-accent-soft/40" : "border-white/[0.09] bg-white/[0.02] hover:border-white/20",
                   )}
                 >
-                  {canCreate && <input type="checkbox" name="idea" value={idea.index} checked={on} onChange={() => toggle(idea.index)} className="mt-1 h-4 w-4 shrink-0 accent-[#f6d43a]" />}
+                  {canCreate && <input type="checkbox" name="idea" value={idea.index} checked={on} onChange={() => toggle(idea.index)} className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]" />}
                   <div className="min-w-0 flex-1">{body}</div>
                 </label>
               )}
@@ -172,7 +172,7 @@ export function CreateVideosForm({
             <Input name="dueOn" type="date" defaultValue={dueOn} className="w-40" />
           </Label>
           <label className="flex h-9 items-center gap-2 text-[13px] text-ink-2">
-            <input type="checkbox" name="writeScripts" defaultChecked className="h-4 w-4 accent-[#f6d43a]" /> Write their scripts right away
+            <input type="checkbox" name="writeScripts" defaultChecked className="h-4 w-4 accent-[var(--accent)]" /> Write their scripts right away
           </label>
           <SubmitButton pendingText="Creating…" className="ml-auto">
             Create {plural(picked.size, "video")}
@@ -235,7 +235,7 @@ export function ShootDayForm({
         <legend className="mb-1.5 text-[12px] font-medium text-muted">Videos to shoot that day</legend>
         {videos.map((v) => (
           <label key={v.id} className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[13.5px] text-ink">
-            <input type="checkbox" name="video" value={v.id} defaultChecked={v.approved} className="h-4 w-4 accent-[#f6d43a]" />
+            <input type="checkbox" name="video" value={v.id} defaultChecked={v.approved} className="h-4 w-4 accent-[var(--accent)]" />
             {v.title}
             {!v.approved && <span className="text-xs text-warning">script not approved yet</span>}
             {v.videographer && <span className="text-xs text-muted">· {v.videographer}</span>}

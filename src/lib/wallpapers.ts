@@ -1,13 +1,13 @@
 // The desktop pictures (public/wallpapers/<id>.webp, thumbnails in thumbs/). `base` shows while
 // the picture loads, `glow` paints a soft light over it until then. "matrix" is live, drawn in
-// the browser; "dynamic" follows the time of day.
+// the browser; "dynamic" follows the time of day. A picture with a `brand` is that studio's own.
 
 export type WallpaperTone = "gold" | "warm" | "cool" | "neutral";
 
-export type Wallpaper = { id: string; name: string; tone: WallpaperTone; base: string; glow: string; live?: boolean; image?: boolean };
+export type Wallpaper = { id: string; name: string; tone: WallpaperTone; base: string; glow: string; live?: boolean; image?: boolean; brand?: string };
 
 export const WALLPAPERS: Wallpaper[] = [
-  { id: "magik", name: "Magik Gold", tone: "gold", base: "#050403", glow: "#f6d43a", image: true },
+  { id: "magik", name: "Magik Gold", tone: "gold", base: "#050403", glow: "#f6d43a", image: true, brand: "magik" },
   { id: "obsidian", name: "Obsidian", tone: "gold", base: "#070605", glow: "#f4c24a", image: true },
   { id: "silk", name: "Gold Silk", tone: "gold", base: "#040101", glow: "#f0b232", image: true },
   { id: "eclipse", name: "Eclipse", tone: "gold", base: "#030201", glow: "#f0a830", image: true },

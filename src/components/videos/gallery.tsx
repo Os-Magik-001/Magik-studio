@@ -12,8 +12,8 @@ import { cx } from "@/components/ui";
 // tick several to download them together.
 
 const TONE: Record<string, string> = {
-  review: "bg-accent text-black",
-  script: "bg-accent text-black",
+  review: "bg-accent text-accent-ink",
+  script: "bg-accent text-accent-ink",
   approved: "bg-success-soft text-success",
   posted: "bg-success-soft text-success",
   edit: "bg-white/10 text-ink-2",
@@ -125,7 +125,7 @@ function VideoCard({ v, client, picked, onPick }: { v: ClientVideo; client: stri
               className="h-full w-full object-cover"
             />
           ) : (
-            <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(246,212,58,0.16),transparent_60%),#0d0d0f] text-center">
+            <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(120%_80%_at_50%_0%,rgb(var(--accent-rgb)/0.16),transparent_60%),#0d0d0f] text-center">
               <Clapperboard size={28} className="text-accent/80" aria-hidden />
               <span className="px-3 text-[11.5px] text-muted">{v.preview ? "" : v.line}</span>
             </span>
@@ -150,7 +150,7 @@ function VideoCard({ v, client, picked, onPick }: { v: ClientVideo; client: stri
           onClick={onPick}
           className={cx(
             "absolute top-3.5 left-3.5 flex h-5 w-5 items-center justify-center rounded-[6px] border transition-opacity",
-            picked ? "border-accent bg-accent text-black opacity-100" : "border-white/60 bg-black/40 text-transparent opacity-70 group-hover:opacity-100",
+            picked ? "border-accent bg-accent text-accent-ink opacity-100" : "border-white/60 bg-black/40 text-transparent opacity-70 group-hover:opacity-100",
           )}
         >
           <Check size={13} strokeWidth={3} aria-hidden />

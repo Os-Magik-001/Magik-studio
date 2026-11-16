@@ -4,6 +4,8 @@ import { useId, type ReactNode } from "react";
 import type { AppIconName } from "@/lib/apps";
 import { cx } from "@/components/ui";
 import { useNow } from "@/components/use-now";
+import { useBrand } from "@/components/brand";
+import { brandInitials } from "@/lib/brand";
 
 // The apps' icons, in the Liquid Glass style of macOS: a glass tile in one soft gradient whose
 // rim catches the light, and one simple symbol of frosted glass floating over it, lit on its
@@ -17,11 +19,22 @@ type Icon = {
   glyph: (cut: string) => ReactNode;
   // Coloured details laid over the glass (the palette's paints, the camera's light).
   accent?: ReactNode;
-  // The symbol keeps its own colours instead of turning to glass (the Magik monogram).
+  // The symbol keeps its own colours instead of turning to glass (the studio's mark).
   raw?: boolean;
 };
 
 const W = "#ffffff";
+
+// Home: the studio's mark, or its initials until it has one.
+function HomeGlyph() {
+  const brand = useBrand();
+  if (brand.logos.mark) return <image href={brand.logos.mark} x={9} y={9} width={30} height={30} />;
+  return (
+    <text x={24} y={31} textAnchor="middle" fontSize={19} fontWeight={700} fill="var(--accent)">
+      {brandInitials(brand)}
+    </text>
+  );
+}
 
 // The tile: a square with Apple's "continuous" corners, where the curve eases into the sides
 // instead of meeting them at once (radius 22.5%, smoothing 0.6).
@@ -95,7 +108,7 @@ const ICONS: Record<AppIconName, Icon> = {
   home: {
     from: "#2f2c27",
     to: "#0b0a09",
-    glyph: () => <image href="/brand/magik-monogram.svg" x={9} y={9} width={30} height={30} />,
+    glyph: () => <HomeGlyph />,
     raw: true,
   },
   pipeline: {

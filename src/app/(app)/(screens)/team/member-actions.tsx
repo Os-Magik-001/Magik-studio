@@ -6,12 +6,14 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Button, Input, cx } from "@/components/ui";
 import { NewPasswordField } from "@/components/password-tools";
 import { deleteMember, resetMemberPassword, setMemberPaused } from "@/app/actions/studio";
+import { useBrand } from "@/components/brand";
 
 type Panel = "password" | "pause" | "delete" | null;
 
 // A person's account, managed from the Team list: a new password, pause or resume, delete.
 export function MemberActions({ userId, name, email, paused, self }: { userId: string; name: string; email: string; paused: boolean; self: boolean }) {
   const [open, setOpen] = useState(false);
+  const brand = useBrand();
   const [panel, setPanel] = useState<Panel>(null);
   const close = () => {
     setPanel(null);
@@ -69,7 +71,7 @@ export function MemberActions({ userId, name, email, paused, self }: { userId: s
           <p className="text-[13px] text-ink-2">
             {paused
               ? `${name} will be able to sign in again, with everything as they left it.`
-              : `${name} won't be able to sign in or use Magik OS until you resume them. Nothing they made is removed.`}
+              : `${name} won't be able to sign in or use ${brand.product} until you resume them. Nothing they made is removed.`}
           </p>
           <SubmitButton size="sm" variant={paused ? "primary" : "secondary"} pendingText={paused ? "Resuming…" : "Pausing…"}>
             {paused ? "Resume the account" : "Pause the account"}

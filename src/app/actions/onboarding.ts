@@ -10,6 +10,7 @@ import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-
 import { DEFAULT_LINK_DAYS, LINK_DAYS } from "@/lib/onboarding";
 import { defaultNote, packLine, readTaxes, totals, type Lang } from "@/lib/invoices";
 import { hashToken, newToken, siteOrigin } from "@/lib/invites";
+import { getBrand } from "@/lib/brand-server";
 
 // The seller's lane of onboarding: client details -> pack -> invoice -> contract -> link.
 // Sellers and studio managers only. Writes go through the secret key after the role check.
@@ -243,7 +244,7 @@ export async function saveStudioSettings(_: ActionResult, formData: FormData): P
   const { error } = await createAdminClient()
     .from("studio_settings")
     .update({
-      business_name: text(formData, "businessName") || "Magik Studio",
+      business_name: text(formData, "businessName") || (await getBrand()).studio,
       address: optionalText(formData, "address"),
       email: optionalText(formData, "email"),
       phone: optionalText(formData, "phone"),

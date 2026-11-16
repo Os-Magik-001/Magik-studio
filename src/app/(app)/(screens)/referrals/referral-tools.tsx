@@ -6,11 +6,13 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import { Field } from "@/components/field";
 import { addReferral, adjustCredits, setReferralStatus } from "@/app/actions/referrals";
+import { useBrand } from "@/components/brand";
 
 // The person's link, to copy or share.
 export function ReferralLink({ url, name }: { url: string; name: string }) {
   const [copied, setCopied] = useState(false);
-  const text = `${name} invites you to Magik Studio: the videos that bring businesses their clients.`;
+  const brand = useBrand();
+  const text = `${name} invites you to ${brand.studio}: the videos that bring businesses their clients.`;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2">
@@ -28,7 +30,7 @@ export function ReferralLink({ url, name }: { url: string; name: string }) {
       </div>
       <div className="flex flex-wrap gap-2">
         <a
-          href={`mailto:?subject=${encodeURIComponent("Magik Studio")}&body=${encodeURIComponent(`${text}\n\n${url}`)}`}
+          href={`mailto:?subject=${encodeURIComponent(brand.studio)}&body=${encodeURIComponent(`${text}\n\n${url}`)}`}
           className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 text-[13px] font-medium text-ink hover:bg-white/[0.13]"
         >
           <Mail size={14} aria-hidden /> Email
@@ -51,7 +53,7 @@ export function ReferralLink({ url, name }: { url: string; name: string }) {
           size="sm"
           variant="ghost"
           onClick={() => {
-            if (navigator.share) navigator.share({ title: "Magik Studio", text, url }).catch(() => {});
+            if (navigator.share) navigator.share({ title: brand.studio, text, url }).catch(() => {});
             else navigator.clipboard.writeText(url).then(() => setCopied(true));
           }}
         >

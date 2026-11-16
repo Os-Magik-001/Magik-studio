@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import Image from "next/image";
 import { Bell, CheckCheck, CircleHelp, LayoutGrid, LogOut, Search, Settings } from "lucide-react";
 import { appById } from "@/lib/apps";
 import { Avatar, cx } from "@/components/ui";
+import { BrandMark, useBrand } from "@/components/brand";
 import { useNow } from "@/components/use-now";
 import { useDesktop } from "@/components/desktop/context";
 import type { Win } from "@/components/desktop/windows";
@@ -15,13 +15,14 @@ import { Ago } from "@/components/home/time";
 // notifications, the clock and the person's menu on the right.
 export function TopBar({ current }: { current: Win | null }) {
   const d = useDesktop();
+  const brand = useBrand();
   const app = current?.appId ? appById(current.appId) : null;
   return (
     <header className="topbar fixed inset-x-0 top-0 z-[9000] flex h-[46px] items-center gap-2 px-3 text-white select-none sm:gap-3 sm:px-5">
-      <button type="button" onClick={d.showDesktop} className="flex shrink-0 items-center gap-2.5 rounded-lg px-1 py-1" aria-label="Magik OS: show the desktop">
-        <Image src="/brand/magik-monogram.svg" alt="" width={28} height={19} unoptimized priority className="h-[19px] w-auto" />
+      <button type="button" onClick={d.showDesktop} className="flex shrink-0 items-center gap-2.5 rounded-lg px-1 py-1" aria-label={`${brand.product}: show the desktop`}>
+        <BrandMark brand={brand} className="h-[19px] w-auto" />
         <span className="hidden font-display text-[13px] font-semibold tracking-[0.38em] sm:inline">
-          MAGIK <span className="text-accent">OS</span>
+          {brand.wordmark[0]} <span className="text-accent">{brand.wordmark[1]}</span>
         </span>
       </button>
       <span className="hidden min-w-0 items-center gap-3 md:flex">

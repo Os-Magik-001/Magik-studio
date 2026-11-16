@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Bell, Building2, CalendarDays, FileText, Gift, Info, Lock, Palette, UserRound } from "lucide-react";
 import type { Role } from "@/lib/auth";
 import { cx } from "@/components/ui";
+import { ProductName } from "@/components/brand";
 
 // Settings, like macOS System Settings: the sections in a sidebar, the chosen one on the right.
 
@@ -17,7 +18,7 @@ const SECTIONS: { key: SettingsSection; label: string; href: string; icon: typeo
   { key: "documents", label: "Documents", href: "/account/documents", icon: FileText, tint: "#64d2ff", roles: ["client"] },
   { key: "referrals", label: "Referrals & credits", href: "/referrals", icon: Gift, tint: "#d9a60c" },
   { key: "studio", label: "Studio", href: "/account/studio", icon: Building2, tint: "#30d158", roles: ["admin"] },
-  { key: "about", label: "About Magik OS", href: "/account/about", icon: Info, tint: "#636366" },
+  { key: "about", label: "About", href: "/account/about", icon: Info, tint: "#636366" },
 ];
 
 export function SettingsShell({
@@ -47,13 +48,13 @@ export function SettingsShell({
                 aria-current={on ? "page" : undefined}
                 className={cx(
                   "flex shrink-0 items-center gap-2.5 rounded-[10px] px-2.5 py-[7px] text-[13.5px] transition-colors",
-                  on ? "bg-accent text-black" : "text-ink-2 hover:bg-white/[0.07] hover:text-ink",
+                  on ? "bg-accent text-accent-ink" : "text-ink-2 hover:bg-white/[0.07] hover:text-ink",
                 )}
               >
                 <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[6px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]" style={{ background: s.tint }}>
                   <s.icon size={13} strokeWidth={2.2} aria-hidden />
                 </span>
-                <span className={cx("whitespace-nowrap", on && "font-semibold")}>{s.label}</span>
+                <span className={cx("whitespace-nowrap", on && "font-semibold")}>{s.label}{s.key === "about" && <> <ProductName /></>}</span>
               </Link>
             );
           })}

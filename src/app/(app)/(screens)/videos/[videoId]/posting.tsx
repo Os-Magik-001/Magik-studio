@@ -44,7 +44,7 @@ export function PostingDate({ videoId, postAt, platforms: initial }: { videoId: 
               type="button"
               aria-pressed={platforms.includes(p)}
               onClick={() => setPlatforms((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))}
-              className={cx("h-7 rounded-full px-2.5 text-[12px] font-medium", platforms.includes(p) ? "bg-accent text-black" : "bg-white/[0.08] text-ink-2 hover:bg-white/[0.13]")}
+              className={cx("h-7 rounded-full px-2.5 text-[12px] font-medium", platforms.includes(p) ? "bg-accent text-accent-ink" : "bg-white/[0.08] text-ink-2 hover:bg-white/[0.13]")}
             >
               {p}
             </button>

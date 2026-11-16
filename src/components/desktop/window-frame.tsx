@@ -20,6 +20,7 @@ import { useDesktop, WindowContext } from "@/components/desktop/context";
 import { useContent } from "@/components/desktop/content";
 import type { MissionSpot } from "@/components/desktop/mission";
 import { MIN_H, MIN_W, clamp, frameOf, zoomRect, type Rect, type Win, type Zoom } from "@/components/desktop/windows";
+import { useBrand } from "@/components/brand";
 
 const EDGES = ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const;
 type Edge = (typeof EDGES)[number];
@@ -32,6 +33,7 @@ const scrolls = new Map<string, number>();
 // it when minimized, and keeps its page alive while other windows are in front.
 export function WindowFrame({ win, focused, hidden, mission, aside }: { win: Win; focused: boolean; hidden: boolean; mission: MissionSpot | null; aside?: boolean }) {
   const d = useDesktop();
+  const brand = useBrand();
   const app = win.appId ? appById(win.appId) : null;
   const { area, phone } = d;
   const frame: Rect = phone ? { x: 0, y: area.top, w: area.w, h: area.bottom - area.top } : frameOf(win, area);
@@ -251,7 +253,7 @@ export function WindowFrame({ win, focused, hidden, mission, aside }: { win: Win
 
   // ------------------------------------------------------------ render
 
-  const title = win.title || app?.name || "Magik OS";
+  const title = win.title || app?.name || brand.product;
   // What the page's own components know of their window (AutoRefresh, the review room…).
   const state = useMemo(() => ({ id: win.id, path: win.path, focused, visible: !hidden }), [win.id, win.path, focused, hidden]);
   const transform = mission

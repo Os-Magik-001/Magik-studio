@@ -8,6 +8,8 @@ import { skillsBlock, type AgentKey } from "@/lib/skills";
 import { fakeAgents, fakeAnswer, type FakeKind } from "@/lib/agent-fakes";
 import type { RevisionKind } from "@/lib/workflow";
 import { templateById } from "@/lib/design-templates";
+import { MAGIK, brandText } from "@/lib/brand";
+import { getBrand } from "@/lib/brand-server";
 
 // The brand strategist, the content planner, the scriptwriter and the motion director run here,
 // in the app. The trend researcher downloads and watches videos, so it runs on the edit engine
@@ -37,6 +39,9 @@ async function ask<T extends z.ZodType>({
   context?: string;
 }): Promise<z.infer<T>> {
   if (fakeAgents()) return fakeAnswer(kind, prompt) as z.infer<T>;
+  // The agents work for the studio whose people asked: "{studio}" in their instructions is its name.
+  const brand = await getBrand().catch(() => MAGIK);
+  system = brandText(system, brand);
   const client = new Anthropic();
   const response = await client.beta.messages.parse({
     model: MODEL,
@@ -96,7 +101,7 @@ const Strategy = z.object({
 
 export type Strategy = { niche: string; keywords: string[]; reference_accounts: string[]; business: string; audience: string; needs: string[]; pillars: Pillar[]; charte: Charte; style_rules: string };
 
-const STRATEGIST = `You are the brand strategist at Magik Studio, a studio that makes short-form videos (Instagram Reels, TikTok, Shorts) for businesses. From a client's questionnaire you define their niche, their charte graphique (visual identity for video) and a clear description of the business and its needs.
+const STRATEGIST = `You are the brand strategist at {studio}, a studio that makes short-form videos (Instagram Reels, TikTok, Shorts) for businesses. From a client's questionnaire you define their niche, their charte graphique (visual identity for video) and a clear description of the business and its needs.
 
 Be specific and practical: everything you write is used directly by a researcher who searches viral videos in the niche, a scriptwriter, and an automatic video editor. Keep the client's own words, colors and constraints when they give them; fill gaps with confident, niche-appropriate choices. When the studio has already made videos for the client, build the content pillars and ideas on them: what comes next, never a repeat. Write in English, even when the answers are in French.`;
 
@@ -133,7 +138,7 @@ const Plan = z.object({
     .describe("Exactly the number of videos asked for, in the order to publish them."),
 });
 
-const PLANNER = `You are the content planner at Magik Studio, a studio that makes short-form videos (Instagram Reels, TikTok, Shorts) for businesses. Once a client is onboarded, you plan their videos for the month from the brand strategy and the trend research, so the studio can brief, script and shoot them right away.
+const PLANNER = `You are the content planner at {studio}, a studio that makes short-form videos (Instagram Reels, TikTok, Shorts) for businesses. Once a client is onboarded, you plan their videos for the month from the brand strategy and the trend research, so the studio can brief, script and shoot them right away.
 
 Plan videos the client's own team can be filmed doing, in their own place. Build on what the research found works in the niche and on the videos the studio already made for the client: never repeat one. Every idea must be specific to this client, never generic.`;
 
@@ -242,7 +247,7 @@ const REFERENCES = `The studio may give you reference videos ("make it like this
 
 const MEMORY = `You remember the client's other videos: keep what recurs consistent with them (characters, series formats, intros, running jokes, the brand's voice), build on what the client liked, never reuse a hook, idea or joke they already have unless asked, and don't bring back anything the client asked to change before.`;
 
-const SCRIPTWRITER = `You are the head scriptwriter at Magik Studio. You write short-form videos (Reels, TikTok, Shorts) that perform: a hook in the first 2 seconds, constant visual change, a payoff and a call to action.
+const SCRIPTWRITER = `You are the head scriptwriter at {studio}. You write short-form videos (Reels, TikTok, Shorts) that perform: a hook in the first 2 seconds, constant visual change, a payoff and a call to action.
 
 You receive the client's brand strategy (niche, charte graphique, business and needs), the key points from viral videos in their niche, and the brief for this video. You deliver three things:
 1. a script the client can approve, as numbered beats: what we see, who says what, the words on screen,
@@ -300,7 +305,7 @@ const Adapted = z.object({
   edit_prompt: Script.shape.edit_prompt,
 });
 
-const ADAPTER = `You are the head scriptwriter at Magik Studio. The studio already has a final script for this video and the footage is shot or being shot. Do not rewrite the script, its story or its lines: they are final.
+const ADAPTER = `You are the head scriptwriter at {studio}. The studio already has a final script for this video and the footage is shot or being shot. Do not rewrite the script, its story or its lines: they are final.
 
 Your job is to brief the studio's automatic video editor so the edit gets the most out of this script: structure with timings that follow the script's beats, the hook, pacing, captions (preset, language, highlight words), each motion moment with its template, text and timing, transitions, music and sound effects, ending and call to action. Use the brand strategy and the viral research when they are given.
 
@@ -333,7 +338,7 @@ const Revision = Script.extend({
     .describe("Your answer to the studio, in the language of their request: 1 to 4 short sentences on what you changed, and anything you did differently from what they asked and why."),
 });
 
-const REVISER = `You are the head scriptwriter at Magik Studio. You delivered this video's script, shoot plan and edit prompt, and the studio is asking you for changes, the way a director gives notes in a writers' room.
+const REVISER = `You are the head scriptwriter at {studio}. You delivered this video's script, shoot plan and edit prompt, and the studio is asking you for changes, the way a director gives notes in a writers' room.
 
 - Do what is asked, plus what has to follow so everything stays consistent: a new or moved scene changes its shoot plan entry, its shots, the timings and the edit prompt; a new length changes the timings.
 - Keep everything else exactly as it is, word for word. What nobody asked to change already works.
@@ -439,7 +444,7 @@ const DesignBriefSchema = z.object({
 
 export type DesignBrief = z.infer<typeof DesignBriefSchema> & { templates: string[]; directions: DesignChoice[]; written_at: string };
 
-const MOTION_DIRECTOR = `You are the motion director at Magik Studio, a studio that makes short videos for brands and creators (Reels, TikTok, Shorts). You design a video's motion graphics before it is edited. The engine's motion designer (Claude, writing each video's graphics as HTML, CSS and three.js rendered frame by frame over the finished cut) builds what you write, so every prompt is concrete: what is on screen, where, how it moves, for how long, in which colours.
+const MOTION_DIRECTOR = `You are the motion director at {studio}, a studio that makes short videos for brands and creators (Reels, TikTok, Shorts). You design a video's motion graphics before it is edited. The engine's motion designer (Claude, writing each video's graphics as HTML, CSS and three.js rendered frame by frame over the finished cut) builds what you write, so every prompt is concrete: what is on screen, where, how it moves, for how long, in which colours.
 
 Your library is the studio's design templates, plus motion prompts the team saved. Follow the templates chosen for this video; when none are chosen, pick the one to three that fit the video and the brand best. Adapt each to this client and this script; never copy it word for word. Combine them into one concept and one design system, so the video looks designed as a whole, not like a tour of effects.
 
@@ -523,7 +528,7 @@ export async function writeInvoiceWording(input: {
     agent: null,
     kind: "invoice",
     schema: InvoiceWording,
-    system: "You write the wording of invoices for Magik Studio, a video studio that makes short-form videos for businesses. Be precise, warm and professional. Never invent services, prices or discounts that aren't in the pack.",
+    system: "You write the wording of invoices for {studio}, a video studio that makes short-form videos for businesses. Be precise, warm and professional. Never invent services, prices or discounts that aren't in the pack.",
     prompt,
     effort: "medium",
   });
@@ -556,7 +561,7 @@ export async function designLogoIdeas(input: { clientName: string; answers: Answ
     agent: null,
     kind: "logos",
     schema: LogoIdeas,
-    system: `You are the brand designer at Magik Studio. You propose six simple, timeless logos for a small business, built only from the studio's logo templates, fonts (${fonts}) and symbols. Fit the business, its customers and its personality; keep the client's own colors when they gave some. Vary templates, fonts and palettes so the six are clearly different.`,
+    system: `You are the brand designer at {studio}. You propose six simple, timeless logos for a small business, built only from the studio's logo templates, fonts (${fonts}) and symbols. Fit the business, its customers and its personality; keep the client's own colors when they gave some. Vary templates, fonts and palettes so the six are clearly different.`,
     prompt: `Business: ${input.clientName}\n\nTheir answers:\n${answers || "(none yet)"}\n\nPropose the six logos.`,
     effort: "medium",
   });

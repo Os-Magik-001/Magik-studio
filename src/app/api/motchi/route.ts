@@ -4,6 +4,7 @@ import { getViewer } from "@/lib/auth";
 import { answerFromGuide } from "@/lib/guide";
 import { fakeAgents } from "@/lib/agent-fakes";
 import { MOTCHI_MODEL, mayAsk, motchiPerson, motchiSystem, streamRedactor } from "@/lib/motchi";
+import { getBrand } from "@/lib/brand-server";
 
 // Motchi's answers (src/components/motchi), streamed as plain text while he writes them. Only for
 // someone signed in; he answers from the user guide for their role and nothing else. When his
@@ -21,13 +22,14 @@ const say = (text: string, status = 200) => new Response(text, { status, headers
 
 export async function POST(request: Request) {
   const viewer = await getViewer();
+  const brand = await getBrand();
   const parsed = Body.safeParse(await request.json().catch(() => null));
   // The conversation starts with his greeting; the API's starts with the person's question.
   const messages = parsed.success ? parsed.data.messages.slice(parsed.data.messages.findIndex((m) => m.role === "user")) : [];
   if (!messages.length || messages.at(-1)?.role !== "user" || messages.at(-1)!.content.length > 1000) return say("I didn't catch that. Ask me again?", 400);
   if (!mayAsk(viewer.id)) return say("You've asked me a lot in a short time! Give me a few minutes, then ask again.", 429);
 
-  const fromGuide = () => answerFromGuide(viewer.role, messages.at(-1)!.content);
+  const fromGuide = () => answerFromGuide(viewer.role, messages.at(-1)!.content, brand);
   if (fakeAgents() || !process.env.ANTHROPIC_API_KEY) return say(fromGuide());
 
   const client = new Anthropic();
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
       fallbacks: "default",
       output_config: { effort: "low" },
       system: [
-        { type: "text", text: motchiSystem(viewer.role), cache_control: { type: "ephemeral" } },
+        { type: "text", text: motchiSystem(viewer.role, brand), cache_control: { type: "ephemeral" } },
         { type: "text", text: motchiPerson({ name: viewer.fullName, role: viewer.role }) },
       ],
       messages,
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
         }
         const final = await stream.finalMessage();
         send(filter.end());
-        if (final.stop_reason === "refusal") send("That's not something I can help with. Ask me anything about using Magik OS!");
+        if (final.stop_reason === "refusal") send(`That's not something I can help with. Ask me anything about using ${brand.product}!`);
         if (final.stop_reason === "max_tokens") send("…");
       } catch (err) {
         if (!request.signal.aborted) {

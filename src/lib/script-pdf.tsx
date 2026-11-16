@@ -90,6 +90,8 @@ const WORDS = {
 
 export type ScriptPdfInput = {
   client: string;
+  // The studio the script comes from, as its header and the file's author.
+  studio: string;
   title: string;
   status: ScriptStatus;
   updatedAt: string;
@@ -107,10 +109,10 @@ function ScriptPdf(p: ScriptPdfInput) {
   const date = new Date(p.updatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric", timeZone: "America/Toronto" });
   const meta = [w.script, w.status[p.status], p.beats.length ? w.beats(p.beats.length) : null, seconds ? w.about(seconds) : null, `${w.updated} ${date}`].filter(Boolean).join("  ·  ");
   return (
-    <Document title={`${p.client} · ${p.title} · ${w.script}`} author="Magik Studio" creator="Magik Studio" producer="Magik Studio" subject={w.script} language="en-CA">
+    <Document title={`${p.client} · ${p.title} · ${w.script}`} author={p.studio} creator={p.studio} producer={p.studio} subject={w.script} language="en-CA">
       <Page size="LETTER" style={s.page}>
         <View style={s.brand} fixed>
-          <Text style={s.brandName}>MAGIK STUDIO</Text>
+          <Text style={s.brandName}>{p.studio.toUpperCase()}</Text>
           <Text style={s.brandClient}>{p.client}</Text>
         </View>
         <Text style={s.title}>{p.title}</Text>
@@ -233,7 +235,7 @@ function ScriptPdf(p: ScriptPdfInput) {
 
         <View style={s.footer} fixed>
           <Text>
-            Magik Studio · {p.client} · {p.title}
+            {p.studio} · {p.client} · {p.title}
           </Text>
           <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
         </View>

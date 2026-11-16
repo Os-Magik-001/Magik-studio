@@ -217,7 +217,7 @@ function Choice({
 }
 
 const choiceBox =
-  "border border-white/10 bg-white/[0.04] transition-[background-color,border-color,box-shadow] duration-150 hover:border-white/25 hover:bg-white/[0.08] peer-checked:border-accent/80 peer-checked:bg-accent-soft peer-checked:shadow-[0_0_0_1px_rgba(246,212,58,0.5)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent/80";
+  "border border-white/10 bg-white/[0.04] transition-[background-color,border-color,box-shadow] duration-150 hover:border-white/25 hover:bg-white/[0.08] peer-checked:border-accent/80 peer-checked:bg-accent-soft peer-checked:shadow-[0_0_0_1px_rgb(var(--accent-rgb)/0.5)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent/80";
 
 function Switch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (

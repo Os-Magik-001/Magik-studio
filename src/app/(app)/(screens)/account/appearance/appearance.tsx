@@ -9,9 +9,10 @@ import { Choice, Switch } from "@/components/switch";
 import { SettingsGroup, SettingsRow } from "@/components/settings/settings-shell";
 import { applyLook, type Look } from "@/components/shell/look";
 import { savePreferences } from "@/app/actions/account";
+import { useBrand } from "@/components/brand";
 
 function preview(w: Wallpaper) {
-  if (w.live) return "repeating-linear-gradient(90deg, rgba(246,212,58,0.2) 0 2px, transparent 2px 14px), #000";
+  if (w.live) return "repeating-linear-gradient(90deg, rgb(var(--accent-rgb)/0.2) 0 2px, transparent 2px 14px), #000";
   if (w.id === "dynamic") {
     const now = resolveWallpaper("dynamic");
     const url = wallpaperThumb(now);
@@ -24,6 +25,7 @@ function preview(w: Wallpaper) {
 // Settings > Appearance: every change shows on the desktop at once and is saved to the account.
 export function AppearanceSettings({ initial }: { initial: Look }) {
   const [look, setLook] = useState<Look>(initial);
+  const brand = useBrand();
   const saving = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<Look>({});
 
@@ -40,12 +42,12 @@ export function AppearanceSettings({ initial }: { initial: Look }) {
     }, 500);
   };
 
-  const current = look.wallpaper ?? "magik";
+  const current = look.wallpaper ?? brand.wallpaper;
   return (
     <>
       <SettingsGroup title="Wallpaper" description="Dynamic changes with the time of day. Matrix is live.">
         <div role="radiogroup" aria-label="Wallpaper" className="grid grid-cols-2 gap-3 p-4 @min-[40rem]:grid-cols-3 @min-[64rem]:grid-cols-4">
-          {WALLPAPERS.map((w) => {
+          {WALLPAPERS.filter((w) => !w.brand || w.brand === brand.slug).map((w) => {
             const on = current === w.id;
             return (
               <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => update({ wallpaper: w.id })} className="group flex flex-col gap-1.5 text-left">
@@ -62,7 +64,7 @@ export function AppearanceSettings({ initial }: { initial: Look }) {
                     </span>
                   )}
                   {on && (
-                    <span className="absolute right-1.5 bottom-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-black">
+                    <span className="absolute right-1.5 bottom-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-ink">
                       <Check size={12} strokeWidth={3} aria-hidden />
                     </span>
                   )}

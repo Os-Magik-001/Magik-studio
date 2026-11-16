@@ -57,7 +57,7 @@ function Preview({ value, title, clientName }: { value: Typography; title: strin
 }
 
 const optionBox =
-  "flex h-full flex-col items-center justify-center gap-1 rounded-[12px] border border-white/10 bg-white/[0.04] px-1.5 py-2 transition-[background-color,border-color,box-shadow] duration-150 hover:border-white/25 hover:bg-white/[0.08] peer-checked:border-accent/80 peer-checked:bg-accent-soft peer-checked:shadow-[0_0_0_1px_rgba(246,212,58,0.5)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent/80";
+  "flex h-full flex-col items-center justify-center gap-1 rounded-[12px] border border-white/10 bg-white/[0.04] px-1.5 py-2 transition-[background-color,border-color,box-shadow] duration-150 hover:border-white/25 hover:bg-white/[0.08] peer-checked:border-accent/80 peer-checked:bg-accent-soft peer-checked:shadow-[0_0_0_1px_rgb(var(--accent-rgb)/0.5)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent/80";
 
 function FontRow({ role, label, hint, value, onChange }: { role: FontRole; label: string; hint: string; value: string; onChange: (id: string) => void }) {
   const id = useId();

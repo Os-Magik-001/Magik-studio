@@ -7,9 +7,11 @@ import { Field } from "@/components/field";
 import { ROLE_LABEL } from "@/lib/workflow";
 import { NewPasswordField } from "@/components/password-tools";
 import { addTeamMember } from "@/app/actions/studio";
+import { useBrand } from "@/components/brand";
 
 export function AddMemberForm({ clients }: { clients: { id: string; name: string }[] }) {
   const [role, setRole] = useState("editor");
+  const brand = useBrand();
   return (
     <ActionForm action={addTeamMember} resetOnSuccess className="flex flex-col gap-4">
       <Field label="Name">
@@ -42,7 +44,7 @@ export function AddMemberForm({ clients }: { clients: { id: string; name: string
         </Field>
       )}
       <NewPasswordField />
-      <SubmitButton pendingText="Adding…">Add to Magik OS</SubmitButton>
+      <SubmitButton pendingText="Adding…">Add to {brand.product}</SubmitButton>
     </ActionForm>
   );
 }

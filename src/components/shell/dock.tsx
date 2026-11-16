@@ -60,7 +60,7 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
                   aria-hidden
                   className={cx(
                     "absolute -bottom-1 h-[4px] w-[4px] rounded-full transition-opacity",
-                    on ? "bg-accent opacity-100 shadow-[0_0_8px_2px_rgba(246,212,58,0.55)]" : running ? "bg-white/70 opacity-100" : "opacity-0",
+                    on ? "bg-accent opacity-100 shadow-[0_0_8px_2px_rgb(var(--accent-rgb)/0.55)]" : running ? "bg-white/70 opacity-100" : "opacity-0",
                   )}
                 />
               </button>

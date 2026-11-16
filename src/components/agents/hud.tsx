@@ -101,7 +101,7 @@ function track(pts: readonly Pt[]) {
   return { d, arrow, total, label: longest.at, width: longest.across ? longest.len - 6 : null };
 }
 
-const COLOR = { idle: "#54d6ff", busy: "#f6d43a", done: "#5fc48a", failed: "#f2685f" } as const;
+const COLOR = { idle: "#54d6ff", busy: "var(--accent)", done: "#5fc48a", failed: "#f2685f" } as const;
 const STATE_TEXT = { idle: "Waiting", busy: "Working", done: "Done", failed: "Needs you" } as const;
 const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 
@@ -117,7 +117,7 @@ function Burst({ pathId, hot }: { pathId: string; hot: boolean }) {
   return (
     <g ref={ref}>
       {[0, 1, 2].map((k) => (
-        <circle key={k} r={4.5} fill={hot ? "#f6d43a" : "#c8f4ff"} opacity={0}>
+        <circle key={k} r={4.5} fill={hot ? "var(--accent)" : "#c8f4ff"} opacity={0}>
           <animateMotion dur="1.1s" begin="indefinite" repeatCount="3" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.4 0 0.2 1">
             <mpath href={`#${pathId}`} />
           </animateMotion>
@@ -212,7 +212,7 @@ export function AgentHud({
               {links.map((l) => {
                 const t = tracks[l.id];
                 const lit = touches(l.id);
-                const color = l.hot ? "#f6d43a" : "#54d6ff";
+                const color = l.hot ? "var(--accent)" : "#54d6ff";
                 return (
                   <g key={l.id} className={hovered && !lit ? "hud-dim" : undefined}>
                     <path id={`hud-link-${l.id}`} d={t.d} fill="none" stroke={color} strokeWidth={lit ? 2.6 : 1.6} strokeOpacity={l.active ? (lit ? 0.95 : 0.5) : lit ? 0.45 : 0.14} strokeLinejoin="round" strokeDasharray={l.active ? undefined : "4 6"} />
@@ -229,7 +229,7 @@ export function AgentHud({
                   const dur = Math.max(1.2, tracks[l.id].total / (into ? 160 : 60));
                   const count = into ? 3 : 1;
                   return Array.from({ length: count }, (_, k) => (
-                    <circle key={`${l.id}-${k}`} r={into ? 4.5 : 3.4} fill={l.hot || into ? "#f6d43a" : "url(#hud-packet)"} opacity={into ? 1 : 0.8}>
+                    <circle key={`${l.id}-${k}`} r={into ? 4.5 : 3.4} fill={l.hot || into ? "var(--accent)" : "url(#hud-packet)"} opacity={into ? 1 : 0.8}>
                       <animateMotion dur={`${dur.toFixed(2)}s`} begin={`-${((i * 0.83 + (k * dur) / count) % dur).toFixed(2)}s`} repeatCount="indefinite">
                         <mpath href={`#hud-link-${l.id}`} />
                       </animateMotion>
@@ -272,7 +272,7 @@ export function AgentHud({
                     <span className="hud-led ml-auto" data-state={n.state} aria-hidden />
                   </span>
                   <span className="mt-2 text-[14px] leading-tight font-semibold text-[#ecfaff]">{n.title}</span>
-                  <span className="mt-1 line-clamp-2 text-[11.5px] leading-snug" style={{ color: n.state === "busy" ? "#ffe680" : n.state === "failed" ? "#ff9b94" : "#8fb6c9" }}>
+                  <span className="mt-1 line-clamp-2 text-[11.5px] leading-snug" style={{ color: n.state === "busy" ? "var(--accent-light)" : n.state === "failed" ? "#ff9b94" : "#8fb6c9" }}>
                     {n.state === "busy" && n.progress ? n.progress : n.meta}
                   </span>
                   <span className="mt-auto flex items-center gap-2 pt-1 font-mono text-[10px] tracking-[0.14em] uppercase">
@@ -376,7 +376,7 @@ export function AgentHud({
           ) : (
             <ol className="flex max-h-[600px] flex-col gap-2.5 overflow-y-auto font-mono text-[12.5px]">
               {[...events].reverse().map((e, i) => (
-                <li key={i} className="flex flex-col gap-0.5 border-l-2 pl-3" style={{ borderColor: e.tone === "bad" ? "#f2685f" : e.fresh ? "#f6d43a" : "rgba(84,214,255,0.35)" }}>
+                <li key={i} className="flex flex-col gap-0.5 border-l-2 pl-3" style={{ borderColor: e.tone === "bad" ? "#f2685f" : e.fresh ? "var(--accent)" : "rgba(84,214,255,0.35)" }}>
                   <span className="flex flex-wrap items-baseline gap-x-3">
                     <span className={e.tone === "bad" ? "text-danger" : e.fresh ? "text-accent" : "text-[#7fdcff]"}>{e.who}</span>
                     <span className="text-[11px] text-muted tabular-nums">

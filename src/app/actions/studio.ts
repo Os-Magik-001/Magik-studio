@@ -12,6 +12,7 @@ import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-
 import { passwordProblem } from "@/lib/passwords";
 import type { Role } from "@/lib/auth";
 import type { Database } from "@/lib/database.types";
+import { getBrand } from "@/lib/brand-server";
 
 const list = (v: string) =>
   v
@@ -234,7 +235,7 @@ export async function setClientAccess(_: ActionResult, formData: FormData): Prom
         : await admin.from("onboardings").insert({ client_id: clientId });
   if (error) return fail("Couldn't save.");
   refresh();
-  return done(mode === "done" ? "Onboarded: their people can use Magik OS." : "Their setup is open: they'll go through it when they sign in.");
+  return done(mode === "done" ? `Onboarded: their people can use ${(await getBrand()).product}.` : "Their setup is open: they'll go through it when they sign in.");
 }
 
 // ---------------------------------------------------------------- videos

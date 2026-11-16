@@ -7,11 +7,13 @@ import { Button, Input } from "@/components/ui";
 import { Choice } from "@/components/switch";
 import { SettingsGroup, SettingsRow } from "@/components/settings/settings-shell";
 import { calendarLink, savePreferences } from "@/app/actions/account";
+import { useBrand } from "@/components/brand";
 
 // Settings > Calendar: how the calendar looks, and the private link that puts it in Google or
 // Apple Calendar.
 export function CalendarSettings({ weekStart, view }: { weekStart: 0 | 1; view: CalendarView }) {
   const [start, setStart] = useState<0 | 1>(weekStart);
+  const brand = useBrand();
   const [shown, setShown] = useState<CalendarView>(view);
   const [link, setLink] = useState<{ https: string; webcal: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -63,7 +65,7 @@ export function CalendarSettings({ weekStart, view }: { weekStart: 0 | 1; view: 
 
       <SettingsGroup
         title="Sync with Google or Apple Calendar"
-        description="Your Magik calendar (your events, shoots, deadlines and posting dates) appears in your phone's or computer's calendar and stays up to date. Keep the link private: anyone with it can see your calendar."
+        description={`Your ${brand.short} calendar (your events, shoots, deadlines and posting dates) appears in your phone's or computer's calendar and stays up to date. Keep the link private: anyone with it can see your calendar.`}
       >
         <div className="flex flex-col gap-3 p-4">
           {!link ? (

@@ -33,9 +33,9 @@ function Dot({ n, state }: { n: number; state: State }) {
       className={cx(
         "relative z-[1] inline-flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold tabular-nums",
         state === "done" && "bg-success text-success-ink",
-        state === "busy" && "bg-accent text-accent-ink shadow-[0_0_0_4px_rgba(246,212,58,0.18),0_0_22px_rgba(246,212,58,0.45)]",
-        state === "current" && "bg-accent text-accent-ink shadow-[0_0_0_4px_rgba(246,212,58,0.18)]",
-        state === "ready" && "bg-accent-soft text-accent shadow-[inset_0_0_0_1.5px_rgba(246,212,58,0.6)]",
+        state === "busy" && "bg-accent text-accent-ink shadow-[0_0_0_4px_rgb(var(--accent-rgb)/0.18),0_0_22px_rgb(var(--accent-rgb)/0.45)]",
+        state === "current" && "bg-accent text-accent-ink shadow-[0_0_0_4px_rgb(var(--accent-rgb)/0.18)]",
+        state === "ready" && "bg-accent-soft text-accent shadow-[inset_0_0_0_1.5px_rgb(var(--accent-rgb)/0.6)]",
         state === "failed" && "bg-danger text-white",
         state === "todo" && "bg-white/8 text-muted",
       )}
@@ -206,7 +206,7 @@ export async function ProductionPanel({ clientId, viewer }: { clientId: string; 
     <section id="production" aria-labelledby="production-title" className="frost scroll-mt-20 overflow-hidden rounded-[22px]">
       {live && <AutoRefresh seconds={5} />}
       <div className="relative border-b border-white/[0.07] px-5 py-4">
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_140%_at_0%_0%,rgba(246,212,58,0.12),transparent_55%)]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_140%_at_0%_0%,rgb(var(--accent-rgb)/0.12),transparent_55%)]" />
         <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="kicker">Production · {month}</div>

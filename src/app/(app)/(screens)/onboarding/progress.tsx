@@ -68,7 +68,7 @@ export function StepRail({ clientId, facts, active, current }: { clientId: strin
                     "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
                     done[s.key]
                       ? s.lane === "seller"
-                        ? "bg-accent text-black"
+                        ? "bg-accent text-accent-ink"
                         : "bg-success text-black"
                       : current === s.key
                         ? "text-ink shadow-[inset_0_0_0_1.5px_var(--accent)]"

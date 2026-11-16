@@ -32,6 +32,7 @@ import { TopBar } from "@/components/shell/top-bar";
 import { Dock } from "@/components/shell/dock";
 import { Spotlight, type QuickAction } from "@/components/shell/spotlight";
 import { Motchi } from "@/components/motchi/motchi";
+import { useBrand } from "@/components/brand";
 
 const MENU_H = 46;
 
@@ -56,7 +57,8 @@ const QUICK_ACTIONS: Partial<Record<ShellViewer["role"], QuickAction[]>> = {
 // A navigation the desktop started: which window it is for.
 type Pending = { id: string; path: string; nav: Nav; at: number };
 
-const stripTitle = (t: string) => t.replace(/\s*·\s*Magik OS$/, "").trim();
+// A page's title without the app's name after it ("Team · Magik OS").
+const stripTitle = (t: string, product: string) => (t.endsWith(product) ? t.slice(0, -product.length).replace(/\s*·\s*$/, "") : t).trim();
 
 // Magik OS: the wallpaper and Home underneath, the app windows on top, the menu bar and the
 // Dock around them. Every page is rendered by the router into a hidden slot (`children`) and
@@ -80,6 +82,7 @@ export function Desktop({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const brand = useBrand();
   const search = useSearchParams();
   const routerPath = pathKey(pathname, search.toString());
   const role = viewer.role;
@@ -171,7 +174,8 @@ export function Desktop({
     [viewer.id],
   );
 
-  const titleFor = (appId: string | null) => (appId ? (appById(appId)?.name ?? "Magik OS") : "Magik OS");
+  const product = brand.product;
+  const titleFor = useCallback((appId: string | null) => (appId ? (appById(appId)?.name ?? product) : product), [product]);
 
   // Puts the router on a window's page, so that window is the one forms and refreshes act on.
   const routeTo = useCallback(
@@ -243,7 +247,7 @@ export function Desktop({
       dispatch({ type: "show", id, appId: target.appId, doc: target.doc, path, title: existing?.title ?? titleFor(target.appId), frame: existing ? frameOf(existing, areaRef.current) : frameFor(target), nav: "push" });
       routeTo(id, path, "push");
     },
-    [focus, frameFor, role, routeTo, toDesktop],
+    [focus, frameFor, role, routeTo, titleFor, toDesktop],
   );
 
   // The router moved (a link, a redirect, Back in the browser): show its page in its window.
@@ -339,9 +343,9 @@ export function Desktop({
     const update = () => {
       const win = stateRef.current.wins.find((w) => w.path === routerPathRef.current);
       if (!win) return;
-      const title = stripTitle(document.title);
+      const title = stripTitle(document.title, product);
       // A page without a title of its own (not found…): the app's name.
-      dispatch({ type: "title", id: win.id, title: title && title !== "Magik OS" ? title : titleFor(win.appId) });
+      dispatch({ type: "title", id: win.id, title: title && title !== product ? title : titleFor(win.appId) });
     };
     const raf = requestAnimationFrame(update);
     const obs = new MutationObserver(update);
@@ -350,7 +354,7 @@ export function Desktop({
       cancelAnimationFrame(raf);
       obs.disconnect();
     };
-  }, [routerPath, state.wins.length]);
+  }, [routerPath, state.wins.length, product, titleFor]);
 
   // ------------------------------------------------------------ window commands
 
@@ -564,7 +568,7 @@ export function Desktop({
 
         <TopBar current={focusedWin} />
         <Dock ref={dockEl} />
-        <Motchi />
+        {brand.mascot && <Motchi />}
         {spotlight && (
           <Spotlight
             apps={apps}

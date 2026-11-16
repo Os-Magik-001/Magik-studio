@@ -21,10 +21,12 @@ import {
   signContract,
   uploadBrandLogo,
 } from "@/app/actions/setup";
+import { useBrand } from "@/components/brand";
 
 // ---------------------------------------------------------------- the contract
 
 export function ContractStep({ contract, name }: { contract: { id: string; fileName: string; url: string | null }; name: string }) {
+  const brand = useBrand();
   return (
     <div className="grid flex-1 gap-8 lg:grid-cols-[1.3fr_1fr]">
       <div className="flex min-h-[420px] flex-col overflow-hidden rounded-[18px] bg-white/[0.04] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
@@ -37,7 +39,7 @@ export function ContractStep({ contract, name }: { contract: { id: string; fileN
       <div className="flex flex-col justify-center">
         <p className="kicker">Before we start</p>
         <h1 className="mt-2 font-display text-[28px] leading-tight font-bold tracking-tight text-ink">Your contract</h1>
-        <p className="mt-3 text-[14px] text-ink-2">Read the agreement with Magik, then sign it by typing your name.</p>
+        <p className="mt-3 text-[14px] text-ink-2">Read the agreement with {brand.short}, then sign it by typing your name.</p>
         {contract.url && (
           <a href={contract.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] text-accent hover:underline">
             <FileText size={14} aria-hidden /> {contract.fileName} <ExternalLink size={12} aria-hidden />
@@ -265,7 +267,7 @@ export function ReferencesStep({ library, added }: { library: LibraryItem[]; add
                     <span
                       className={cx(
                         "absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-full transition-colors",
-                        chosen ? "bg-accent text-black" : "bg-black/45 text-white/80 backdrop-blur",
+                        chosen ? "bg-accent text-accent-ink" : "bg-black/45 text-white/80 backdrop-blur",
                       )}
                     >
                       {chosen ? <Check size={15} strokeWidth={3} aria-hidden /> : <Plus size={15} aria-hidden />}
@@ -389,8 +391,8 @@ export function BrandStep({ brandName, initial }: { brandName: string; initial: 
             onClick={() => setMode("create")}
             className="group flex flex-col items-center rounded-[24px] bg-white/[0.05] px-6 py-9 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-[background-color,transform] hover:bg-white/[0.09] active:scale-[0.98]"
           >
-            <span className="app-icon h-16 w-16" style={{ background: "linear-gradient(180deg,#ffe36e,#d9a60c)" }}>
-              <Sparkles size={30} color="#1c1400" aria-hidden />
+            <span className="app-icon h-16 w-16" style={{ background: "linear-gradient(180deg,var(--accent-light),var(--accent-deep))" }}>
+              <Sparkles size={30} color="var(--accent-ink)" aria-hidden />
             </span>
             <span className="mt-5 text-[18px] font-semibold text-ink">No, let&apos;s create one</span>
             <span className="mt-1 text-[13.5px] text-muted">Start from ready-made designs and make it yours</span>
@@ -535,6 +537,7 @@ function UploadLogo({ onBack }: { onBack: () => void }) {
 // ---------------------------------------------------------------- done
 
 export function DoneStep({ name, clientName, logo }: { name: string; clientName: string; logo: string | null }) {
+  const brand = useBrand();
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
       {logo ? (
@@ -549,7 +552,7 @@ export function DoneStep({ name, clientName, logo }: { name: string; clientName:
         You&apos;re all set, {name.split(/\s+/)[0]}.
       </h1>
       <p className="animate-rise-in mt-3 max-w-lg text-[15px] text-ink-2 [animation-delay:0.25s]">
-        The studio has everything it needs to start on {clientName}&apos;s videos. You&apos;ll find them, your brand and your documents on your Magik desktop.
+        The studio has everything it needs to start on {clientName}&apos;s videos. You&apos;ll find them, your brand and your documents on your {brand.short} desktop.
       </p>
       <form action={completeSetup} className="animate-rise-in mt-9 [animation-delay:0.35s]">
         <Button variant="primary" className="h-11 px-7 text-[15px]">

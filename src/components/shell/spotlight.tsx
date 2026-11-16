@@ -133,7 +133,7 @@ export function Spotlight({
                     onClick={() => choose(row)}
                     className={cx(
                       "flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left",
-                      selected ? "bg-accent text-black" : "text-ink",
+                      selected ? "bg-accent text-accent-ink" : "text-ink",
                     )}
                   >
                     {icon}

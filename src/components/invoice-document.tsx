@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { INVOICE_LABELS, money, readLines, readTaxLines, type Lang } from "@/lib/invoices";
+import { BrandLockup } from "@/components/brand";
 
 export type InvoiceRow = {
   number: string;
@@ -45,7 +45,7 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceRow }) {
         </div>
       )}
       <header className="flex items-start justify-between gap-6">
-        <Image src="/brand/magik-horizontal-dark.svg" alt={from.name ?? "Magik"} width={190} height={41} unoptimized className="h-auto w-[190px]" />
+        <BrandLockup dark className="h-auto w-[190px]" />
         <div className="text-right">
           <h1 className="font-display text-[30px] leading-none font-bold tracking-tight uppercase">{L.invoice}</h1>
           <p className="mt-2 text-[13px] text-[#6e6e73]">
@@ -53,7 +53,7 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceRow }) {
           </p>
         </div>
       </header>
-      <div className="mt-3 h-[3px] w-16 bg-[#F6D43A]" />
+      <div className="mt-3 h-[3px] w-16 bg-accent" />
 
       <section className="mt-10 grid grid-cols-2 gap-8">
         <div>

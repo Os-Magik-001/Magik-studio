@@ -50,7 +50,7 @@ function StepMark({ n, state }: { n: number; state: StepState }) {
       className={cx(
         "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold tabular-nums",
         state === "done" && "bg-success text-success-ink",
-        state === "current" && "bg-accent text-accent-ink shadow-[0_0_0_4px_rgba(246,212,58,0.18)]",
+        state === "current" && "bg-accent text-accent-ink shadow-[0_0_0_4px_rgb(var(--accent-rgb)/0.18)]",
         state === "todo" && "bg-white/8 text-muted",
         state === "optional" && "border border-dashed border-white/25 text-muted",
       )}

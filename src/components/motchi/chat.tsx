@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowUp, X } from "lucide-react";
 import { cx } from "@/components/ui";
+import { useBrand } from "@/components/brand";
 
 // Talking with Motchi: a glass panel over the Dock's corner. His answers stream in from
 // /api/motchi as he writes them. The conversation lasts as long as the page.
@@ -64,6 +65,7 @@ export function MotchiChat({
 }) {
   const [lines, setLines] = useState<Line[]>([{ role: "assistant", content: `Hi${firstName ? ` ${firstName}` : ""}! How can I help you?` }]);
   const [draft, setDraft] = useState("");
+  const brand = useBrand();
   const [busy, setBusy] = useState(false);
   const list = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -133,7 +135,7 @@ export function MotchiChat({
         <MotchiFace />
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-semibold text-ink">Motchi</p>
-          <p className="truncate text-[11.5px] text-muted">Your Magik OS assistant</p>
+          <p className="truncate text-[11.5px] text-muted">Your {brand.product} assistant</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-white/10 hover:text-ink">
           <X size={15} aria-hidden />
@@ -143,7 +145,7 @@ export function MotchiChat({
       <div ref={list} className="flex min-h-[120px] flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3 text-[13.5px] leading-[1.45]" aria-live="polite">
         {lines.map((line, i) =>
           line.role === "user" ? (
-            <p key={i} className="max-w-[85%] self-end rounded-[16px] rounded-br-[6px] bg-accent px-3 py-2 whitespace-pre-wrap text-[#1c1400]">
+            <p key={i} className="max-w-[85%] self-end rounded-[16px] rounded-br-[6px] bg-accent px-3 py-2 whitespace-pre-wrap text-accent-ink">
               {line.content}
             </p>
           ) : (
@@ -190,16 +192,16 @@ export function MotchiChat({
           }}
           rows={1}
           maxLength={1000}
-          placeholder="Ask Motchi about Magik OS"
+          placeholder={`Ask Motchi about ${brand.product}`}
           aria-label="Your question for Motchi"
-          className="max-h-[96px] min-h-[38px] flex-1 resize-none rounded-[14px] bg-white/[0.07] px-3 py-2 text-[13.5px] text-ink shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.14)] [field-sizing:content] placeholder:text-muted/80 focus:outline-none focus-visible:shadow-[inset_0_0_0_1px_rgba(246,212,58,0.6)]"
+          className="max-h-[96px] min-h-[38px] flex-1 resize-none rounded-[14px] bg-white/[0.07] px-3 py-2 text-[13.5px] text-ink shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.14)] [field-sizing:content] placeholder:text-muted/80 focus:outline-none focus-visible:shadow-[inset_0_0_0_1px_rgb(var(--accent-rgb)/0.6)]"
         />
-        <button type="submit" disabled={busy || !draft.trim()} aria-label="Send" className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-accent text-[#1c1400] transition-opacity disabled:opacity-40">
+        <button type="submit" disabled={busy || !draft.trim()} aria-label="Send" className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity disabled:opacity-40">
           <ArrowUp size={17} strokeWidth={2.4} aria-hidden />
         </button>
       </form>
       <p className="flex items-center justify-between gap-2 px-4 pb-3 text-[11px] text-muted">
-        <span>Motchi knows how Magik OS works. For anything else, use Help.</span>
+        <span>Motchi knows how {brand.product} works. For anything else, use Help.</span>
         <button type="button" onClick={onQuiet} className="shrink-0 underline-offset-2 hover:text-ink hover:underline">
           Quiet today
         </button>

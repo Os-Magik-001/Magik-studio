@@ -1,6 +1,6 @@
 import type { Database } from "@/lib/database.types";
 
-// The desktop's apps: every feature of Magik OS is an app in the Dock, and opens in its own
+// The desktop's apps: every feature is an app in the Dock, and opens in its own
 // window. Shared by the server (which apps a role gets) and the browser (the Dock, the windows'
 // titles, Spotlight).
 
@@ -200,7 +200,7 @@ export const APPS: AppDef[] = [
     match: ["/website"],
     icon: "website",
     roles: ["client"],
-    hint: "Your website made with Magik",
+    hint: "Your website made by the studio",
     size: [1220, 840],
   },
   {
@@ -251,7 +251,7 @@ export const APPS: AppDef[] = [
     match: ["/help"],
     icon: "help",
     roles: EVERYONE,
-    hint: "How Magik OS works, and a question for the studio",
+    hint: "How everything works, and a question for the studio",
     size: [960, 780],
     dock: false,
   },
