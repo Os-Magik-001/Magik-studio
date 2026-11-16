@@ -68,7 +68,7 @@ export function BoardCard({ card: c }: { card: BoardCardData }) {
   return (
     <Link
       href={`/videos/${c.id}`}
-      className={cx("frost flex flex-col gap-2 rounded-xl p-3 transition-colors hover:border-line-strong", c.overdue && "border-danger/40", c.next.who === "engine" && "border-warning/35")}
+      className="frost flex flex-col gap-2.5 rounded-[14px] p-3.5"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

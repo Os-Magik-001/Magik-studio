@@ -16,7 +16,7 @@ export function Greeting({ name, line, signature }: { name: string; line: [strin
       <p className="inline-flex rounded-full border border-accent/45 bg-black/35 px-3.5 py-1 text-[14px] font-medium text-accent backdrop-blur-md">
         {now ? `${part},` : " "}
       </p>
-      <h1 className="mt-3 font-serif text-[64px] leading-[0.95] font-semibold tracking-[-0.01em] text-white sm:text-[96px] xl:text-[118px]">
+      <h1 className="mt-3 font-serif text-[64px] leading-[0.95] font-semibold tracking-[-0.01em] text-white sm:text-[88px] xl:text-[104px]">
         {first}
         <span className="text-accent">.</span>
       </h1>

@@ -76,7 +76,7 @@ export async function HomeDashboard({ viewer }: { viewer: Viewer }) {
       </div>
       <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {panels.map((p, i) => (
-          <Widget key={p.id} id={p.id} className="animate-rise-in xl:h-[max(360px,calc(100dvh-548px))] [&>section]:h-full" style={{ animationDelay: `${140 + i * 70}ms` }}>
+          <Widget key={p.id} id={p.id} className="animate-rise-in xl:h-[max(400px,calc(100dvh-520px))] [&>section]:h-full" style={{ animationDelay: `${140 + i * 70}ms` }}>
             {p.node}
           </Widget>
         ))}

@@ -6,13 +6,13 @@
    is the system accent. Apple's system colors for status. */
 :root {
   --bg: #000000;
-  --surface: rgba(255, 255, 255, 0.045);
+  --surface: rgba(255, 255, 255, 0.05);
   --surface-2: rgba(255, 255, 255, 0.085);
-  --border: rgba(255, 255, 255, 0.085);
+  --border: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.17);
   --ink: #f5f5f7;
   --ink-2: rgba(235, 235, 245, 0.84);
-  --muted: rgba(235, 235, 245, 0.56);
+  --muted: rgba(235, 235, 245, 0.64);
   --accent: #f6d43a;
   --accent-ink: #000000;
   --accent-rgb: 246 212 58;
@@ -34,6 +34,11 @@
   --stage-2: #0d0d0d;
   --stage-ink: #ffffff;
   --stage-muted: #8c8a83;
+
+  /* Motion: one soft curve for things that arrive, one with a little spring for things that
+     answer a touch. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 
   /* Desktop geometry, shared by the window manager and the CSS. */
   --menubar-h: 34px;
@@ -107,6 +112,24 @@ body {
 ::selection {
   background: rgb(var(--accent-rgb) / 0.32);
   color: #fff;
+}
+
+/* Everything that can be pressed answers smoothly. In the base layer, so a control's own
+   transition (a utility) wins over it. */
+@layer base {
+  a,
+  button,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="radio"] {
+    transition:
+      color 0.18s var(--ease),
+      background-color 0.18s var(--ease),
+      border-color 0.18s var(--ease),
+      box-shadow 0.22s var(--ease),
+      opacity 0.18s var(--ease);
+  }
 }
 
 /* In the base layer, so a control's own focus style (a utility) wins over it. */
@@ -215,12 +238,16 @@ input::-webkit-calendar-picker-indicator {
     color: #000;
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     backdrop-filter: blur(16px) saturate(160%);
-    background-color: rgb(var(--accent-rgb) / 0.94);
-    background-image: linear-gradient(180deg, var(--accent-sheen), rgb(var(--accent-rgb) / 0) 58%);
+    background-color: var(--accent);
+    background-image: linear-gradient(180deg, var(--accent-sheen), rgb(var(--accent-rgb) / 0) 70%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.75),
-      inset 0 -2px 6px rgba(120, 90, 0, 0.3),
-      0 8px 22px -10px rgb(var(--accent-rgb) / 0.6);
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+      0 1px 2px rgba(0, 0, 0, 0.35),
+      0 8px 20px -10px rgb(var(--accent-rgb) / 0.55);
+  }
+  .glass-tint::before {
+    display: none;
   }
   .glass-tint::after {
     background: radial-gradient(90% 80% at 30% -20%, rgba(255, 255, 255, 0.45), transparent 60%);
@@ -253,7 +280,29 @@ input::-webkit-calendar-picker-indicator {
   .frost {
     background-color: var(--surface);
     border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.16);
+    transition:
+      background-color 0.2s var(--ease),
+      border-color 0.2s var(--ease),
+      box-shadow 0.25s var(--ease),
+      transform 0.25s var(--ease);
+  }
+  /* A surface that leads somewhere answers the pointer: a little lighter, a little closer. */
+  a.frost:hover,
+  button.frost:hover {
+    background-color: rgba(255, 255, 255, 0.075);
+    border-color: rgba(255, 255, 255, 0.11);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 10px 24px -14px rgba(0, 0, 0, 0.7);
+    transform: translateY(-1px);
+  }
+  a.frost:active,
+  button.frost:active {
+    transform: none;
+    transition-duration: 0.08s;
   }
 
   /* A window's body material: the wallpaper and the windows below show through, blurred. */
@@ -368,19 +417,11 @@ html[data-wallpaper="matrix"] .wallpaper {
 }
 
 /* The Dock's size and labels, and solid windows (Settings > Appearance). */
-html[data-dock="medium"] .dock-icon {
-  width: 52px;
-  height: 52px;
+html[data-dock="medium"] .dock {
+  --dock-item: 70px;
 }
-html[data-dock="medium"] .dock-item {
-  width: 70px;
-}
-html[data-dock="small"] .dock-icon {
-  width: 42px;
-  height: 42px;
-}
-html[data-dock="small"] .dock-item {
-  width: 58px;
+html[data-dock="small"] .dock {
+  --dock-item: 58px;
 }
 html[data-labels="off"] .dock-label {
   display: none;
@@ -455,7 +496,27 @@ html[data-solid="1"] .material-window {
 .dock::-webkit-scrollbar {
   display: none;
 }
+/* Every app stays in view: with many apps and open windows, the icons get smaller instead of
+   running off the screen (--dock-n is how many the Dock holds). */
+.dock {
+  --dock-item: 82px;
+}
+@media (max-width: 639px) {
+  .dock {
+    --dock-item: 64px;
+  }
+  /* On a phone the icons speak for themselves: no room for names under them. */
+  .dock-label {
+    display: none;
+  }
+}
+.dock-item {
+  --w: min(var(--dock-item), calc((100vw - 104px) / var(--dock-n, 12)));
+  width: var(--w);
+}
 .dock-icon {
+  width: calc(var(--w) * 0.75);
+  height: calc(var(--w) * 0.75);
   transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
   will-change: transform;
 }
@@ -471,10 +532,18 @@ html[data-solid="1"] .material-window {
 
 /* Home's panels: the same glass as an app, a little lighter at the rim. */
 .home-panel {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 200px);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 30px 80px -30px rgba(0, 0, 0, 0.85);
+  transition: box-shadow 0.35s var(--ease);
+}
+/* A panel's list scrolls inside it and fades out at the bottom, instead of being cut. */
+.home-scroll {
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+  padding-bottom: 14px;
 }
 
 /* ------------------------------------------------------------------ Windows
@@ -505,23 +574,33 @@ html[data-solid="1"] .material-window {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 20px;
   -webkit-backdrop-filter: blur(36px) saturate(160%);
   backdrop-filter: blur(36px) saturate(160%);
+  /* A soft light from the top of the window, fading into its body. */
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 240px);
+  animation: win-open 0.32s var(--ease) both;
   /* Nearly solid, as macOS windows are: Safari does not blur what is behind a moved window, so
      a lighter tint would let the window underneath show through. */
   background-color: rgba(28, 28, 31, 0.97);
   box-shadow:
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
-    0 0 0 1px rgba(0, 0, 0, 0.6),
-    0 22px 60px -18px rgba(0, 0, 0, 0.7);
-  transition: box-shadow 0.2s ease;
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 16px 44px -20px rgba(0, 0, 0, 0.65);
+  transition: box-shadow 0.35s var(--ease);
 }
 .win[data-focused] .win-inner {
   box-shadow:
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.26),
-    0 0 0 1px rgba(0, 0, 0, 0.65),
-    0 40px 100px -20px rgba(0, 0, 0, 0.85);
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 14px 32px -14px rgba(0, 0, 0, 0.55),
+    0 50px 120px -30px rgba(0, 0, 0, 0.9);
+}
+@keyframes win-open {
+  from { opacity: 0; transform: translateY(10px) scale(0.972); }
+  to { opacity: 1; transform: none; }
 }
 .win[data-zoomed="max"] .win-inner {
   border-radius: 14px;
@@ -536,10 +615,10 @@ html[data-solid="1"] .material-window {
   flex-shrink: 0;
   align-items: center;
   gap: 6px;
-  height: 46px;
-  padding: 0 12px 0 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
-  background: rgba(255, 255, 255, 0.035);
+  height: 48px;
+  padding: 0 12px 0 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.018);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -599,7 +678,8 @@ html[data-solid="1"] .material-window {
   margin: 0 auto;
   width: 100%;
   max-width: 1440px;
-  padding: 24px 32px 40px;
+  padding: 30px 38px 48px;
+  animation: page-in 0.36s var(--ease) both;
   /* Pages lay out for the width of their window, not of the screen (container queries). */
   container-type: inline-size;
 }
@@ -642,7 +722,7 @@ html[data-solid="1"] .material-window {
   position: fixed;
   top: 0;
   left: 0;
-  border-radius: 18px;
+  border-radius: 20px;
   background: rgb(var(--accent-rgb) / 0.1);
   box-shadow: inset 0 0 0 1.5px rgb(var(--accent-rgb) / 0.55);
   -webkit-backdrop-filter: blur(6px);
@@ -724,6 +804,10 @@ html[data-wm-busy] * {
   .desktop[data-mission] .win {
     transition: none;
   }
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes pop-in {
   from { opacity: 0; transform: translateY(-4px) scale(0.98); }

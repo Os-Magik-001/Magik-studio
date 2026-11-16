@@ -469,8 +469,9 @@ function Chip({ e, onEvent, day }: { e: CalEvent; onEvent: (e: CalEvent, el: HTM
           ev.stopPropagation();
           onEvent(e, ev.currentTarget);
         }}
-        className="block w-full truncate rounded-[5px] px-1.5 py-[1px] text-left text-[11.5px] font-medium text-black"
-        style={{ background: color, opacity: first ? 1 : 0.85 }}
+        className="block w-full truncate rounded-[6px] border-l-[3px] px-1.5 py-[2px] text-left text-[11.5px] font-medium hover:brightness-125"
+        // A tint of the calendar's colour with its name in a lighter shade: a full month stays calm to read.
+        style={{ borderColor: color, background: `color-mix(in srgb, ${color} ${first ? 26 : 18}%, rgba(30,30,33,0.9))`, color: `color-mix(in srgb, ${color} 45%, white)` }}
       >
         {e.title}
       </button>

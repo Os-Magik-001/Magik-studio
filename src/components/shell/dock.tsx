@@ -31,7 +31,10 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
 
   return (
     <nav ref={ref} aria-label="Dock" className="dock-wrap pointer-events-none fixed inset-x-0 bottom-2.5 z-[8900] flex justify-center px-2 select-none sm:bottom-3">
-      <ul className="dock pointer-events-auto flex max-w-full items-end overflow-x-auto overflow-y-visible rounded-[28px] px-2 pt-2.5 pb-1.5 sm:rounded-[32px] sm:px-3 sm:pt-3">
+      <ul
+        className="dock pointer-events-auto flex max-w-full items-end overflow-x-auto overflow-y-visible rounded-[28px] px-2 pt-2.5 pb-1.5 sm:rounded-[32px] sm:px-3 sm:pt-3"
+        style={{ "--dock-n": items.length + minimized.length + (minimized.length ? 0.4 : 0) } as React.CSSProperties}
+      >
         {items.map((app) => {
           const running = app.id !== "home" && d.wins.some((w) => w.appId === app.id);
           const on = app.id === focusedApp;
@@ -50,9 +53,9 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
                 }}
                 aria-label={app.id === "home" ? "Home: show the desktop" : running ? `${app.name}, open` : app.name}
                 aria-current={on ? "page" : undefined}
-                className="dock-item group relative flex w-[64px] flex-col items-center gap-1 rounded-[18px] pb-1 focus-visible:outline-offset-0 sm:w-[82px] sm:gap-1.5"
+                className="dock-item group relative flex flex-col items-center gap-1 rounded-[18px] pb-1 focus-visible:outline-offset-0 sm:gap-1.5"
               >
-                <span className="dock-icon relative block h-[46px] w-[46px] sm:h-[62px] sm:w-[62px]">
+                <span className="dock-icon relative block">
                   <AppIcon icon={app.icon} size="fill" />
                 </span>
                 <span className={cx("dock-label max-w-full truncate px-0.5 text-[10.5px] font-medium sm:text-[11.5px]", on ? "text-accent" : "text-white/80")}>{app.name}</span>
@@ -69,7 +72,7 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
         })}
         {minimized.length > 0 && (
           <>
-            <li aria-hidden className="mx-1.5 mb-6 h-[46px] w-px shrink-0 self-end bg-white/15 sm:mx-2 sm:h-[62px]" />
+            <li aria-hidden className="mx-1.5 mb-6 h-[40px] w-px shrink-0 self-end bg-white/15 sm:mx-2" />
             {minimized.map((w) => (
               <MinimizedTile key={w.uid} win={w} onOpen={() => d.focus(w.id)} />
             ))}
@@ -91,10 +94,10 @@ function MinimizedTile({ win, onOpen }: { win: Win; onOpen: () => void }) {
         onClick={onOpen}
         aria-label={`${win.title}, minimized`}
         title={win.title}
-        className="dock-item group relative flex w-[64px] flex-col items-center gap-1 rounded-[18px] pb-1 sm:w-[82px] sm:gap-1.5"
+        className="dock-item group relative flex flex-col items-center gap-1 rounded-[18px] pb-1 sm:gap-1.5"
       >
-        <span className="dock-icon relative flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-white/[0.07] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] sm:h-[62px] sm:w-[62px]">
-          {app ? <AppIcon icon={app.icon} size={34} /> : null}
+        <span className="dock-icon relative flex items-center justify-center rounded-[22%] bg-white/[0.07] p-[20%] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
+          {app ? <AppIcon icon={app.icon} size="fill" /> : null}
         </span>
         <span className="dock-label max-w-full truncate px-0.5 text-[10.5px] font-medium text-white/60 sm:text-[11.5px]">{win.title}</span>
       </button>
