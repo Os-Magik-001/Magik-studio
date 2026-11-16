@@ -10,7 +10,7 @@ export default async function CalendarSettingsPage() {
   const viewer = await getViewer();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="calendar" title="Calendar" description="How your calendar looks, and how to see it in Google Calendar or on your iPhone.">
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="calendar" title="Calendar" description="How your calendar looks, and how to see it in Google Calendar or on your iPhone.">
         <CalendarSettings weekStart={viewer.preferences.weekStart ?? 1} view={viewer.preferences.calendarView ?? "month"} />
       </SettingsShell>
     </WindowPage>

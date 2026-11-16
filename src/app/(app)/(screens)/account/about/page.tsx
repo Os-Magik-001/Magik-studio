@@ -26,7 +26,7 @@ export default async function AboutPage() {
   const brand = await getBrand();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="about" title={`About ${brand.product}`}>
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="about" title={`About ${brand.product}`}>
         <div className="frost flex items-center gap-5 rounded-[18px] p-6">
           <BrandMark brand={brand} className="h-12 w-auto" />
           <div>

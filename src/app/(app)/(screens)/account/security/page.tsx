@@ -12,7 +12,7 @@ export default async function SecurityPage() {
   const viewer = await getViewer();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="security" title="Password & security" description="Change your password, or sign out everywhere if you used a computer that isn't yours.">
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="security" title="Password & security" description="Change your password, or sign out everywhere if you used a computer that isn't yours.">
         <SettingsGroup title="Password" description="At least 8 characters. Your studio manager can also set a new one for you.">
           <div className="p-4">
             <ChangePasswordForm />

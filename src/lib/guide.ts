@@ -90,6 +90,7 @@ const SETTINGS: { label: string; text: string; roles?: Role[] }[] = [
   { label: "Documents", text: "your invoices and your contract", roles: ["client"] },
   { label: "Referrals & credits", text: "your referral link and your credits" },
   { label: "Studio", text: "the studio's invoice details, its packs and the credits a signed referral gives", roles: ["admin"] },
+  { label: "Branding", text: "the app's name, the studio's name, its logos, accent colour and default wallpaper, as everyone in the studio and its clients see them", roles: ["admin"] },
   { label: "About {product}", text: "what {product} is, Motchi, and every keyboard shortcut" },
 ];
 

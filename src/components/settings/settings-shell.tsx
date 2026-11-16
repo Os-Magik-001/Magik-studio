@@ -1,15 +1,15 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Bell, Building2, CalendarDays, FileText, Gift, Info, Lock, Palette, UserRound } from "lucide-react";
+import { Bell, Brush, Building2, Network, CalendarDays, FileText, Gift, Info, Lock, Palette, UserRound } from "lucide-react";
 import type { Role } from "@/lib/auth";
 import { cx } from "@/components/ui";
 import { ProductName } from "@/components/brand";
 
 // Settings, like macOS System Settings: the sections in a sidebar, the chosen one on the right.
 
-export type SettingsSection = "general" | "appearance" | "notifications" | "calendar" | "security" | "documents" | "referrals" | "studio" | "about";
+export type SettingsSection = "general" | "appearance" | "notifications" | "calendar" | "security" | "documents" | "referrals" | "studio" | "branding" | "agencies" | "about";
 
-const SECTIONS: { key: SettingsSection; label: string; href: string; icon: typeof Bell; tint: string; roles?: Role[] }[] = [
+const SECTIONS: { key: SettingsSection; label: string; href: string; icon: typeof Bell; tint: string; roles?: Role[]; platform?: boolean }[] = [
   { key: "general", label: "General", href: "/account", icon: UserRound, tint: "#0a84ff" },
   { key: "appearance", label: "Appearance", href: "/account/appearance", icon: Palette, tint: "#bf5af2" },
   { key: "notifications", label: "Notifications", href: "/account/notifications", icon: Bell, tint: "#ff453a" },
@@ -18,23 +18,28 @@ const SECTIONS: { key: SettingsSection; label: string; href: string; icon: typeo
   { key: "documents", label: "Documents", href: "/account/documents", icon: FileText, tint: "#64d2ff", roles: ["client"] },
   { key: "referrals", label: "Referrals & credits", href: "/referrals", icon: Gift, tint: "#d9a60c" },
   { key: "studio", label: "Studio", href: "/account/studio", icon: Building2, tint: "#30d158", roles: ["admin"] },
+  { key: "branding", label: "Branding", href: "/account/branding", icon: Brush, tint: "#ff375f", roles: ["admin"] },
+  { key: "agencies", label: "Agencies", href: "/account/agencies", icon: Network, tint: "#5e5ce6", platform: true },
   { key: "about", label: "About", href: "/account/about", icon: Info, tint: "#636366" },
 ];
 
 export function SettingsShell({
   role,
+  platform,
   active,
   title,
   description,
   children,
 }: {
   role: Role;
+  // The platform's owner also gets Agencies.
+  platform?: boolean;
   active: SettingsSection;
   title: string;
   description?: ReactNode;
   children: ReactNode;
 }) {
-  const sections = SECTIONS.filter((s) => !s.roles || s.roles.includes(role));
+  const sections = SECTIONS.filter((s) => (s.platform ? !!platform : !s.roles || s.roles.includes(role)));
   return (
     <div className="win-bleed flex min-h-full flex-col @min-[48rem]:flex-row">
       <aside className="settings-side shrink-0 border-white/[0.07] @min-[48rem]:w-[236px] @min-[48rem]:border-r">

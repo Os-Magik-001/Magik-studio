@@ -23,7 +23,7 @@ export default async function AccountPage() {
   const name = displayName(viewer);
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="general" title="General" description={`Your name, your account, and what you can do in ${(await getBrand()).product}.`}>
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="general" title="General" description={`Your name, your account, and what you can do in ${(await getBrand()).product}.`}>
         <div className="frost flex items-center gap-4 rounded-[18px] p-5">
           <Avatar name={name} size={64} />
           <div className="min-w-0">

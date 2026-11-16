@@ -22,7 +22,7 @@ export default async function NotificationSettingsPage() {
   const viewer = await getViewer();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="notifications" title="Notifications" description={`Choose what ${(await getBrand()).product} tells you about.`}>
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="notifications" title="Notifications" description={`Choose what ${(await getBrand()).product} tells you about.`}>
         <NotificationSettings initial={viewer.preferences.muted ?? []} categories={CATEGORIES[viewer.role]} />
         <SettingsGroup>
           <SettingsRow label="Mark everything as read" hint="Clears the badge on the bell.">

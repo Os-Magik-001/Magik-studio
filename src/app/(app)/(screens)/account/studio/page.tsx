@@ -16,7 +16,7 @@ export default async function StudioSettingsPage() {
   const { data: studio } = await (await agencyDb()).from("studio_settings").select("business_name, referral_reward").maybeSingle();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="studio" title="Studio" description={`Settings for ${studio?.business_name ?? "the studio"}: shared by everyone.`}>
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="studio" title="Studio" description={`Settings for ${studio?.business_name ?? "the studio"}: shared by everyone.`}>
         <SettingsGroup title="Referrals" description="Credits go to the person who referred a client, when you mark the referral as signed in the Referrals app.">
           <div className="p-4">
             <ReferralRewardForm reward={studio?.referral_reward ?? 100} />

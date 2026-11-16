@@ -11,7 +11,7 @@ export default async function AppearancePage() {
   const viewer = await getViewer();
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="appearance" title="Appearance" description="Your wallpaper, the Dock and the windows. Saved to your account, so they follow you to any computer.">
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="appearance" title="Appearance" description="Your wallpaper, the Dock and the windows. Saved to your account, so they follow you to any computer.">
         <AppearanceSettings initial={lookOf(viewer.preferences)} />
       </SettingsShell>
     </WindowPage>

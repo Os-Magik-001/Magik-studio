@@ -15,6 +15,8 @@ export type Viewer = {
   role: Role;
   clientId: string | null;
   agencyId: string;
+  // The platform's owner: sees and creates agencies (Settings > Agencies).
+  platformAdmin: boolean;
   preferences: Preferences;
   referralCode: string;
 };
@@ -27,7 +29,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role, client_id, agency_id, paused_at, preferences, referral_code")
+    .select("id, email, full_name, role, client_id, agency_id, platform_admin, paused_at, preferences, referral_code")
     .eq("id", userId)
     .maybeSingle();
   if (!profile) redirect("/login?error=no-profile");
@@ -44,6 +46,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
     role: profile.role,
     clientId: profile.client_id,
     agencyId: profile.agency_id,
+    platformAdmin: profile.platform_admin,
     preferences: readPreferences(profile.preferences),
     referralCode: profile.referral_code,
   };

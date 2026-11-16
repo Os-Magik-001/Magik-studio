@@ -50,7 +50,8 @@ export const MAGIK: Brand = {
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
-const FILE = z.string().regex(/^(\/|https:\/\/)[^\s"'()<>]+$/).max(500);
+// A file of the app (/brand/...) or one stored for the agency (https, or the local stack).
+const FILE = z.string().regex(/^(\/|https:\/\/|http:\/\/127\.0\.0\.1:)[^\s"'()<>]+$/).max(500);
 const NAME = z.string().trim().min(1).max(60);
 
 // What an agency's record may set (agencies.brand). Anything left out is worked out from its name.

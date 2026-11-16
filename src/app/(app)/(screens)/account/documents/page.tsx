@@ -30,7 +30,7 @@ export default async function DocumentsPage() {
 
   return (
     <WindowPage>
-      <SettingsShell role={viewer.role} active="documents" title="Documents" description={`Your invoices and your contract with ${(await getBrand()).short}.`}>
+      <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="documents" title="Documents" description={`Your invoices and your contract with ${(await getBrand()).short}.`}>
         <Card>
           <CardHeader title="Invoices" />
           {invoices?.length ? (
