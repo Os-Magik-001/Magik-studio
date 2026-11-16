@@ -5,7 +5,7 @@ import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { visibleVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { ASPECTS, FORMAT_LABEL, type VideoFormat } from "@/lib/workflow";
 import { parseTypography } from "@/lib/typography";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
@@ -28,7 +28,7 @@ export async function startMadeVideo(_: ActionResult, formData: FormData): Promi
     if (!client) return fail("Client not found.");
   }
 
-  const { data, error } = await createAdminClient()
+  const { data, error } = await (await agencyDb())
     .from("videos")
     .insert({
       client_id: clientId,
@@ -54,7 +54,7 @@ export async function makeVideo(_: ActionResult, formData: FormData): Promise<Ac
   const video = await visibleVideo(videoId);
   if (!video?.internal) return fail("Video not found.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ count: footage }, { count: open }, { data: latest }] = await Promise.all([
     admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
     admin.from("edit_jobs").select("id", { count: "exact", head: true }).eq("video_id", videoId).in("status", ["queued", "running"]),

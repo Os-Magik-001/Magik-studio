@@ -1,5 +1,5 @@
 import "server-only";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import type { Database } from "@/lib/database.types";
 import { categoryOf, readPreferences } from "@/lib/preferences";
 import { friendlyError } from "@/lib/errors";
@@ -9,7 +9,7 @@ type NotificationRow = Database["public"]["Tables"]["notifications"]["Insert"];
 // Sends notifications, except to the people who muted that kind in their settings.
 export async function deliver(rows: NotificationRow[]) {
   if (!rows.length) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const ids = [...new Set(rows.map((r) => r.user_id))];
   const { data: people } = await admin.from("profiles").select("id, preferences, paused_at").in("id", ids);
   const muted = new Map((people ?? []).map((p) => [p.id, new Set(readPreferences(p.preferences).muted ?? [])]));
@@ -32,7 +32,7 @@ export async function notify(
   audience: Audience,
   message: { kind: string; title: string; body?: string },
 ) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: video } = await admin
     .from("videos")
     .select("id, client_id, internal, editor_id, videographer_id")
@@ -70,7 +70,7 @@ export async function notify(
 // Onboarding news (an account opened, a contract signed, a setup finished) for the client's
 // seller and the studio managers. Not tied to a video.
 export async function notifySales(clientId: string, message: { kind: string; title: string; body?: string }) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: client }, { data: admins }] = await Promise.all([
     admin.from("clients").select("seller_id").eq("id", clientId).maybeSingle(),
     admin.from("profiles").select("id").eq("role", "admin"),

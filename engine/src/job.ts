@@ -90,8 +90,10 @@ const progress = (jobId: string, text: string) => {
 };
 
 async function notify(videoId: string, title: string, body?: string) {
-  const { data: video } = await db.from("videos").select("editor_id").eq("id", videoId).single();
-  const { data: admins } = await db.from("profiles").select("id").eq("role", "admin");
+  const { data: video } = await db.from("videos").select("editor_id, agency_id").eq("id", videoId).single();
+  if (!video) return;
+  // The studio managers of the video's own agency.
+  const { data: admins } = await db.from("profiles").select("id").eq("role", "admin").eq("agency_id", video.agency_id);
   const ids = new Set<string>([...(admins ?? []).map((a) => a.id), ...(video?.editor_id ? [video.editor_id] : [])]);
   if (ids.size) {
     await db.from("notifications").insert([...ids].map((user_id) => ({ user_id, video_id: videoId, kind: "version_ready", title, body: body ?? null })));

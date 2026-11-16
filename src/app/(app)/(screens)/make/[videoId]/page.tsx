@@ -5,7 +5,7 @@ import { Download, ExternalLink, Trash2 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { visibleVideo } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { signedUrls } from "@/lib/storage";
 import { driveServiceEmail } from "@/lib/drive";
 import { friendlyError } from "@/lib/errors";
@@ -65,7 +65,7 @@ export default async function MadeVideoPage({ params, searchParams }: { params: 
   const open = (jobs ?? []).find((j) => j.status === "queued" || j.status === "running");
   const failed = state.label === "Failed" ? jobs?.[0] : null;
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [footageUrls, play, download] = await Promise.all([
     signedUrls("footage", (footage ?? []).flatMap((f) => (f.storage_path ? [f.storage_path] : []))),
     shown ? signedUrls("versions", [shown.storage_path]).then((m) => m.get(shown.storage_path) ?? null) : null,

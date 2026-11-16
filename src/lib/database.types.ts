@@ -46,6 +46,7 @@ export type Database = {
       }
       agent_runs: {
         Row: {
+          agency_id: string
           agent: string
           attempts: number
           client_id: string
@@ -62,6 +63,7 @@ export type Database = {
           video_id: string | null
         }
         Insert: {
+          agency_id?: string
           agent: string
           attempts?: number
           client_id: string
@@ -78,6 +80,7 @@ export type Database = {
           video_id?: string | null
         }
         Update: {
+          agency_id?: string
           agent?: string
           attempts?: number
           client_id?: string
@@ -119,6 +122,7 @@ export type Database = {
       }
       brand_kits: {
         Row: {
+          agency_id: string
           client_id: string
           colors: string[]
           edit_style: string
@@ -132,6 +136,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_id?: string
           client_id: string
           colors?: string[]
           edit_style?: string
@@ -145,6 +150,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_id?: string
           client_id?: string
           colors?: string[]
           edit_style?: string
@@ -169,18 +175,21 @@ export type Database = {
       }
       brand_questionnaires: {
         Row: {
+          agency_id: string
           answers: Json
           client_id: string
           submitted_by: string | null
           updated_at: string
         }
         Insert: {
+          agency_id?: string
           answers?: Json
           client_id: string
           submitted_by?: string | null
           updated_at?: string
         }
         Update: {
+          agency_id?: string
           answers?: Json
           client_id?: string
           submitted_by?: string | null
@@ -205,6 +214,7 @@ export type Database = {
       }
       brand_strategies: {
         Row: {
+          agency_id: string
           audience: string | null
           business: string | null
           charte: Json
@@ -219,6 +229,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_id?: string
           audience?: string | null
           business?: string | null
           charte?: Json
@@ -233,6 +244,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_id?: string
           audience?: string | null
           business?: string | null
           charte?: Json
@@ -258,14 +270,17 @@ export type Database = {
       }
       calendar_attendees: {
         Row: {
+          agency_id: string
           event_id: string
           user_id: string
         }
         Insert: {
+          agency_id?: string
           event_id: string
           user_id: string
         }
         Update: {
+          agency_id?: string
           event_id?: string
           user_id?: string
         }
@@ -288,6 +303,7 @@ export type Database = {
       }
       calendar_events: {
         Row: {
+          agency_id: string
           all_day: boolean
           client_id: string | null
           color: string
@@ -303,6 +319,7 @@ export type Database = {
           video_id: string | null
         }
         Insert: {
+          agency_id?: string
           all_day?: boolean
           client_id?: string | null
           color?: string
@@ -318,6 +335,7 @@ export type Database = {
           video_id?: string | null
         }
         Update: {
+          agency_id?: string
           all_day?: boolean
           client_id?: string | null
           color?: string
@@ -358,16 +376,19 @@ export type Database = {
       }
       calendar_feeds: {
         Row: {
+          agency_id: string
           created_at: string
           nonce: string
           user_id: string
         }
         Insert: {
+          agency_id?: string
           created_at?: string
           nonce: string
           user_id: string
         }
         Update: {
+          agency_id?: string
           created_at?: string
           nonce?: string
           user_id?: string
@@ -384,6 +405,7 @@ export type Database = {
       }
       client_invites: {
         Row: {
+          agency_id: string
           client_id: string
           created_at: string
           created_by: string | null
@@ -399,6 +421,7 @@ export type Database = {
           used_by: string | null
         }
         Insert: {
+          agency_id?: string
           client_id: string
           created_at?: string
           created_by?: string | null
@@ -414,6 +437,7 @@ export type Database = {
           used_by?: string | null
         }
         Update: {
+          agency_id?: string
           client_id?: string
           created_at?: string
           created_by?: string | null
@@ -454,14 +478,17 @@ export type Database = {
       }
       client_team: {
         Row: {
+          agency_id: string
           client_id: string
           user_id: string
         }
         Insert: {
+          agency_id?: string
           client_id: string
           user_id: string
         }
         Update: {
+          agency_id?: string
           client_id?: string
           user_id?: string
         }
@@ -485,6 +512,7 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          agency_id: string
           contact_name: string | null
           created_at: string
           email: string | null
@@ -504,6 +532,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          agency_id?: string
           contact_name?: string | null
           created_at?: string
           email?: string | null
@@ -523,6 +552,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          agency_id?: string
           contact_name?: string | null
           created_at?: string
           email?: string | null
@@ -559,6 +589,7 @@ export type Database = {
       }
       comments: {
         Row: {
+          agency_id: string
           author_id: string | null
           body: string
           created_at: string
@@ -571,6 +602,7 @@ export type Database = {
           version_id: string
         }
         Insert: {
+          agency_id?: string
           author_id?: string | null
           body: string
           created_at?: string
@@ -583,6 +615,7 @@ export type Database = {
           version_id: string
         }
         Update: {
+          agency_id?: string
           author_id?: string | null
           body?: string
           created_at?: string
@@ -620,6 +653,7 @@ export type Database = {
       }
       contracts: {
         Row: {
+          agency_id: string
           client_id: string
           created_at: string
           created_by: string | null
@@ -634,6 +668,7 @@ export type Database = {
           storage_path: string
         }
         Insert: {
+          agency_id?: string
           client_id: string
           created_at?: string
           created_by?: string | null
@@ -648,6 +683,7 @@ export type Database = {
           storage_path: string
         }
         Update: {
+          agency_id?: string
           client_id?: string
           created_at?: string
           created_by?: string | null
@@ -687,6 +723,7 @@ export type Database = {
       }
       credit_ledger: {
         Row: {
+          agency_id: string
           amount: number
           created_at: string
           created_by: string | null
@@ -696,6 +733,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agency_id?: string
           amount: number
           created_at?: string
           created_by?: string | null
@@ -705,6 +743,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agency_id?: string
           amount?: number
           created_at?: string
           created_by?: string | null
@@ -739,6 +778,7 @@ export type Database = {
       }
       edit_jobs: {
         Row: {
+          agency_id: string
           attempts: number
           base_version_id: string | null
           created_at: string
@@ -755,6 +795,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          agency_id?: string
           attempts?: number
           base_version_id?: string | null
           created_at?: string
@@ -771,6 +812,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          agency_id?: string
           attempts?: number
           base_version_id?: string | null
           created_at?: string
@@ -819,6 +861,7 @@ export type Database = {
       }
       footage: {
         Row: {
+          agency_id: string
           content_type: string | null
           created_at: string
           drive_file_id: string | null
@@ -832,6 +875,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          agency_id?: string
           content_type?: string | null
           created_at?: string
           drive_file_id?: string | null
@@ -845,6 +889,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          agency_id?: string
           content_type?: string | null
           created_at?: string
           drive_file_id?: string | null
@@ -876,6 +921,7 @@ export type Database = {
       }
       help_requests: {
         Row: {
+          agency_id: string
           body: string
           created_at: string
           id: string
@@ -885,6 +931,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          agency_id?: string
           body: string
           created_at?: string
           id?: string
@@ -894,6 +941,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          agency_id?: string
           body?: string
           created_at?: string
           id?: string
@@ -914,6 +962,7 @@ export type Database = {
       }
       invoices: {
         Row: {
+          agency_id: string
           bill_to: Json
           client_id: string
           created_at: string
@@ -937,6 +986,7 @@ export type Database = {
           written_by_claude: boolean
         }
         Insert: {
+          agency_id?: string
           bill_to?: Json
           client_id: string
           created_at?: string
@@ -960,6 +1010,7 @@ export type Database = {
           written_by_claude?: boolean
         }
         Update: {
+          agency_id?: string
           bill_to?: Json
           client_id?: string
           created_at?: string
@@ -1008,6 +1059,7 @@ export type Database = {
       }
       motion_prompts: {
         Row: {
+          agency_id: string | null
           created_at: string
           created_by: string | null
           creator: string | null
@@ -1020,6 +1072,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          agency_id?: string | null
           created_at?: string
           created_by?: string | null
           creator?: string | null
@@ -1032,6 +1085,7 @@ export type Database = {
           title: string
         }
         Update: {
+          agency_id?: string | null
           created_at?: string
           created_by?: string | null
           creator?: string | null
@@ -1055,6 +1109,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          agency_id: string
           body: string | null
           client_id: string | null
           created_at: string
@@ -1066,6 +1121,7 @@ export type Database = {
           video_id: string | null
         }
         Insert: {
+          agency_id?: string
           body?: string | null
           client_id?: string | null
           created_at?: string
@@ -1077,6 +1133,7 @@ export type Database = {
           video_id?: string | null
         }
         Update: {
+          agency_id?: string
           body?: string | null
           client_id?: string | null
           created_at?: string
@@ -1113,6 +1170,7 @@ export type Database = {
       }
       onboardings: {
         Row: {
+          agency_id: string
           brand_done_at: string | null
           client_id: string
           completed_at: string | null
@@ -1123,6 +1181,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_id?: string
           brand_done_at?: string | null
           client_id: string
           completed_at?: string | null
@@ -1133,6 +1192,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_id?: string
           brand_done_at?: string | null
           client_id?: string
           completed_at?: string | null
@@ -1155,6 +1215,7 @@ export type Database = {
       packs: {
         Row: {
           active: boolean
+          agency_id: string
           billing: string
           created_at: string
           description: string | null
@@ -1169,6 +1230,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          agency_id?: string
           billing?: string
           created_at?: string
           description?: string | null
@@ -1183,6 +1245,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          agency_id?: string
           billing?: string
           created_at?: string
           description?: string | null
@@ -1199,34 +1262,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_id: string
           client_id: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
           paused_at: string | null
+          platform_admin: boolean
           preferences: Json
           referral_code: string
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
+          agency_id?: string
           client_id?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
           paused_at?: string | null
+          platform_admin?: boolean
           preferences?: Json
           referral_code?: string
           role: Database["public"]["Enums"]["user_role"]
         }
         Update: {
+          agency_id?: string
           client_id?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
           paused_at?: string | null
+          platform_admin?: boolean
           preferences?: Json
           referral_code?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -1244,6 +1313,7 @@ export type Database = {
       reference_library: {
         Row: {
           active: boolean
+          agency_id: string | null
           cover_path: string | null
           created_at: string
           created_by: string | null
@@ -1257,6 +1327,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          agency_id?: string | null
           cover_path?: string | null
           created_at?: string
           created_by?: string | null
@@ -1270,6 +1341,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          agency_id?: string | null
           cover_path?: string | null
           created_at?: string
           created_by?: string | null
@@ -1293,6 +1365,7 @@ export type Database = {
       }
       reference_videos: {
         Row: {
+          agency_id: string
           analysis: Json | null
           attempts: number
           client_id: string
@@ -1318,6 +1391,7 @@ export type Database = {
           watched: boolean
         }
         Insert: {
+          agency_id?: string
           analysis?: Json | null
           attempts?: number
           client_id: string
@@ -1343,6 +1417,7 @@ export type Database = {
           watched?: boolean
         }
         Update: {
+          agency_id?: string
           analysis?: Json | null
           attempts?: number
           client_id?: string
@@ -1400,6 +1475,7 @@ export type Database = {
       }
       referrals: {
         Row: {
+          agency_id: string
           client_id: string | null
           company: string | null
           created_at: string
@@ -1414,6 +1490,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_id?: string
           client_id?: string | null
           company?: string | null
           created_at?: string
@@ -1428,6 +1505,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_id?: string
           client_id?: string | null
           company?: string | null
           created_at?: string
@@ -1460,6 +1538,7 @@ export type Database = {
       }
       script_revisions: {
         Row: {
+          agency_id: string
           beats: Json | null
           body: string | null
           created_at: string
@@ -1475,6 +1554,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          agency_id?: string
           beats?: Json | null
           body?: string | null
           created_at?: string
@@ -1490,6 +1570,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          agency_id?: string
           beats?: Json | null
           body?: string | null
           created_at?: string
@@ -1530,6 +1611,7 @@ export type Database = {
       }
       scripts: {
         Row: {
+          agency_id: string
           beats: Json | null
           approved_at: string | null
           approved_by: string | null
@@ -1547,6 +1629,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          agency_id?: string
           beats?: Json | null
           approved_at?: string | null
           approved_by?: string | null
@@ -1564,6 +1647,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          agency_id?: string
           beats?: Json | null
           approved_at?: string | null
           approved_by?: string | null
@@ -1606,6 +1690,7 @@ export type Database = {
       }
       shoots: {
         Row: {
+          agency_id: string
           created_at: string
           ends_at: string | null
           id: string
@@ -1615,6 +1700,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          agency_id?: string
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -1624,6 +1710,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          agency_id?: string
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -1644,6 +1731,7 @@ export type Database = {
       }
       sound_files: {
         Row: {
+          agency_id: string | null
           analysis: Json | null
           created_at: string
           drive_file_id: string
@@ -1656,6 +1744,7 @@ export type Database = {
           tags: string[]
         }
         Insert: {
+          agency_id?: string | null
           analysis?: Json | null
           created_at?: string
           drive_file_id: string
@@ -1668,6 +1757,7 @@ export type Database = {
           tags?: string[]
         }
         Update: {
+          agency_id?: string | null
           analysis?: Json | null
           created_at?: string
           drive_file_id?: string
@@ -1691,6 +1781,7 @@ export type Database = {
       }
       sound_libraries: {
         Row: {
+          agency_id: string | null
           created_at: string
           created_by: string | null
           drive_folder_id: string | null
@@ -1706,6 +1797,7 @@ export type Database = {
           synced_at: string | null
         }
         Insert: {
+          agency_id?: string | null
           created_at?: string
           created_by?: string | null
           drive_folder_id?: string | null
@@ -1721,6 +1813,7 @@ export type Database = {
           synced_at?: string | null
         }
         Update: {
+          agency_id?: string | null
           created_at?: string
           created_by?: string | null
           drive_folder_id?: string | null
@@ -1748,10 +1841,10 @@ export type Database = {
       studio_settings: {
         Row: {
           address: string | null
+          agency_id: string
           business_name: string
           currency: string
           email: string | null
-          id: boolean
           invoice_prefix: string
           next_invoice_number: number
           payment_instructions: string | null
@@ -1764,10 +1857,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          agency_id?: string
           business_name?: string
           currency?: string
           email?: string | null
-          id?: boolean
           invoice_prefix?: string
           next_invoice_number?: number
           payment_instructions?: string | null
@@ -1780,10 +1873,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          agency_id?: string
           business_name?: string
           currency?: string
           email?: string | null
-          id?: boolean
           invoice_prefix?: string
           next_invoice_number?: number
           payment_instructions?: string | null
@@ -1799,6 +1892,7 @@ export type Database = {
       trend_reports: {
         Row: {
           accounts: string[]
+          agency_id: string
           attempts: number
           audio: Json
           client_id: string
@@ -1816,6 +1910,7 @@ export type Database = {
         }
         Insert: {
           accounts?: string[]
+          agency_id?: string
           attempts?: number
           audio?: Json
           client_id: string
@@ -1833,6 +1928,7 @@ export type Database = {
         }
         Update: {
           accounts?: string[]
+          agency_id?: string
           attempts?: number
           audio?: Json
           client_id?: string
@@ -1867,6 +1963,7 @@ export type Database = {
       }
       versions: {
         Row: {
+          agency_id: string
           created_at: string
           created_by: string | null
           decided_at: string | null
@@ -1884,6 +1981,7 @@ export type Database = {
           video_id: string
         }
         Insert: {
+          agency_id?: string
           created_at?: string
           created_by?: string | null
           decided_at?: string | null
@@ -1901,6 +1999,7 @@ export type Database = {
           video_id: string
         }
         Update: {
+          agency_id?: string
           created_at?: string
           created_by?: string | null
           decided_at?: string | null
@@ -1936,6 +2035,7 @@ export type Database = {
       }
       videos: {
         Row: {
+          agency_id: string
           aspect: string
           brief: string | null
           client_id: string | null
@@ -1956,6 +2056,7 @@ export type Database = {
           videographer_id: string | null
         }
         Insert: {
+          agency_id?: string
           aspect?: string
           brief?: string | null
           client_id?: string | null
@@ -1976,6 +2077,7 @@ export type Database = {
           videographer_id?: string | null
         }
         Update: {
+          agency_id?: string
           aspect?: string
           brief?: string | null
           client_id?: string | null
@@ -2032,10 +2134,10 @@ export type Database = {
     }
     Functions: {
       claim_agent_run: {
-        Args: { run?: string }
+        Args: { run?: string; agency?: string }
         Returns: Database["public"]["Tables"]["agent_runs"]["Row"][]
       }
-      take_invoice_number: { Args: never; Returns: string }
+      take_invoice_number: { Args: { agency: string }; Returns: string }
     }
     Enums: {
       agent_status: "queued" | "running" | "done" | "failed"

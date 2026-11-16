@@ -9,7 +9,7 @@ import { queueRuns, startProduction, startWorkers } from "@/lib/production";
 import { deliver } from "@/lib/notify";
 import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // The client's Production panel: each step of making the month's videos is one click, and the
@@ -27,7 +27,7 @@ async function visibleClient(clientId: string) {
 
 // Runs of an agent already waiting or at work for this client (or these videos).
 async function openRuns(clientId: string, agent: "strategist" | "planner" | "scriptwriter") {
-  const { data } = await createAdminClient().from("agent_runs").select("id, video_id").eq("client_id", clientId).eq("agent", agent).in("status", ["queued", "running"]);
+  const { data } = await (await agencyDb()).from("agent_runs").select("id, video_id").eq("client_id", clientId).eq("agent", agent).in("status", ["queued", "running"]);
   return data ?? [];
 }
 
@@ -38,7 +38,7 @@ export async function startProductionNow(_: ActionResult, formData: FormData): P
   if (!claudeConfigured()) return fail(NOT_CONNECTED);
   const client = await visibleClient(text(formData, "clientId"));
   if (!client) return fail("Client not found.");
-  const { data: form } = await createAdminClient().from("brand_questionnaires").select("answers").eq("client_id", client.id).maybeSingle();
+  const { data: form } = await (await agencyDb()).from("brand_questionnaires").select("answers").eq("client_id", client.id).maybeSingle();
   if (answeredCount(readAnswers(form?.answers)) < 4) return fail("The questionnaire needs at least 4 answers first: the client fills it in during onboarding, or you can on Brand & strategy.");
   if (!(await startProduction(client.id, viewer.id))) return fail("The brand strategist is already at work.");
   refresh();
@@ -54,7 +54,7 @@ export async function planMonth(_: ActionResult, formData: FormData): Promise<Ac
   if (!client) return fail("Client not found.");
   const count = Math.round(Number(text(formData, "count")));
   if (!(count >= 1 && count <= 12)) return fail("Plan between 1 and 12 videos.");
-  const { data: strategy } = await createAdminClient().from("brand_strategies").select("client_id").eq("client_id", client.id).maybeSingle();
+  const { data: strategy } = await (await agencyDb()).from("brand_strategies").select("client_id").eq("client_id", client.id).maybeSingle();
   if (!strategy) return fail("Run the brand strategist first: the plan builds on the strategy.");
   if ((await openRuns(client.id, "planner")).length) return fail("The content planner is already planning.");
 
@@ -69,7 +69,7 @@ export async function planMonth(_: ActionResult, formData: FormData): Promise<Ac
 export async function createPlannedVideos(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const viewer = await requireRole("admin");
   const runId = text(formData, "runId");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: run } = await admin.from("agent_runs").select("id, client_id, agent, status, output").eq("id", runId).maybeSingle();
   if (!run || run.agent !== "planner" || run.status !== "done") return fail("Plan not found.");
   const client = await visibleClient(run.client_id);
@@ -169,7 +169,7 @@ export async function sendScripts(_: ActionResult, formData: FormData): Promise<
   const ready = (videos ?? []).filter((v) => v.scripts?.status === "draft" && v.scripts.body.trim() && !busy.has(v.id));
   if (!ready.length) return fail("No finished script is waiting to be sent.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { error } = await admin.from("scripts").update({ status: "client_review", client_note: null }).in("video_id", ready.map((v) => v.id)).eq("status", "draft");
   if (error) return fail("Couldn't send the scripts.");
   const { data: people } = await admin.from("profiles").select("id").eq("client_id", client.id).eq("role", "client");
@@ -219,7 +219,7 @@ export async function scheduleShootDay(_: ActionResult, formData: FormData): Pro
   const missing = videos.filter((v) => !v.videographer_id && !chosen);
   if (missing.length) return fail(viewer.role === "admin" ? "Pick the videographer." : `Ask the studio manager to assign a videographer to ${missing.map((v) => v.title).join(", ")}.`);
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   if (chosen) {
     const { data: who } = await admin.from("profiles").select("id").eq("id", chosen).eq("role", "videographer").maybeSingle();
     if (!who) return fail("Pick the videographer.");

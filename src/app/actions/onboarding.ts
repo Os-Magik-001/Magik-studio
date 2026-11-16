@@ -5,12 +5,13 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { claudeConfigured } from "@/lib/claude";
 import { writeInvoiceWording } from "@/lib/agents";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 import { DEFAULT_LINK_DAYS, LINK_DAYS } from "@/lib/onboarding";
 import { defaultNote, packLine, readTaxes, totals, type Lang } from "@/lib/invoices";
 import { hashToken, newToken, siteOrigin } from "@/lib/invites";
 import { getBrand } from "@/lib/brand-server";
+import { getAgency } from "@/lib/brand-server";
 
 // The seller's lane of onboarding: client details -> pack -> invoice -> contract -> link.
 // Sellers and studio managers only. Writes go through the secret key after the role check.
@@ -50,7 +51,7 @@ export async function createOnboardingClient(_: ActionResult, formData: FormData
   const f = clientFields(formData);
   const problem = clientProblem(f);
   if (problem) return fail(problem);
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data, error } = await admin.from("clients").insert({ ...f, seller_id: viewer.id }).select("id").single();
   if (error) return fail("Couldn't create the client.");
   await Promise.all([admin.from("brand_kits").insert({ client_id: data.id }), admin.from("onboardings").insert({ client_id: data.id })]);
@@ -62,7 +63,7 @@ export async function startOnboarding(formData: FormData) {
   await requireRole("admin", "seller");
   const clientId = text(formData, "clientId");
   if (!UUID.test(clientId)) return;
-  await createAdminClient().from("onboardings").upsert({ client_id: clientId }, { onConflict: "client_id", ignoreDuplicates: true });
+  await (await agencyDb()).from("onboardings").upsert({ client_id: clientId }, { onConflict: "client_id", ignoreDuplicates: true });
   redirect(`/onboarding/${clientId}`);
 }
 
@@ -73,7 +74,7 @@ export async function saveClientInfos(_: ActionResult, formData: FormData): Prom
   const f = clientFields(formData);
   const problem = clientProblem(f);
   if (problem) return fail(problem);
-  const { error } = await createAdminClient().from("clients").update(f).eq("id", clientId);
+  const { error } = await (await agencyDb()).from("clients").update(f).eq("id", clientId);
   if (error) return fail("Couldn't save the details.");
   refresh();
   return done("Saved.");
@@ -86,7 +87,7 @@ export async function choosePack(_: ActionResult, formData: FormData): Promise<A
   const clientId = text(formData, "clientId");
   const packId = text(formData, "packId");
   if (!UUID.test(clientId) || !UUID.test(packId)) return fail("Pick one of the packs.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: pack } = await admin.from("packs").select("id, revision_rounds, active").eq("id", packId).maybeSingle();
   if (!pack?.active) return fail("Pick one of the packs.");
   // The pack's revision rounds become the client's limit (beyond it, changes are billable).
@@ -123,7 +124,7 @@ export async function savePack(_: ActionResult, formData: FormData): Promise<Act
     return fail("Videos per month must be a whole number.");
   }
   if (!Number.isInteger(f.revision_rounds) || f.revision_rounds < 0 || f.revision_rounds > 20) return fail("Revision rounds must be from 0 to 20.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { error } = id ? await admin.from("packs").update(f).eq("id", id) : await admin.from("packs").insert({ ...f, active: true });
   if (error) return fail("Couldn't save the pack.");
   refresh();
@@ -134,7 +135,7 @@ export async function setPackActive(formData: FormData) {
   await requireRole("admin");
   const id = text(formData, "packId");
   if (!UUID.test(id)) return;
-  await createAdminClient().from("packs").update({ active: text(formData, "active") === "1" }).eq("id", id);
+  await (await agencyDb()).from("packs").update({ active: text(formData, "active") === "1" }).eq("id", id);
   refresh();
 }
 
@@ -144,7 +145,7 @@ export async function generateInvoice(_: ActionResult, formData: FormData): Prom
   const viewer = await requireRole("admin", "seller");
   const clientId = text(formData, "clientId");
   if (!UUID.test(clientId)) return fail("Client not found.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: client }, { data: settings }] = await Promise.all([
     admin
       .from("clients")
@@ -172,7 +173,7 @@ export async function generateInvoice(_: ActionResult, formData: FormData): Prom
   const taxes = readTaxes(settings.taxes);
   const t = totals(lines, taxes);
 
-  const { data: number, error: numberError } = await admin.rpc("take_invoice_number");
+  const { data: number, error: numberError } = await admin.rpc("take_invoice_number", { agency: (await getAgency()).id });
   if (numberError || !number) return fail("Couldn't number the invoice.");
   // An unpaid invoice from before is replaced, not deleted.
   await admin.from("invoices").update({ status: "void" }).eq("client_id", client.id).in("status", ["issued", "sent"]);
@@ -215,7 +216,7 @@ export async function setInvoiceStatus(formData: FormData) {
   const id = text(formData, "invoiceId");
   const status = text(formData, "status");
   if (!UUID.test(id) || !["issued", "sent", "paid", "void"].includes(status)) return;
-  await createAdminClient()
+  await (await agencyDb())
     .from("invoices")
     .update({
       status,
@@ -241,7 +242,7 @@ export async function saveStudioSettings(_: ActionResult, formData: FormData): P
     .filter((t) => t.name);
   if (taxes.some((t) => !Number.isFinite(t.rate) || t.rate < 0 || t.rate > 50)) return fail("Tax rates are percentages, like 5 or 9.975.");
   const currency = text(formData, "currency").toUpperCase();
-  const { error } = await createAdminClient()
+  const { error } = await (await agencyDb())
     .from("studio_settings")
     .update({
       business_name: text(formData, "businessName") || (await getBrand()).studio,
@@ -254,8 +255,7 @@ export async function saveStudioSettings(_: ActionResult, formData: FormData): P
       payment_terms_days: terms,
       payment_instructions: optionalText(formData, "paymentInstructions"),
       invoice_prefix: prefix,
-    })
-    .eq("id", true);
+    });
   if (error) return fail("Couldn't save the invoice details.");
   refresh();
   return done("Saved. New invoices use these details.");
@@ -271,7 +271,7 @@ export async function uploadContract(_: ActionResult, formData: FormData): Promi
   if (!(file instanceof File) || !file.size) return fail("Choose the contract (a PDF).");
   if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) return fail("The contract must be a PDF.");
   if (file.size > 4 * 1024 * 1024) return fail("This PDF is over 4 MB. Compress it and try again.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: client } = await admin.from("clients").select("id").eq("id", clientId).maybeSingle();
   if (!client) return fail("Client not found.");
   const path = `${client.id}/${crypto.randomUUID()}-${safeName(file.name)}`;
@@ -298,7 +298,7 @@ export async function markContractSigned(formData: FormData) {
   await requireRole("admin", "seller");
   const id = text(formData, "contractId");
   if (!UUID.test(id)) return;
-  await createAdminClient().from("contracts").update({ status: "signed", signed_outside: true, signed_at: now() }).eq("id", id).eq("status", "awaiting_signature");
+  await (await agencyDb()).from("contracts").update({ status: "signed", signed_outside: true, signed_at: now() }).eq("id", id).eq("status", "awaiting_signature");
   refresh();
 }
 
@@ -306,7 +306,7 @@ export async function removeContract(formData: FormData) {
   await requireRole("admin", "seller");
   const id = text(formData, "contractId");
   if (!UUID.test(id)) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data } = await admin.from("contracts").select("storage_path").eq("id", id).maybeSingle();
   if (!data) return;
   await admin.from("contracts").delete().eq("id", id);
@@ -322,7 +322,7 @@ export async function createInviteLink(_: ActionResult, formData: FormData): Pro
   const days = Number(text(formData, "days"));
   const valid = (LINK_DAYS as readonly number[]).includes(days) ? days : DEFAULT_LINK_DAYS;
   if (!UUID.test(clientId)) return fail("Client not found.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: client } = await admin.from("clients").select("id, email").eq("id", clientId).maybeSingle();
   if (!client) return fail("Client not found.");
   // A new link replaces any link still open.
@@ -344,7 +344,7 @@ export async function createInviteLink(_: ActionResult, formData: FormData): Pro
 export async function markInviteSent(input: { clientId: string; via: "copy" | "email" | "sms" | "share" }): Promise<ActionResult> {
   await requireRole("admin", "seller");
   if (!UUID.test(input.clientId) || !["copy", "email", "sms", "share"].includes(input.via)) return fail("Client not found.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: invite } = await admin
     .from("client_invites")
     .select("id, sent_at")

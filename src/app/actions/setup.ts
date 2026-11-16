@@ -14,7 +14,7 @@ import { notifySales } from "@/lib/notify";
 import { startProduction } from "@/lib/production";
 import { passwordProblem } from "@/lib/passwords";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, text, type ActionResult } from "@/lib/action-result";
 import { getBrand } from "@/lib/brand-server";
 
@@ -33,7 +33,7 @@ async function setupClient(): Promise<Viewer & { clientId: string }> {
 }
 
 async function clientName(clientId: string) {
-  const { data } = await createAdminClient().from("clients").select("name").eq("id", clientId).maybeSingle();
+  const { data } = await (await agencyDb()).from("clients").select("name").eq("id", clientId).maybeSingle();
   return data?.name ?? "A client";
 }
 
@@ -42,7 +42,7 @@ async function clientName(clientId: string) {
 export async function markInviteOpened(token: string) {
   const invite = await inviteByToken(String(token ?? ""));
   if (!invite || invite.state !== "active" || invite.opened_at) return;
-  await createAdminClient().from("client_invites").update({ opened_at: now() }).eq("id", invite.id).is("opened_at", null);
+  await (await agencyDb()).from("client_invites").update({ opened_at: now() }).eq("id", invite.id).is("opened_at", null);
 }
 
 export async function createAccountFromInvite(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -61,7 +61,7 @@ export async function createAccountFromInvite(_: ActionResult, formData: FormDat
   if (weak) return fail(weak);
   if (password !== formData.get("confirm")) return fail("The two passwords don't match.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   // Claim the link first, so one link can't open two accounts.
   const { data: claimed } = await admin.from("client_invites").update({ used_at: now() }).eq("id", invite.id).is("used_at", null).select("id").maybeSingle();
   if (!claimed) return fail("This link has already been used to open an account. Sign in instead.");
@@ -112,7 +112,7 @@ export async function signContract(_: ActionResult, formData: FormData): Promise
   const signature = text(formData, "signature").slice(0, 120);
   if (text(formData, "agree") !== "1") return fail("Tick the box to confirm you've read and accept the contract.");
   if (signature.length < 3) return fail("Type your full name to sign.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: contract } = await admin.from("contracts").select("id, client_id, status").eq("id", text(formData, "contractId")).maybeSingle();
   if (!contract || contract.client_id !== viewer.clientId) return fail("Contract not found.");
   if (contract.status !== "signed") {
@@ -154,7 +154,7 @@ export async function finishQuestions(): Promise<ActionResult> {
   const answers = readAnswers(row?.answers);
   const missing = SETUP_QUESTION_KEYS.slice(0, REQUIRED_SETUP_QUESTIONS).filter((k) => !answers[k]);
   if (missing.length) return fail("Answer the first questions before going on: we need them to get started.");
-  await createAdminClient().from("onboardings").update({ questions_done_at: now() }).eq("client_id", viewer.clientId);
+  await (await agencyDb()).from("onboardings").update({ questions_done_at: now() }).eq("client_id", viewer.clientId);
   return done();
 }
 
@@ -162,7 +162,7 @@ export async function finishQuestions(): Promise<ActionResult> {
 
 export async function addSetupReference(input: { link?: string; note?: string; libraryId?: string }): Promise<ActionResult> {
   const viewer = await setupClient();
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   let url = String(input.link ?? "");
   let libraryId: string | null = null;
   let title: string | null = null;
@@ -198,13 +198,13 @@ export async function addSetupReference(input: { link?: string; note?: string; l
 
 export async function removeSetupReference(id: string): Promise<ActionResult> {
   const viewer = await setupClient();
-  await createAdminClient().from("reference_videos").delete().eq("id", String(id)).eq("client_id", viewer.clientId).eq("created_by", viewer.id);
+  await (await agencyDb()).from("reference_videos").delete().eq("id", String(id)).eq("client_id", viewer.clientId).eq("created_by", viewer.id);
   return done();
 }
 
 export async function finishReferences(): Promise<ActionResult> {
   const viewer = await setupClient();
-  await createAdminClient().from("onboardings").update({ references_done_at: now() }).eq("client_id", viewer.clientId);
+  await (await agencyDb()).from("onboardings").update({ references_done_at: now() }).eq("client_id", viewer.clientId);
   return done();
 }
 
@@ -212,7 +212,7 @@ export async function finishReferences(): Promise<ActionResult> {
 
 async function finishBrand(viewer: Viewer & { clientId: string }, hasBrand: boolean, how: string) {
   const at = now();
-  await createAdminClient()
+  await (await agencyDb())
     .from("onboardings")
     .update({ has_brand: hasBrand, brand_done_at: at, completed_at: at })
     .eq("client_id", viewer.clientId);
@@ -227,7 +227,7 @@ async function finishBrand(viewer: Viewer & { clientId: string }, hasBrand: bool
 }
 
 async function replaceLogo(clientId: string, path: string, patch: Record<string, unknown>) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: kit } = await admin.from("brand_kits").select("logo_path").eq("client_id", clientId).maybeSingle();
   const { error } = await admin.from("brand_kits").upsert({ client_id: clientId, logo_path: path, ...patch });
   if (error) return false;
@@ -257,7 +257,7 @@ export async function uploadBrandLogo(_: ActionResult, formData: FormData): Prom
     .filter(Boolean)
     .slice(0, 4);
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const path = `${viewer.clientId}/${crypto.randomUUID()}-${safeName(file.name.replace(/\.[^.]+$/, ""))}.${ext}`;
   const { error } = await admin.storage.from("brand").upload(path, file, { contentType: file.type, upsert: false });
   if (error) return fail("Couldn't upload your logo. Try again.");
@@ -287,7 +287,7 @@ export async function saveCreatedLogo(formData: FormData): Promise<ActionResult>
   } catch {
     return fail("Couldn't read the logo. Try again.");
   }
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const path = `${viewer.clientId}/${crypto.randomUUID()}-logo.png`;
   const { error } = await admin.storage.from("brand").upload(path, file, { contentType: "image/png", upsert: false });
   if (error) return fail("Couldn't save your logo. Try again.");
@@ -329,6 +329,6 @@ export async function logoSuggestions(): Promise<LogoSpec[]> {
 
 export async function completeSetup() {
   const viewer = await setupClient();
-  await createAdminClient().from("onboardings").update({ completed_at: now() }).eq("client_id", viewer.clientId).is("completed_at", null);
+  await (await agencyDb()).from("onboardings").update({ completed_at: now() }).eq("client_id", viewer.clientId).is("completed_at", null);
   redirect("/");
 }

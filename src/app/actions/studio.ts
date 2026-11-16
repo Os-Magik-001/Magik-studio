@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { visibleVideo } from "@/lib/access";
 import { notify } from "@/lib/notify";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { ASPECTS, FORMAT_LABEL, type VideoFormat } from "@/lib/workflow";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 import { passwordProblem } from "@/lib/passwords";
@@ -100,7 +100,7 @@ export async function setBrandLogo(input: { clientId: string; path: string }): P
     .upsert({ client_id: input.clientId, logo_path: input.path });
   if (error) return fail("Couldn't save the logo.");
   if (kit?.logo_path && kit.logo_path !== input.path) {
-    await createAdminClient().storage.from("brand").remove([kit.logo_path]);
+    await (await agencyDb()).storage.from("brand").remove([kit.logo_path]);
   }
   refresh();
   return done();
@@ -124,7 +124,7 @@ export async function addTeamMember(_: ActionResult, formData: FormData): Promis
   const weak = passwordProblem(password);
   if (weak) return fail(weak);
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: created, error } = await admin.auth.admin.createUser({
     email,
     password: password as string,
@@ -164,7 +164,7 @@ export async function resetMemberPassword(_: ActionResult, formData: FormData): 
   const weak = passwordProblem(password);
   if (weak) return fail(weak);
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: profile } = await admin.from("profiles").select("email").eq("id", userId).maybeSingle();
   if (!profile) return fail("Unknown person.");
   const { error } = await admin.auth.admin.updateUserById(userId, { password: password as string });
@@ -179,7 +179,7 @@ export async function setMemberPaused(_: ActionResult, formData: FormData): Prom
   const userId = text(formData, "userId");
   const pause = text(formData, "pause") === "1";
   if (userId === viewer.id) return fail("You can't pause your own account.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: profile } = await admin.from("profiles").select("email, full_name, role").eq("id", userId).maybeSingle();
   if (!profile) return fail("Unknown person.");
   if (pause && profile.role === "admin") {
@@ -201,7 +201,7 @@ export async function deleteMember(_: ActionResult, formData: FormData): Promise
   const viewer = await requireRole("admin");
   const userId = text(formData, "userId");
   if (userId === viewer.id) return fail("You can't delete your own account.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: profile } = await admin.from("profiles").select("email, full_name, role").eq("id", userId).maybeSingle();
   if (!profile) return fail("Unknown person.");
   if (text(formData, "confirm").toLowerCase() !== profile.email.toLowerCase()) return fail("Type their email to confirm.");
@@ -222,7 +222,7 @@ export async function setClientAccess(_: ActionResult, formData: FormData): Prom
   const clientId = text(formData, "clientId");
   const mode = text(formData, "mode");
   if (!/^[0-9a-f-]{36}$/i.test(clientId) || !["setup", "done"].includes(mode)) return fail("Pick what to do.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: row } = await admin.from("onboardings").select("client_id, completed_at").eq("client_id", clientId).maybeSingle();
   const now = new Date().toISOString();
   const { error } =
@@ -268,7 +268,7 @@ export async function createVideo(_: ActionResult, formData: FormData): Promise<
     .single();
   if (error) return fail("Couldn't create the video.");
 
-  await createAdminClient().from("scripts").insert({ video_id: data.id });
+  await (await agencyDb()).from("scripts").insert({ video_id: data.id });
   await notify(
     { videoId: data.id, editor: true, videographer: true, exclude: viewer.id },
     { kind: "assigned", title: `New video: ${title}`, body: "You've been assigned to it." },
@@ -319,7 +319,7 @@ export async function deleteVideo(formData: FormData) {
   const videoId = text(formData, "videoId");
   const video = await visibleVideo(videoId);
   if (!video) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: footage }, { data: versions }] = await Promise.all([
     admin.from("footage").select("storage_path").eq("video_id", videoId),
     admin.from("versions").select("storage_path").eq("video_id", videoId),
@@ -337,7 +337,7 @@ export async function markDelivered(_: ActionResult, formData: FormData): Promis
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
   if (video.status !== "approved") return fail("Only approved videos can be delivered.");
-  await createAdminClient().from("videos").update({ status: "delivered" }).eq("id", videoId);
+  await (await agencyDb()).from("videos").update({ status: "delivered" }).eq("id", videoId);
   await notify(
     { videoId, clients: true, editor: true, admins: true, exclude: viewer.id },
     { kind: "delivered", title: `Delivered: ${video.title}` },

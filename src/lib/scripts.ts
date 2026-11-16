@@ -7,7 +7,8 @@ import { clientMemory } from "@/lib/memory";
 import { motionLibrary } from "@/lib/motion-prompts";
 import { describeReferences, loadReferences } from "@/lib/references";
 import type { Json } from "@/lib/database.types";
-import { createAdminClient, type Db } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
+import type { Db } from "@/lib/supabase/admin";
 import { parseShotList, type RevisionKind, type ScriptStatus } from "@/lib/workflow";
 
 // A script's versions, its thread and the scriptwriter, shared by the video page's actions and
@@ -27,7 +28,7 @@ export const sameVersion = (a: Version, b: Version) =>
 export const versionOf = (s: Version): Version => ({ body: s.body, shot_list: s.shot_list, shoot_plan: s.shoot_plan, edit_prompt: s.edit_prompt, beats: s.beats ?? null });
 
 export async function record(videoId: string, kind: RevisionKind, by: string | null, entry: { request?: string | null; reply?: string | null; version?: Version; restoredFrom?: string; at?: string } = {}) {
-  await createAdminClient()
+  await (await agencyDb())
     .from("script_revisions")
     .insert({
       video_id: videoId,
@@ -45,7 +46,7 @@ export async function record(videoId: string, kind: RevisionKind, by: string | n
 // version can always come back.
 export async function keepCurrent(script: CurrentScript | null) {
   if (!script || (!script.body.trim() && !script.edit_prompt?.trim())) return;
-  const { count } = await createAdminClient()
+  const { count } = await (await agencyDb())
     .from("script_revisions")
     .select("id", { count: "exact", head: true })
     .eq("video_id", script.video_id)
@@ -60,7 +61,7 @@ export async function approvalAfter(current: CurrentScript, body: string, viewer
   if (sameText(current.body, body)) return {};
   if (current.status !== "approved") return { status: "draft" };
   const { data: approver } = current.approved_by
-    ? await createAdminClient().from("profiles").select("role").eq("id", current.approved_by).maybeSingle()
+    ? await (await agencyDb()).from("profiles").select("role").eq("id", current.approved_by).maybeSingle()
     : { data: null };
   if (approver && approver.role !== "client") return { approved_by: viewerId, approved_at: new Date().toISOString() };
   return { status: "draft", approved_by: null, approved_at: null };
@@ -108,7 +109,7 @@ export async function direct(videoId: string, input: Omit<Parameters<typeof runM
 // designs it right away when the video's graphics are designed. Throws with a plain reason.
 // `db`: the caller's client (RLS) from the video page, the server's own from the worker.
 export async function writeScript(videoId: string, { by, notes = "", db }: { by: string | null; notes?: string; db: Db }) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: video } = await db.from("videos").select("id, client_id, title, format, aspect, brief").eq("id", videoId).maybeSingle();
   if (!video) throw new Error("Video not found.");
   if (!video.client_id) throw new Error("This video has no client.");
@@ -188,7 +189,7 @@ export async function writeScript(videoId: string, { by, notes = "", db }: { by:
 // The scriptwriter changes what it delivered as asked (the studio's request, the client's notes
 // or both) and keeps the rest; the motion director follows. Throws with a plain reason.
 export async function reviseWithScriptwriter(videoId: string, { by, asked, useClientNote, db }: { by: string | null; asked: string; useClientNote: boolean; db: Db }) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: video } = await db.from("videos").select("id, client_id, title, format, aspect, brief").eq("id", videoId).maybeSingle();
   if (!video) throw new Error("Video not found.");
   if (!video.client_id) throw new Error("This video has no client.");

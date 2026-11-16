@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { getViewer, requireRole } from "@/lib/auth";
 import { deliver } from "@/lib/notify";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 import { getBrand } from "@/lib/brand-server";
 
@@ -27,12 +27,12 @@ function readLead(formData: FormData): Lead | string {
 }
 
 async function salesTeam() {
-  const { data } = await createAdminClient().from("profiles").select("id").in("role", ["admin", "seller"]).is("paused_at", null);
+  const { data } = await (await agencyDb()).from("profiles").select("id").in("role", ["admin", "seller"]).is("paused_at", null);
   return (data ?? []).map((p) => p.id);
 }
 
 async function record(referrerId: string, referrerName: string, lead: Lead, via: "link" | "app") {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   // A handful a day per person is plenty; more is a script.
   const since = new Date(Date.now() - 24 * 3600_000).toISOString();
   const { count } = await admin.from("referrals").select("id", { count: "exact", head: true }).eq("referrer_id", referrerId).gte("created_at", since);
@@ -68,7 +68,7 @@ export async function submitReferral(_: ActionResult, formData: FormData): Promi
   if (!/^[0-9a-z]{4,16}$/.test(code)) return fail("This referral link isn't valid.");
   const lead = readLead(formData);
   if (typeof lead === "string") return fail(lead);
-  const { data: referrer } = await createAdminClient().from("profiles").select("id, full_name, email, paused_at").eq("referral_code", code).maybeSingle();
+  const { data: referrer } = await (await agencyDb()).from("profiles").select("id, full_name, email, paused_at").eq("referral_code", code).maybeSingle();
   if (!referrer || referrer.paused_at) return fail("This referral link isn't valid anymore.");
   const problem = await record(referrer.id, referrer.full_name ?? referrer.email.split("@")[0], lead, "link");
   if (problem) return fail(problem);
@@ -92,7 +92,7 @@ export async function setReferralStatus(_: ActionResult, formData: FormData): Pr
   const id = text(formData, "id");
   const status = text(formData, "status");
   if (!["new", "contacted", "signed", "declined"].includes(status)) return fail("Pick a status.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: ref } = await admin.from("referrals").select("id, referrer_id, name, company, credits, status").eq("id", id).maybeSingle();
   if (!ref) return fail("Unknown referral.");
   const patch: { status: string; credits?: number } = { status };
@@ -124,7 +124,7 @@ export async function adjustCredits(_: ActionResult, formData: FormData): Promis
   if (!userId) return fail("Pick a person.");
   if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > 1_000_000) return fail("Enter a number of credits, like 50 or -20.");
   if (!reason) return fail("Say why, so they know.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { error } = await admin.from("credit_ledger").insert({ user_id: userId, amount, reason, created_by: viewer.id });
   if (error) return fail("Couldn't save the credits.");
   await deliver([{ user_id: userId, kind: "credit_adjusted", title: amount > 0 ? `+${amount} credits from the studio` : `${amount} credits`, body: reason }]);
@@ -136,7 +136,7 @@ export async function saveReferralReward(_: ActionResult, formData: FormData): P
   await requireRole("admin");
   const reward = Math.trunc(Number(text(formData, "reward")));
   if (!Number.isFinite(reward) || reward < 0 || reward > 100000) return fail("Enter a number of credits between 0 and 100,000.");
-  const { error } = await createAdminClient().from("studio_settings").update({ referral_reward: reward }).eq("id", true);
+  const { error } = await (await agencyDb()).from("studio_settings").update({ referral_reward: reward });
   if (error) return fail("Couldn't save.");
   refresh();
   return done("Saved.");

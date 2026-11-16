@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { formatMoney } from "@/lib/onboarding";
 import { Badge, Button, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { setPackActive } from "@/app/actions/onboarding";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Packs" };
 // The offers sellers choose from. The studio manager sets them; sellers see them.
 export default async function PacksPage() {
   const viewer = await requireRole("admin", "seller");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: packs }, { data: settings }, { data: clients }] = await Promise.all([
     admin.from("packs").select("*").order("active", { ascending: false }).order("sort").order("price_cents"),
     admin.from("studio_settings").select("currency").maybeSingle(),

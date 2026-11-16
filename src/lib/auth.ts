@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/database.types";
 import { readPreferences, type Preferences } from "@/lib/preferences";
+import { getAgency } from "@/lib/brand-server";
 
 export type Role = Database["public"]["Enums"]["user_role"];
 
@@ -13,6 +14,7 @@ export type Viewer = {
   fullName: string | null;
   role: Role;
   clientId: string | null;
+  agencyId: string;
   preferences: Preferences;
   referralCode: string;
 };
@@ -25,11 +27,14 @@ export const getViewer = cache(async (): Promise<Viewer> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role, client_id, paused_at, preferences, referral_code")
+    .select("id, email, full_name, role, client_id, agency_id, paused_at, preferences, referral_code")
     .eq("id", userId)
     .maybeSingle();
   if (!profile) redirect("/login?error=no-profile");
-  // A paused account can't use Magik OS until a studio manager resumes it.
+  // An account opens its own studio's address only: the server reads the rows of the agency the
+  // address belongs to, never another one's.
+  if (profile.agency_id !== (await getAgency()).id) redirect("/login?error=other-studio");
+  // A paused account can't use the app until a studio manager resumes it.
   if (profile.paused_at) redirect("/paused");
 
   return {
@@ -38,6 +43,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
     fullName: profile.full_name,
     role: profile.role,
     clientId: profile.client_id,
+    agencyId: profile.agency_id,
     preferences: readPreferences(profile.preferences),
     referralCode: profile.referral_code,
   };

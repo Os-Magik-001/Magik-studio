@@ -4,7 +4,7 @@ import { getViewer } from "@/lib/auth";
 import { EVENT_COLORS, POST_PLATFORMS } from "@/lib/calendar";
 import { deliver } from "@/lib/notify";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 
 // The Calendar app's changes. Events are written as the signed-in person (RLS: their own, or
 // any for a studio manager); the invitee lists with the server's key, after that check.
@@ -65,7 +65,7 @@ export async function saveEvent(input: EventInput): Promise<Result> {
 
   // Invitees: the studio's team only, never for a client's own events.
   if (viewer.role !== "client" && Array.isArray(input.attendees)) {
-    const admin = createAdminClient();
+    const admin = await agencyDb();
     const wanted = [...new Set(input.attendees.filter((a) => typeof a === "string" && UUID.test(a) && a !== viewer.id))].slice(0, 50);
     const { data: staff } = wanted.length ? await admin.from("profiles").select("id").in("id", wanted).neq("role", "client") : { data: [] };
     const keep = new Set((staff ?? []).map((p) => p.id));

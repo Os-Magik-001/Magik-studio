@@ -8,8 +8,10 @@ import { clientMemory } from "@/lib/memory";
 import { answeredCount, readAnswers, type Answers } from "@/lib/questionnaire";
 import { reviseWithScriptwriter, writeScript } from "@/lib/scripts";
 import type { Database, Json } from "@/lib/database.types";
-import { createAdminClient, type Db } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
+import type { Db } from "@/lib/supabase/admin";
 import { friendlyError } from "@/lib/errors";
+import { getAgency } from "@/lib/brand-server";
 
 // Production: what happens once a client is onboarded. The studio's agents work in the
 // background, one run at a time per worker, so a month of scripts never hits a request's time
@@ -30,7 +32,7 @@ const now = () => new Date().toISOString();
 
 export async function queueRuns(rows: { agent: RunAgent; client_id: string; video_id?: string | null; input?: Json; requested_by?: string | null }[]) {
   if (!rows.length) return [];
-  const { data, error } = await createAdminClient()
+  const { data, error } = await (await agencyDb())
     .from("agent_runs")
     .insert(rows.map((r) => ({ agent: r.agent, client_id: r.client_id, video_id: r.video_id ?? null, input: r.input ?? {}, requested_by: r.requested_by ?? null })))
     .select("id");
@@ -94,15 +96,16 @@ async function reapStale(db: Db) {
 }
 
 export async function hasQueued() {
-  const { count } = await createAdminClient().from("agent_runs").select("id", { count: "exact", head: true }).eq("status", "queued");
+  const { count } = await (await agencyDb()).from("agent_runs").select("id", { count: "exact", head: true }).eq("status", "queued");
   return !!count;
 }
 
 // One worker turn: claim the oldest queued run and do it. Returns whether there was one.
 export async function workOnce() {
-  const db = createAdminClient();
+  const db = await agencyDb();
   await reapStale(db);
-  const { data } = await db.rpc("claim_agent_run", {});
+  // Only this agency's runs: the worker was called at its address.
+  const { data } = await db.rpc("claim_agent_run", { agency: (await getAgency()).id });
   const run = (data ?? [])[0];
   if (!run) return false;
   try {
@@ -251,7 +254,7 @@ export function planMonthLabel(date = new Date()) {
 async function notifyPeople(clientId: string, ids: (string | null | undefined)[], message: { title: string; body?: string }) {
   const people = [...new Set(ids.filter((id): id is string => !!id))];
   if (!people.length) return;
-  await createAdminClient()
+  await (await agencyDb())
     .from("notifications")
     .insert(people.map((user_id) => ({ user_id, client_id: clientId, kind: "production", title: message.title, body: message.body ?? null })));
 }
@@ -259,7 +262,7 @@ async function notifyPeople(clientId: string, ids: (string | null | undefined)[]
 // The studio managers, the client's editors and whoever asked (the seller heard production
 // start with the onboarding news).
 async function studioFor(clientId: string, requester: string | null) {
-  const db = createAdminClient();
+  const db = await agencyDb();
   const [{ data: admins }, { data: client }, { data: team }] = await Promise.all([
     db.from("profiles").select("id").eq("role", "admin"),
     db.from("clients").select("name").eq("id", clientId).single(),
@@ -288,7 +291,7 @@ async function afterRun(run: Run, db: Db) {
 // Production starts on its own when a client finishes onboarding (`firstTime`: only if it never
 // started), or when the studio presses Start. Returns false when it didn't start.
 export async function startProduction(clientId: string, by: string | null, { firstTime = false } = {}) {
-  const db = createAdminClient();
+  const db = await agencyDb();
   const [{ count: open }, { count: ever }, { data: strategy }] = await Promise.all([
     db.from("agent_runs").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("agent", "strategist").in("status", ["queued", "running"]),
     db.from("agent_runs").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("agent", "strategist"),
@@ -303,7 +306,7 @@ export async function startProduction(clientId: string, by: string | null, { fir
 // Work waiting with no worker on it (one that never started, or stopped): start one. The screens
 // that show the agents' work call it, so a queue never stays stuck while someone is looking.
 export async function kickQueue() {
-  const db = createAdminClient();
+  const db = await agencyDb();
   const [{ count: waiting }, { count: recent }] = await Promise.all([
     db.from("agent_runs").select("id", { count: "exact", head: true }).eq("status", "queued").lt("created_at", new Date(Date.now() - 45_000).toISOString()),
     db.from("agent_runs").select("id", { count: "exact", head: true }).gt("started_at", new Date(Date.now() - 120_000).toISOString()),

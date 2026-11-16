@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { headers } from "next/headers";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { linkState } from "@/lib/onboarding";
 
 // The link a seller sends a new client: /join/<token>. Only the token's hash is stored, so the
@@ -13,7 +13,7 @@ const TOKEN = /^[A-Za-z0-9_-]{20,64}$/;
 
 export async function inviteByToken(token: string) {
   if (!TOKEN.test(token)) return null;
-  const { data } = await createAdminClient()
+  const { data } = await (await agencyDb())
     .from("client_invites")
     .select(
       "id, client_id, email, expires_at, sent_at, opened_at, used_at, revoked_at, created_by, clients(id, name, contact_name, email, language, pack_id, packs(name, price_cents, billing, videos_per_month, revision_rounds, features))",

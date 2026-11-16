@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireRole, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { ROLE_LABEL } from "@/lib/workflow";
 import { Avatar, Badge, Card, CardHeader, PageHeader, cx } from "@/components/ui";
 import { SegmentedNav } from "@/components/segmented";
@@ -24,7 +24,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
     supabase.from("profiles").select("id, full_name, email, role, paused_at, client:clients!profiles_client_id_fkey(name)").order("role").order("full_name"),
     supabase.from("clients").select("id, name").order("name"),
     // When each person last signed in (the studio is small: one page is everyone).
-    createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
+    (await agencyDb()).auth.admin.listUsers({ perPage: 1000 }),
   ]);
   const lastSeen = new Map((auth?.users ?? []).map((u) => [u.id, u.last_sign_in_at ?? null]));
   const all = people ?? [];

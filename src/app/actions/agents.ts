@@ -6,7 +6,7 @@ import { claudeConfigured } from "@/lib/claude";
 import { writeStrategy } from "@/lib/production";
 import { QUESTIONS } from "@/lib/questionnaire";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, text, type ActionResult } from "@/lib/action-result";
 
 // The client (for their own brand) or the studio saves the questionnaire.
@@ -35,7 +35,7 @@ export async function runBrandStrategist(_: ActionResult, formData: FormData): P
   const { data: client } = await (await createClient()).from("clients").select("id").eq("id", clientId).maybeSingle();
   if (!client) return fail("Client not found.");
   try {
-    await writeStrategy(client.id, createAdminClient());
+    await writeStrategy(client.id, (await agencyDb()));
   } catch (e) {
     return fail(e instanceof Error ? e.message : "The brand strategist couldn't finish.");
   }
@@ -57,7 +57,7 @@ export async function requestTrendResearch(_: ActionResult, formData: FormData):
   const accounts = list("accounts").slice(0, 4);
   if (!hashtags.length && !accounts.length) return fail("Give at least one hashtag or account to search.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { count } = await admin
     .from("trend_reports")
     .select("id", { count: "exact", head: true })

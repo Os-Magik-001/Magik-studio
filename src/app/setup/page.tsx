@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getViewer, displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { signedUrls } from "@/lib/storage";
 import { QUESTIONS, readAnswers } from "@/lib/questionnaire";
 import { REQUIRED_SETUP_QUESTIONS, SETUP_QUESTION_KEYS } from "@/lib/onboarding";
@@ -26,7 +26,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
   if (!viewer.clientId) return <BeingPrepared name={displayName(viewer)} />;
   const clientId = viewer.clientId;
   const supabase = await createClient();
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ step: asked }, { data: progress }, { data: client }, { data: contracts }, { data: form }, { data: library }, { data: refs }, { data: kit }] = await Promise.all([
     searchParams,
     supabase.from("onboardings").select("*").eq("client_id", clientId).maybeSingle(),

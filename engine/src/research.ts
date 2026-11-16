@@ -358,11 +358,13 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
 
 // The studio managers and whoever asked hear when the research is in: the month's plan builds on it.
 async function tellStudio(report: Report, title: (client: string) => string, body: string) {
-  const [{ data: admins }, { data: row }, { data: client }] = await Promise.all([
-    db.from("profiles").select("id").eq("role", "admin"),
-    db.from("trend_reports").select("requested_by").eq("id", report.id).maybeSingle(),
+  const [{ data: row }, { data: client }] = await Promise.all([
+    db.from("trend_reports").select("requested_by, agency_id").eq("id", report.id).maybeSingle(),
     db.from("clients").select("name").eq("id", report.client_id).maybeSingle(),
   ]);
+  if (!row) return;
+  // The studio managers of the client's own agency.
+  const { data: admins } = await db.from("profiles").select("id").eq("role", "admin").eq("agency_id", row.agency_id);
   const ids = new Set([...(admins ?? []).map((a) => a.id), ...(row?.requested_by ? [row.requested_by] : [])]);
   if (ids.size) {
     await db.from("notifications").insert([...ids].map((user_id) => ({ user_id, client_id: report.client_id, kind: "production", title: title(client?.name ?? "A client"), body })));

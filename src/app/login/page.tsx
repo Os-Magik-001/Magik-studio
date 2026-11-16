@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 const ERRORS: Record<string, string> = {
   "no-profile": "Your account isn't set up in {product} yet. Ask your studio manager to add you.",
+  "other-studio": "This account belongs to another studio. Sign in at your own studio's address.",
 };
 
 // The lock screen: the desktop's wallpaper, the date and time, and the sign-in fields.

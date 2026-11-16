@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { formatMoney } from "@/lib/onboarding";
 import { readTaxes } from "@/lib/invoices";
 import { formatCalendarDate } from "@/lib/dates";
@@ -18,7 +18,7 @@ const LABEL = { issued: "Ready to send", sent: "Sent", paid: "Paid", void: "Void
 
 export default async function InvoicesPage() {
   const viewer = await requireRole("admin", "seller");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: invoices }, { data: settings }] = await Promise.all([
     admin.from("invoices").select("id, number, status, total_cents, currency, issued_on, due_on, clients(id, name)").order("created_at", { ascending: false }).limit(200),
     admin.from("studio_settings").select("*").maybeSingle(),

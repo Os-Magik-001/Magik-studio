@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { signedUrls } from "@/lib/storage";
 import { readAnswers } from "@/lib/questionnaire";
 import { PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
@@ -28,7 +28,7 @@ export default async function YourBrand() {
     supabase.from("brand_questionnaires").select("answers").eq("client_id", viewer.clientId).maybeSingle(),
     supabase.from("brand_kits").select("logo_path, colors, fonts").eq("client_id", viewer.clientId).maybeSingle(),
     // Clients don't read reference_videos through RLS; these are their own, by client id.
-    createAdminClient().from("reference_videos").select("id, url, platform, title, note").eq("client_id", viewer.clientId).is("video_id", null).order("created_at"),
+    (await agencyDb()).from("reference_videos").select("id, url, platform, title, note").eq("client_id", viewer.clientId).is("video_id", null).order("created_at"),
   ]);
   const logo = kit?.logo_path ? (await signedUrls("brand", [kit.logo_path])).get(kit.logo_path) : null;
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { SetupFrame, Hello } from "@/components/setup/setup-frame";
 import { ReferralForm } from "./referral-form";
 import { getBrand } from "@/lib/brand-server";
@@ -16,7 +16,7 @@ export default async function ReferralPage({ params }: { params: Promise<{ code:
   const brand = await getBrand();
   const valid = /^[0-9a-z]{4,16}$/i.test(code);
   const { data: referrer } = valid
-    ? await createAdminClient().from("profiles").select("full_name, email, paused_at").eq("referral_code", code.toLowerCase()).maybeSingle()
+    ? await (await agencyDb()).from("profiles").select("full_name, email, paused_at").eq("referral_code", code.toLowerCase()).maybeSingle()
     : { data: null };
   // First name only: the page is public.
   const first = referrer && !referrer.paused_at ? (referrer.full_name ?? referrer.email.split("@")[0]).split(/\s+/)[0] : null;

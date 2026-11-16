@@ -15,22 +15,22 @@ import { clientMemory } from "@/lib/memory";
 import { motionLibrary } from "@/lib/motion-prompts";
 import { describeReferences, loadReferences } from "@/lib/references";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { formatTimecode, parseShotList, videoStatusIndex, type VideoStatus } from "@/lib/workflow";
 import { parseTypography } from "@/lib/typography";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // Moves a video forward, never backwards (e.g. a late footage upload doesn't undo "editing").
 async function advance(videoId: string, to: VideoStatus) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data } = await admin.from("videos").select("status").eq("id", videoId).single();
   if (data && videoStatusIndex(data.status) < videoStatusIndex(to)) {
     await admin.from("videos").update({ status: to }).eq("id", videoId);
   }
 }
 
-const setStatus = (videoId: string, status: VideoStatus) =>
-  createAdminClient().from("videos").update({ status }).eq("id", videoId);
+const setStatus = async (videoId: string, status: VideoStatus) =>
+  (await agencyDb()).from("videos").update({ status }).eq("id", videoId);
 
 export async function saveDesignTemplates(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin", "editor");
@@ -51,7 +51,7 @@ export async function directMotion(_: ActionResult, formData: FormData): Promise
   if (!video) return fail("Video not found.");
 
   const supabase = await createClient();
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: client }, { data: kit }, { data: script }, { data: strategy }, { data: report }, memory, motion, references] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules").eq("client_id", video.client_id).maybeSingle(),
@@ -132,7 +132,7 @@ export async function saveScript(_: ActionResult, formData: FormData): Promise<A
 // Saves by the same person a few minutes apart are one version, not a version per click.
 async function recordHandEdit(videoId: string, by: string, before: CurrentScript | null, version: Version) {
   await keepCurrent(before);
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: last } = await admin
     .from("script_revisions")
     .select("id, kind, created_by, created_at")
@@ -192,7 +192,7 @@ export async function reviseScriptWithClaude(_: ActionResult, formData: FormData
 
 export async function restoreScriptRevision(formData: FormData) {
   const viewer = await requireRole("admin", "editor");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: earlier } = await admin
     .from("script_revisions")
     .select("id, video_id, body, shot_list, shoot_plan, edit_prompt, beats")
@@ -237,7 +237,7 @@ export async function fastTrackScript(_: ActionResult, formData: FormData): Prom
   if (writePrompt && !claudeConfigured()) return fail("The agents aren't connected yet: ANTHROPIC_API_KEY is missing.");
 
   const supabase = await createClient();
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: client }, { data: kit }, { data: current }, { data: strategy }, { data: report }, { count: footageCount }, { count: openJobs }] = await Promise.all([
     supabase.from("clients").select("name").eq("id", video.client_id).single(),
     supabase.from("brand_kits").select("style_rules, graphics").eq("client_id", video.client_id).maybeSingle(),
@@ -337,7 +337,7 @@ export async function sendScriptToClient(_: ActionResult, formData: FormData): P
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: script } = await admin.from("scripts").select("body, status").eq("video_id", videoId).single();
   if (!script?.body.trim()) return fail("Write the script before sending it.");
   if (script.status === "approved") return fail("Already approved.");
@@ -359,7 +359,7 @@ export async function decideScript(_: ActionResult, formData: FormData): Promise
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: script } = await admin.from("scripts").select("status").eq("video_id", videoId).single();
   if (script?.status !== "client_review") return fail("This script isn't waiting for approval.");
 
@@ -394,7 +394,7 @@ export async function toggleShot(formData: FormData) {
   const videoId = text(formData, "videoId");
   const index = Number(text(formData, "index"));
   if (!(await visibleVideo(videoId))) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data } = await admin.from("scripts").select("shot_list, status").eq("video_id", videoId).single();
   if (!data || !Array.isArray(data.shot_list)) return;
   const shots = data.shot_list as { text: string; done?: boolean }[];
@@ -420,7 +420,7 @@ export async function registerFootage(input: {
     return fail("The upload didn't finish. Try again.");
   }
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { error } = await admin.from("footage").insert({
     video_id: input.videoId,
     storage_path: input.path,
@@ -462,7 +462,7 @@ export async function addDriveFootage(_: ActionResult, formData: FormData): Prom
   }
   if (!files.length) return fail("No video files in that folder.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: existing } = await admin.from("footage").select("drive_file_id").eq("video_id", videoId).not("drive_file_id", "is", null);
   const known = new Set(existing?.map((f) => f.drive_file_id));
   const fresh = files.filter((f) => !known.has(f.id));
@@ -498,7 +498,7 @@ export async function deleteFootage(formData: FormData) {
     .eq("id", text(formData, "footageId"))
     .maybeSingle();
   if (!data) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   // Drive footage stays in Drive; only the link is removed.
   if (data.storage_path) await admin.storage.from("footage").remove([data.storage_path]);
   await admin.from("footage").delete().eq("id", data.id);
@@ -513,7 +513,7 @@ export async function launchEdit(_: ActionResult, formData: FormData): Promise<A
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   // For now an edit can start before the client approves the script (or without one).
   const { count: footageCount } = await admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId);
   if (!footageCount) return fail("Add the raw footage first.");
@@ -551,7 +551,7 @@ export async function markFootageComplete(_: ActionResult, formData: FormData): 
   const video = await visibleVideo(videoId);
   if (!video) return fail("Video not found.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ count: footageCount }, { count: openJobs }, { data: script }] = await Promise.all([
     admin.from("footage").select("id", { count: "exact", head: true }).eq("video_id", videoId),
     admin.from("edit_jobs").select("id", { count: "exact", head: true }).eq("video_id", videoId).in("status", ["queued", "running"]),
@@ -588,7 +588,7 @@ export async function cancelEditJob(formData: FormData) {
     .in("status", ["queued", "running"])
     .maybeSingle();
   if (!job) return;
-  await createAdminClient()
+  await (await agencyDb())
     .from("edit_jobs")
     .update({ status: "cancelled", finished_at: new Date().toISOString() })
     .eq("id", job.id);
@@ -605,7 +605,7 @@ export async function retryEditJob(formData: FormData) {
     .eq("status", "failed")
     .maybeSingle();
   if (!job) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { count } = await admin
     .from("edit_jobs")
     .select("id", { count: "exact", head: true })
@@ -636,7 +636,7 @@ export async function registerDraftVersion(input: {
     return fail("The upload didn't finish. Try again.");
   }
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: last } = await admin
     .from("versions")
     .select("number")
@@ -681,7 +681,7 @@ export async function requestFixes(_: ActionResult, formData: FormData): Promise
   const instructions = text(formData, "instructions");
   if (!instructions) return fail("Tell the edit engine what to fix.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   await admin.from("versions").update({ status: "fixes_requested", decided_at: new Date().toISOString() }).eq("id", version.id);
   await admin.from("edit_jobs").insert({
     video_id: version.video_id,
@@ -701,7 +701,7 @@ export async function sendVersionToClient(_: ActionResult, formData: FormData): 
   if (!version) return fail("Version not found.");
   if (version.status !== "draft") return fail("This version isn't waiting for the editor.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: latest } = await admin
     .from("versions")
     .select("id")
@@ -776,7 +776,7 @@ export async function setCommentResolved(formData: FormData) {
     .eq("id", text(formData, "commentId"))
     .maybeSingle();
   if (!comment) return;
-  await createAdminClient()
+  await (await agencyDb())
     .from("comments")
     .update({ resolved: text(formData, "resolved") === "1" })
     .eq("id", comment.id);
@@ -784,7 +784,7 @@ export async function setCommentResolved(formData: FormData) {
 }
 
 async function withTimecodedComments(versionId: string, extra: string | null) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: comments } = await admin
     .from("comments")
     .select("body, timecode_ms, resolved, drawing")
@@ -810,7 +810,7 @@ export async function decideVersion(_: ActionResult, formData: FormData): Promis
   const video = await visibleVideo(version.video_id);
   if (!video) return fail("Video not found.");
 
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const now = new Date().toISOString();
 
   if (decision === "approve") {

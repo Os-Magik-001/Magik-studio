@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { parseDriveLink } from "@/lib/drive";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, text, type ActionResult } from "@/lib/action-result";
 
 // The studio adds one of its Google Drive folders as a music or sound-effect library; the
@@ -20,7 +20,7 @@ export async function addSoundLibrary(_: ActionResult, formData: FormData): Prom
   const folder = parseDriveLink(link);
   if (!folder) return fail("That doesn't look like a Google Drive link. In Drive: right-click the folder → Share → Copy link.");
 
-  const { error } = await createAdminClient()
+  const { error } = await (await agencyDb())
     .from("sound_libraries")
     .insert({ name, kind, source: "drive", drive_folder_id: folder, license: text(formData, "license"), created_by: viewer.id });
   if (error) return fail(error.code === "23505" ? "There's already a library with that name." : "Couldn't add the library.");
@@ -30,7 +30,7 @@ export async function addSoundLibrary(_: ActionResult, formData: FormData): Prom
 
 export async function syncSoundLibrary(formData: FormData) {
   await requireRole("admin", "editor");
-  await createAdminClient()
+  await (await agencyDb())
     .from("sound_libraries")
     .update({ status: "queued", progress: null, error: null })
     .eq("id", text(formData, "libraryId"))
@@ -41,6 +41,6 @@ export async function syncSoundLibrary(formData: FormData) {
 
 export async function removeSoundLibrary(formData: FormData) {
   await requireRole("admin");
-  await createAdminClient().from("sound_libraries").delete().eq("id", text(formData, "libraryId")).eq("source", "drive");
+  await (await agencyDb()).from("sound_libraries").delete().eq("id", text(formData, "libraryId")).eq("source", "drive");
   refresh();
 }

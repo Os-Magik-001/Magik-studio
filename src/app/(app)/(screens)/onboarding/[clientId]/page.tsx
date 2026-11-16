@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowRight, Check, ExternalLink, FileText, Sparkles } from "lucide-react";
 import { displayName, requireRole } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { signedUrls } from "@/lib/storage";
 import { QUESTIONS, readAnswers } from "@/lib/questionnaire";
 import { STEPS, currentStep, formatMoney, linkState, stepByKey, stepsDone, type OnboardingFacts, type StepKey } from "@/lib/onboarding";
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ clientId:
   const { clientId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(clientId)) return { title: "Onboarding" };
   await requireRole("admin", "seller");
-  const { data } = await createAdminClient().from("clients").select("name").eq("id", clientId).maybeSingle();
+  const { data } = await (await agencyDb()).from("clients").select("name").eq("id", clientId).maybeSingle();
   return { title: data?.name ?? "Onboarding" };
 }
 
@@ -35,7 +35,7 @@ export default async function ClientOnboardingPage({
   if (!/^[0-9a-f-]{36}$/i.test(clientId)) notFound();
 
   // Sellers don't read production tables through RLS; the role check above is the gate.
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [{ data: client }, { data: progress }, { data: packs }, { data: settings }, { data: invoices }, { data: contracts }, { data: invites }, { data: accounts }, { data: form }, { data: refs }, { data: kit }] =
     await Promise.all([
       admin.from("clients").select("id, name, contact_name, email, phone, address, website, instagram, language, notes, pack_id, seller_id, created_at").eq("id", clientId).maybeSingle(),
@@ -74,7 +74,7 @@ export default async function ClientOnboardingPage({
     "brand",
     [kit?.logo_path].filter((p): p is string => !!p),
   );
-  const contractUrl = contract ? (await createAdminClient().storage.from("contracts").createSignedUrl(contract.storage_path, 60 * 60)).data?.signedUrl : null;
+  const contractUrl = contract ? (await (await agencyDb()).storage.from("contracts").createSignedUrl(contract.storage_path, 60 * 60)).data?.signedUrl : null;
   const answers = readAnswers(form?.answers);
   const link = linkState(invite);
 

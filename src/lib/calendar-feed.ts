@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 
 // A person's private calendar link, for Google or Apple Calendar to subscribe to:
 // /api/calendar/<id>.<nonce>.<sig>.ics, where sig is an HMAC of the id and the nonce made with
@@ -10,7 +10,7 @@ const sign = (userId: string, nonce: string) =>
   createHmac("sha256", process.env.SUPABASE_SECRET_KEY ?? "").update(`magik-calendar:${userId}:${nonce}`).digest("base64url").slice(0, 32);
 
 export async function feedToken(userId: string, fresh = false) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   let nonce: string | null = null;
   if (!fresh) {
     const { data } = await admin.from("calendar_feeds").select("nonce").eq("user_id", userId).maybeSingle();
@@ -31,6 +31,6 @@ export async function feedOwner(token: string): Promise<string | null> {
   const expected = Buffer.from(sign(userId, nonce));
   const given = Buffer.from(sig);
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
-  const { data } = await createAdminClient().from("calendar_feeds").select("nonce").eq("user_id", userId).maybeSingle();
+  const { data } = await (await agencyDb()).from("calendar_feeds").select("nonce").eq("user_id", userId).maybeSingle();
   return data?.nonce === nonce ? userId : null;
 }

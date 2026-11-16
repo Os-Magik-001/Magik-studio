@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { WindowPage } from "@/components/desktop/window-page";
 import { SettingsGroup, SettingsShell } from "@/components/settings/settings-shell";
 import { ReferralRewardForm } from "./reward-form";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Studio settings" };
 // other settings live.
 export default async function StudioSettingsPage() {
   const viewer = await requireRole("admin");
-  const { data: studio } = await createAdminClient().from("studio_settings").select("business_name, referral_reward").maybeSingle();
+  const { data: studio } = await (await agencyDb()).from("studio_settings").select("business_name, referral_reward").maybeSingle();
   return (
     <WindowPage>
       <SettingsShell role={viewer.role} active="studio" title="Studio" description={`Settings for ${studio?.business_name ?? "the studio"}: shared by everyone.`}>

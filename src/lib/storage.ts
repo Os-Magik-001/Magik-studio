@@ -1,12 +1,12 @@
 import "server-only";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 
 const TWO_HOURS = 60 * 60 * 2;
 
 // Callers must have already confirmed (through RLS) that the viewer can see these rows.
 export async function signedUrls(bucket: "footage" | "versions" | "brand" | "references", paths: string[]) {
   if (paths.length === 0) return new Map<string, string>();
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data } = await admin.storage.from(bucket).createSignedUrls(paths, TWO_HOURS);
   const map = new Map<string, string>();
   data?.forEach((d) => {
@@ -16,7 +16,7 @@ export async function signedUrls(bucket: "footage" | "versions" | "brand" | "ref
 }
 
 export async function objectExists(bucket: "footage" | "versions" | "brand", path: string) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const slash = path.lastIndexOf("/");
   const { data } = await admin.storage
     .from(bucket)
@@ -26,7 +26,7 @@ export async function objectExists(bucket: "footage" | "versions" | "brand", pat
 
 // Links that download a file under a readable name ("Grand opening v2.mp4").
 export async function downloadUrls(bucket: "versions" | "footage", items: { path: string; name: string }[]) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const out = new Map<string, string>();
   await Promise.all(
     items.map(async ({ path, name }) => {

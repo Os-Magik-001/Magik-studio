@@ -4,7 +4,7 @@ import { ChevronRight, Plus } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { onboardingFacts } from "@/lib/home";
 import { stepByKey } from "@/lib/onboarding";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { Avatar, Badge, Card, CardHeader, EmptyState, LinkButton, PageHeader, Select, cx } from "@/components/ui";
 import { LocalDate } from "@/components/local-date";
 import { SegmentedNav } from "@/components/segmented";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Onboarding" };
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   await requireRole("admin", "seller");
   const { show } = await searchParams;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const [all, { data: packs }, { data: sellers }, { data: clients }] = await Promise.all([
     onboardingFacts(),
     admin.from("packs").select("id, name"),

@@ -2,7 +2,7 @@ import "server-only";
 import type { Role, Viewer } from "@/lib/auth";
 import { displayName } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import type { Db } from "@/lib/supabase/admin";
 import { EVENT_COLORS, addDays, dayStart, type CalEvent, type EventColor, type Person } from "@/lib/calendar";
 
@@ -181,7 +181,7 @@ export async function calendarEvents(viewer: Viewer, from: string, to: string) {
 // The same calendar for the feed, read with the server's key and the same rules as RLS
 // (private.can_access_video and can_access_client).
 export async function feedEvents(userId: string, from: string, to: string) {
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data: p } = await admin.from("profiles").select("id, role, client_id, paused_at").eq("id", userId).maybeSingle();
   if (!p || p.paused_at) return [];
   let videoIds: string[] | null = null;

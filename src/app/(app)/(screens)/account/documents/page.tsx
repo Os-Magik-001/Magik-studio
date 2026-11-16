@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ExternalLink, FileText, Receipt } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { formatMoney } from "@/lib/onboarding";
 import { formatCalendarDate } from "@/lib/dates";
 import { Badge, Card, CardHeader, EmptyState } from "@/components/ui";
@@ -24,7 +24,7 @@ export default async function DocumentsPage() {
   // RLS returned only this client's contracts; sign their links.
   const urls = new Map<string, string>();
   for (const c of contracts ?? []) {
-    const { data } = await createAdminClient().storage.from("contracts").createSignedUrl(c.storage_path, 60 * 60);
+    const { data } = await (await agencyDb()).storage.from("contracts").createSignedUrl(c.storage_path, 60 * 60);
     if (data?.signedUrl) urls.set(c.id, data.signedUrl);
   }
 

@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife } from "next/cache";
 import type { Viewer } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { deliver } from "@/lib/notify";
 import { getBrand } from "@/lib/brand-server";
 
@@ -34,7 +34,7 @@ export async function canEmbed(url: string): Promise<boolean> {
 export async function ensureWebsiteNotice(viewer: Viewer) {
   if (viewer.role !== "client" || !viewer.clientId) return;
   try {
-    const admin = createAdminClient();
+    const admin = await agencyDb();
     const { short } = await getBrand();
     const [{ data: client }, { count }] = await Promise.all([
       admin.from("clients").select("site_status").eq("id", viewer.clientId).maybeSingle(),

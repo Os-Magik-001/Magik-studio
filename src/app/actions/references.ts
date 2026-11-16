@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { clientVideo } from "@/lib/access";
 import { parseReferenceLink, REFERENCE_FOCUS, WATCHABLE } from "@/lib/reference-links";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // The studio managers and editors add reels and videos as references ("make it like this") for
@@ -29,7 +29,7 @@ export async function addReference(_: ActionResult, formData: FormData): Promise
   if ("error" in link) return fail(link.error);
   const focus = formData.getAll("focus").map(String).filter((f) => REFERENCE_FOCUS.some((x) => x.value === f));
   const forVideo = videoId && text(formData, "scope") !== "client" ? videoId : null;
-  const { error } = await createAdminClient()
+  const { error } = await (await agencyDb())
     .from("reference_videos")
     .insert({
       client_id: clientId,
@@ -60,7 +60,7 @@ export async function removeReference(formData: FormData) {
   await requireRole("admin", "editor");
   const ref = await visibleReference(text(formData, "referenceId"));
   if (!ref) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   if (ref.sheets.length) await admin.storage.from("references").remove(ref.sheets);
   await admin.from("reference_videos").delete().eq("id", ref.id);
   refresh();
@@ -70,7 +70,7 @@ export async function retryReference(formData: FormData) {
   await requireRole("admin", "editor");
   const ref = await visibleReference(text(formData, "referenceId"));
   if (!ref || ref.status !== "failed") return;
-  await createAdminClient()
+  await (await agencyDb())
     .from("reference_videos")
     .update({ status: "queued", error: null, progress: null, attempts: 0, started_at: null, finished_at: null })
     .eq("id", ref.id)

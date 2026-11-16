@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { PROMPT_MOTION_TAGS } from "@/lib/motion-prompts";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // A Prompt Motion entry's address ends with its creator's handle and a short code
@@ -24,7 +24,7 @@ export async function addMotionPrompt(_: ActionResult, formData: FormData): Prom
   if (prompt.length > 20000) return fail("That's over 20,000 characters: keep the part that matters.");
   if (link && !/^https?:\/\//.test(link)) return fail("The link should start with https://");
 
-  const { error } = await createAdminClient()
+  const { error } = await (await agencyDb())
     .from("motion_prompts")
     .insert({
       title: title.slice(0, 120),
@@ -43,6 +43,6 @@ export async function addMotionPrompt(_: ActionResult, formData: FormData): Prom
 
 export async function deleteMotionPrompt(formData: FormData) {
   await requireRole("admin", "editor");
-  await createAdminClient().from("motion_prompts").delete().eq("id", text(formData, "promptId"));
+  await (await agencyDb()).from("motion_prompts").delete().eq("id", text(formData, "promptId"));
   refresh();
 }

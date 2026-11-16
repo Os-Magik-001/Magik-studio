@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { parseReferenceLink } from "@/lib/reference-links";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 
 // The studio's reference library: videos new clients pick from in their setup ("videos to
@@ -37,7 +37,7 @@ export async function addLibraryItem(_: ActionResult, formData: FormData): Promi
   if ("error" in link) return fail(link.error);
   const title = text(formData, "title").slice(0, 120);
   if (!title) return fail("Give it a title clients will understand, like “Fast cuts, bold captions”.");
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const id = crypto.randomUUID();
 
   let coverPath: string | null = null;
@@ -75,7 +75,7 @@ export async function updateLibraryItem(_: ActionResult, formData: FormData): Pr
   if (!UUID.test(id)) return fail("Video not found.");
   const title = text(formData, "title").slice(0, 120);
   if (!title) return fail("Give it a title.");
-  const { error } = await createAdminClient()
+  const { error } = await (await agencyDb())
     .from("reference_library")
     .update({ title, note: optionalText(formData, "note")?.slice(0, 600) ?? null, tags: tagList(text(formData, "tags")) })
     .eq("id", id);
@@ -88,7 +88,7 @@ export async function setLibraryItemActive(formData: FormData) {
   await requireRole("admin", "editor");
   const id = text(formData, "id");
   if (!UUID.test(id)) return;
-  await createAdminClient().from("reference_library").update({ active: text(formData, "active") === "1" }).eq("id", id);
+  await (await agencyDb()).from("reference_library").update({ active: text(formData, "active") === "1" }).eq("id", id);
   refresh();
 }
 
@@ -96,7 +96,7 @@ export async function deleteLibraryItem(formData: FormData) {
   await requireRole("admin", "editor");
   const id = text(formData, "id");
   if (!UUID.test(id)) return;
-  const admin = createAdminClient();
+  const admin = await agencyDb();
   const { data } = await admin.from("reference_library").select("cover_path").eq("id", id).maybeSingle();
   await admin.from("reference_library").delete().eq("id", id);
   if (data?.cover_path) await admin.storage.from("references").remove([data.cover_path]);

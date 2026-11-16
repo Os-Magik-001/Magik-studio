@@ -8,7 +8,7 @@ import { feedToken } from "@/lib/calendar-feed";
 import type { Json } from "@/lib/database.types";
 import { readPreferences, type Preferences } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, type ActionResult } from "@/lib/action-result";
 
 export async function updateMyName(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -16,7 +16,7 @@ export async function updateMyName(_: ActionResult, formData: FormData): Promise
   const fullName = optionalText(formData, "fullName");
   if (fullName && fullName.length > 80) return fail("Keep your name under 80 characters.");
   // Profiles are admin-managed under RLS; people may only change their own name.
-  const { error } = await createAdminClient().from("profiles").update({ full_name: fullName }).eq("id", viewer.id);
+  const { error } = await (await agencyDb()).from("profiles").update({ full_name: fullName }).eq("id", viewer.id);
   if (error) return fail("Couldn't save your name.");
   refresh();
   return done("Saved.");
@@ -53,7 +53,7 @@ export async function changeMyPassword(_: ActionResult, formData: FormData): Pro
 export async function savePreferences(patch: Preferences): Promise<Preferences> {
   const viewer = await getViewer();
   const next = readPreferences({ ...viewer.preferences, ...readPreferences(patch) });
-  await createAdminClient().from("profiles").update({ preferences: next as unknown as Json }).eq("id", viewer.id);
+  await (await agencyDb()).from("profiles").update({ preferences: next as unknown as Json }).eq("id", viewer.id);
   return next;
 }
 

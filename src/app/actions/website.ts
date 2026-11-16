@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { notifySales } from "@/lib/notify";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { agencyDb } from "@/lib/supabase/agency";
 import { done, fail, optionalText, text, type ActionResult } from "@/lib/action-result";
 import { getBrand } from "@/lib/brand-server";
 
@@ -14,7 +14,7 @@ export async function requestWebsite(_: ActionResult, formData: FormData): Promi
   const kind = text(formData, "kind") === "change" ? "change" : "interest";
   const message = optionalText(formData, "message")?.slice(0, 2000) ?? undefined;
   if (kind === "change" && !message) return fail("Say what you'd like changed.");
-  const { data: client } = await createAdminClient().from("clients").select("name").eq("id", viewer.clientId).maybeSingle();
+  const { data: client } = await (await agencyDb()).from("clients").select("name").eq("id", viewer.clientId).maybeSingle();
   const name = client?.name ?? "A client";
   await notifySales(viewer.clientId, {
     kind: "website_request",
@@ -35,7 +35,7 @@ export async function saveClientWebsite(_: ActionResult, formData: FormData): Pr
   const valid = (u: string | null) => !u || /^https:\/\/[^\s/$.?#].[^\s]*$/i.test(u);
   if (!valid(url) || !valid(adminUrl)) return fail("Addresses start with https://");
   if (status === "live" && !url) return fail("A live website needs its address.");
-  const { error } = await createAdminClient().from("clients").update({ site_status: status, site_url: url, site_admin_url: adminUrl }).eq("id", clientId);
+  const { error } = await (await agencyDb()).from("clients").update({ site_status: status, site_url: url, site_admin_url: adminUrl }).eq("id", clientId);
   if (error) return fail("Couldn't save the website.");
   refresh();
   return done("Saved. The client sees it in their Website app.");

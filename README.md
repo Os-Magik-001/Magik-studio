@@ -161,6 +161,15 @@ The first studio manager has to be created directly (sign-up is invite-only). Af
 
 To try everything without touching production, run Supabase locally (`supabase start`, needs Docker or Colima) and start the app with the local URL and keys exported: values already in the environment win over `.env.local`.
 
+## Agencies (white label)
+
+The app serves several studios ("agencies"), each under its own name, logo and colours, each seeing only its own rows. Magik is the first one.
+
+- **Brand**: `src/lib/brand.ts` and `getBrand()` (`src/lib/brand-server.ts`). The agency is found from the address of the request (`agencies.domains`); an address no agency claims is Magik's. Never type a studio's name or the accent colour in the interface: use `getBrand()` on the server, `useBrand()` in client components, and the `--accent` variables in CSS.
+- **Walls**: every table has `agency_id`. A trigger fills it from the row's parent and refuses a row that points into another agency; one restrictive policy per table keeps each signed-in person inside their agency. The server's own queries go through `agencyDb()` (`src/lib/supabase/agency.ts`), which narrows every query to the request's agency. `createPlatformClient()` sees everything: only for what belongs to no agency.
+- **An account opens its own studio's address only** (`getViewer`).
+- **The leak test**: `node scripts/agency-walls.mjs <api url> <publishable key> <secret key> <a first-agency admin's email> <their password>` against a local database (`supabase start`). It sets up a second agency and checks, table by table and from both sides, that nothing crosses. Run it after any change to a migration, a policy or a server query. A new table needs: `agency_id`, its `set_agency` trigger, its "own agency" policy, and a line in the test's table list.
+
 ## Database
 
 Migrations live in `supabase/migrations/`. Regenerate types after a schema change:
