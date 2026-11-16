@@ -77,6 +77,15 @@ function mix(a: string, b: string, t: number) {
   return `rgb(${[0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t)).join(", ")})`;
 }
 
+// How light and how colourful a #RRGGBB colour is, 0 to 1.
+const channels = (hex: string) => [0, 1, 2].map((i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255);
+const lightness = (hex: string) => (Math.max(...channels(hex)) + Math.min(...channels(hex))) / 2;
+const saturation = (hex: string) => {
+  const c = channels(hex);
+  const max = Math.max(...c);
+  return max === 0 ? 0 : (max - Math.min(...c)) / max;
+};
+
 // A sparkle: four points, curved sides.
 const sparkle = (x: number, y: number, r: number) =>
   `M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`;
@@ -358,7 +367,13 @@ export function AppIcon({
   size?: number | "fill";
   className?: string;
 }) {
-  const { from, to, glyph, accent, raw } = ICONS[icon];
+  const { from: hue, to: hueDeep, glyph, accent, raw } = ICONS[icon];
+  // One dark glass tile for every app; the symbol carries the app's own colour, light at the top
+  // and deeper below. An app whose colour is dark or grey gets a silver symbol instead.
+  const from = "#2c2c31";
+  const to = "#0d0d0f";
+  const dull = lightness(hue) < 0.42 || saturation(hue) < 0.18;
+  const ink = dull ? ["#f2f2f6", "#a6a6b2"] : [mix(hue, "#ffffff", 0.42), mix(hue, hueDeep, 0.45)];
   const id = useId().replace(/[^\w-]/g, "");
   const ref = (name: string) => `url(#${name}${id})`;
   const symbol = icon === "calendar" ? null : raw ? glyph("#000") : <rect width={48} height={48} fill={ref("glass")} mask={ref("cut")} />;
@@ -376,20 +391,20 @@ export function AppIcon({
         </linearGradient>
         {/* Light from above, pooling at the top of the tile. */}
         <radialGradient id={`sheen${id}`} gradientUnits="userSpaceOnUse" cx={24} cy={-6} r={40}>
-          <stop stopColor={W} stopOpacity={0.3} />
+          <stop stopColor={W} stopOpacity={0.17} />
           <stop offset={1} stopColor={W} stopOpacity={0} />
         </radialGradient>
         {/* The glass rim: bright where the light hits the top left, a glint at the bottom right. */}
         <linearGradient id={`rim${id}`} gradientUnits="userSpaceOnUse" x1={6} y1={0} x2={42} y2={48}>
-          <stop stopColor={W} stopOpacity={0.9} />
-          <stop offset={0.32} stopColor={W} stopOpacity={0.14} />
+          <stop stopColor={W} stopOpacity={0.5} />
+          <stop offset={0.32} stopColor={W} stopOpacity={0.1} />
           <stop offset={0.72} stopColor={W} stopOpacity={0.05} />
           <stop offset={1} stopColor={W} stopOpacity={0.5} />
         </linearGradient>
         {/* Frosted glass: brightest at the top, letting the tile's colour through lower down. */}
         <linearGradient id={`glass${id}`} gradientUnits="userSpaceOnUse" x1={0} y1={8} x2={0} y2={40}>
-          <stop stopColor={W} stopOpacity={0.94} />
-          <stop offset={1} stopColor={W} stopOpacity={0.66} />
+          <stop stopColor={ink[0]} />
+          <stop offset={1} stopColor={ink[1]} />
         </linearGradient>
         {/* The thickness of the tile's glass: a soft glow just inside its edge. */}
         <filter id={`edge${id}`} filterUnits="userSpaceOnUse" x={0} y={0} width={48} height={48}>
@@ -412,13 +427,13 @@ export function AppIcon({
           <feComposite in="SourceAlpha" in2="inner" operator="out" />
           <feGaussianBlur stdDeviation={0.2} />
           <feComposite in2="SourceAlpha" operator="in" result="outline" />
-          <feFlood floodColor={W} floodOpacity={0.55} />
+          <feFlood floodColor={W} floodOpacity={0.25} />
           <feComposite in2="outline" operator="in" result="rimline" />
           <feOffset in="SourceAlpha" dx={0.55} dy={0.8} result="down" />
           <feComposite in="SourceAlpha" in2="down" operator="out" />
           <feGaussianBlur stdDeviation={0.3} />
           <feComposite in2="SourceAlpha" operator="in" result="top" />
-          <feFlood floodColor={W} floodOpacity={0.95} />
+          <feFlood floodColor={W} floodOpacity={0.55} />
           <feComposite in2="top" operator="in" result="lit" />
           <feOffset in="SourceAlpha" dx={-0.5} dy={-0.9} result="up" />
           <feComposite in="SourceAlpha" in2="up" operator="out" />
@@ -437,7 +452,7 @@ export function AppIcon({
       </defs>
       <path d={TILE} fill={ref("tile")} />
       <path d={TILE} fill={ref("sheen")} />
-      <path d={TILE} fill="none" stroke={W} strokeOpacity={0.22} strokeWidth={3.2} clipPath={ref("clip")} filter={ref("edge")} />
+      <path d={TILE} fill="none" stroke={W} strokeOpacity={0.1} strokeWidth={3.2} clipPath={ref("clip")} filter={ref("edge")} />
       {symbol && <g filter={ref("depth")}>{symbol}</g>}
       {icon === "calendar" ? <CalendarFace /> : accent}
       <path d={TILE} fill="none" stroke={ref("rim")} strokeWidth={1.7} clipPath={ref("clip")} />
@@ -452,10 +467,10 @@ function CalendarFace() {
   if (!now) return null;
   return (
     <g style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}>
-      <text x={24} y={15.5} textAnchor="middle" fontSize={8.2} fontWeight={600} letterSpacing={0.4} fill="#ff3b30">
+      <text x={24} y={15.5} textAnchor="middle" fontSize={8.2} fontWeight={600} letterSpacing={0.4} fill="#ff6961">
         {now.toLocaleDateString(undefined, { weekday: "short" }).replace(/\.$/, "").toUpperCase()}
       </text>
-      <text x={24} y={38.5} textAnchor="middle" fontSize={23} fontWeight={400} fill="#1c1c1e">
+      <text x={24} y={38.5} textAnchor="middle" fontSize={23} fontWeight={400} fill="#f5f5f7">
         {now.getDate()}
       </text>
     </g>

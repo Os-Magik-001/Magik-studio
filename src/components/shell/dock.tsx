@@ -19,6 +19,26 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
   const minimized = d.wins.filter((w) => w.minimized).slice(-6);
   const [menu, setMenu] = useState<{ app: AppDef; x: number } | null>(null);
 
+  // The icons' size, in pixels, set on each icon itself: the size the person chose in Appearance,
+  // made smaller when there are more apps and open windows than the screen is wide, so the Dock
+  // never runs off it.
+  const [screen, setScreen] = useState<{ width: number; choice: string } | null>(null);
+  useEffect(() => {
+    const read = () => setScreen({ width: window.innerWidth, choice: document.documentElement.dataset.dock ?? "large" });
+    read();
+    window.addEventListener("resize", read);
+    window.addEventListener("magik:look", read);
+    return () => {
+      window.removeEventListener("resize", read);
+      window.removeEventListener("magik:look", read);
+    };
+  }, []);
+  const width = screen?.width ?? 1440;
+  const chosen = width < 640 ? 54 : screen?.choice === "small" ? 50 : screen?.choice === "medium" ? 62 : 74;
+  const slots = items.length + minimized.length + (minimized.length ? 0.4 : 0);
+  const item = Math.max(34, Math.floor(Math.min(chosen, (width - 96) / slots)));
+  const size = { item, icon: Math.round(item * 0.76) };
+
   const openApp = (app: AppDef) => {
     if (app.id === "home") return d.showDesktop();
     const wins = d.wins.filter((w) => w.appId === app.id).sort((a, b) => b.z - a.z);
@@ -33,7 +53,6 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
     <nav ref={ref} aria-label="Dock" className="dock-wrap pointer-events-none fixed inset-x-0 bottom-2.5 z-[8900] flex justify-center px-2 select-none sm:bottom-3">
       <ul
         className="dock pointer-events-auto flex max-w-full items-end overflow-x-auto overflow-y-visible rounded-[28px] px-2 pt-2.5 pb-1.5 sm:rounded-[32px] sm:px-3 sm:pt-3"
-        style={{ "--dock-n": items.length + minimized.length + (minimized.length ? 0.4 : 0) } as React.CSSProperties}
       >
         {items.map((app) => {
           const running = app.id !== "home" && d.wins.some((w) => w.appId === app.id);
@@ -54,8 +73,9 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
                 aria-label={app.id === "home" ? "Home: show the desktop" : running ? `${app.name}, open` : app.name}
                 aria-current={on ? "page" : undefined}
                 className="dock-item group relative flex flex-col items-center gap-1 rounded-[18px] pb-1 focus-visible:outline-offset-0 sm:gap-1.5"
+                style={{ width: size.item }}
               >
-                <span className="dock-icon relative block">
+                <span className="dock-icon relative block" style={{ width: size.icon, height: size.icon }}>
                   <AppIcon icon={app.icon} size="fill" />
                 </span>
                 <span className={cx("dock-label max-w-full truncate px-0.5 text-[10.5px] font-medium sm:text-[11.5px]", on ? "text-accent" : "text-white/80")}>{app.name}</span>
@@ -72,9 +92,9 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
         })}
         {minimized.length > 0 && (
           <>
-            <li aria-hidden className="mx-1.5 mb-6 h-[40px] w-px shrink-0 self-end bg-white/15 sm:mx-2" />
+            <li aria-hidden className="mx-1.5 mb-6 w-px shrink-0 self-end bg-white/15 sm:mx-2" style={{ height: size.icon * 0.8 }} />
             {minimized.map((w) => (
-              <MinimizedTile key={w.uid} win={w} onOpen={() => d.focus(w.id)} />
+              <MinimizedTile key={w.uid} win={w} size={size} onOpen={() => d.focus(w.id)} />
             ))}
           </>
         )}
@@ -85,7 +105,7 @@ export function Dock({ ref }: { ref?: Ref<HTMLElement> }) {
 }
 
 // A minimized window, waiting in the Dock: its app's icon over a sliver of glass, its title.
-function MinimizedTile({ win, onOpen }: { win: Win; onOpen: () => void }) {
+function MinimizedTile({ win, size, onOpen }: { win: Win; size: { item: number; icon: number }; onOpen: () => void }) {
   const app = win.appId ? appById(win.appId) : null;
   return (
     <li className="shrink-0">
@@ -95,8 +115,9 @@ function MinimizedTile({ win, onOpen }: { win: Win; onOpen: () => void }) {
         aria-label={`${win.title}, minimized`}
         title={win.title}
         className="dock-item group relative flex flex-col items-center gap-1 rounded-[18px] pb-1 sm:gap-1.5"
+        style={{ width: size.item }}
       >
-        <span className="dock-icon relative flex items-center justify-center rounded-[22%] bg-white/[0.07] p-[20%] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
+        <span className="dock-icon relative flex items-center justify-center rounded-[22%] bg-white/[0.07] p-[20%] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]" style={{ width: size.icon, height: size.icon }}>
           {app ? <AppIcon icon={app.icon} size="fill" /> : null}
         </span>
         <span className="dock-label max-w-full truncate px-0.5 text-[10.5px] font-medium text-white/60 sm:text-[11.5px]">{win.title}</span>
