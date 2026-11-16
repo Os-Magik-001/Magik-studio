@@ -17,51 +17,61 @@ export type MotchiScene = {
   dispose: () => void;
 };
 
-// The character sheet's yellows, a little deeper at the roots so the fur has depth.
-const COLORS = { root: "#c98e08", mid: "#f2b41a", tip: "#ffd23f", sheen: "#fff1b8", eyeWhite: "#f2f2ea", eyeBlack: "#111111" };
-const SHELLS = 40;
-const FUR = 0.075;
-const EYE_R = 0.27;
+// The character sheet's palette: primary yellow at the tips, its shadow yellows toward the roots.
+const COLORS = { root: "#bd8a0c", mid: "#eab220", tip: "#fbd04e", sheen: "#fff0b8", eyeWhite: "#f2f2ea", eyeBlack: "#0c0c0d" };
+const SHELLS = 52;
+const FUR = 0.1;
+const EYE_R = 0.25;
+// Where he stands: the soles of his feet.
+const GROUND = -1.06;
 
-const EARS = [-1, 1].map((side) => ({ side, dir: new THREE.Vector3(side * 0.5, 0.86, 0.1).normalize() }));
-const FEET = [-1, 1].map((side) => new THREE.Vector3(side * 0.42, -0.8, 0.46).normalize());
-const EYES = [-1, 1].map((side) => new THREE.Vector3(side * 0.36, -0.08, 0.93).normalize());
+// Small rounded ears set close on the crown, two stubby feet under the front, eyes at mid height.
+const EARS = [-1, 1].map((side) => ({ side, dir: new THREE.Vector3(side * 0.43, 0.9, 0.04).normalize() }));
+const FEET = [-1, 1].map((side) => new THREE.Vector3(side * 0.4, -0.86, 0.32).normalize());
+const EYES = [-1, 1].map((side) => new THREE.Vector3(side * 0.38, 0.0, 0.925).normalize());
 
 const angle = (a: THREE.Vector3, b: THREE.Vector3) => Math.acos(Math.min(1, Math.max(-1, a.dot(b))));
+// A bump that is round on top and melts into the body at its edge.
+const bump = (d: number, radius: number, power: number) => (d >= radius ? 0 : Math.cos((d / radius) * (Math.PI / 2)) ** power);
 
-// The body's surface in a direction: an egg, wider low down, with the ears and the feet pulled out
-// of it and a flat bottom to sit on. Also says how much of an ear the point is, for the twitch.
+// The body's surface in a direction: a plush pear, widest below the middle with a narrower
+// dome, the ears and the feet pulled out of it. Also says how much of an ear the point is, for
+// the twitch.
 function surface(dir: THREE.Vector3, out: THREE.Vector3) {
-  const wide = 1 + 0.12 * Math.max(0, -dir.y) - 0.05 * Math.max(0, dir.y);
-  out.set(dir.x * wide, dir.y * 1.08, dir.z * 0.88 * wide);
-  // A rounded crown between the ears, not a peak.
-  if (out.y > 0.78) out.y = 0.78 + (out.y - 0.78) * 0.55;
+  const up = Math.max(0, dir.y);
+  const down = Math.max(0, -dir.y);
+  const wide = 1 + 0.1 * down - 0.13 * up * up;
+  out.set(dir.x * wide, dir.y * 1.1, dir.z * 0.92 * wide);
   let ear = 0;
   let side = 0;
   for (const e of EARS) {
-    const d = angle(dir, e.dir);
-    if (d >= 0.46) continue;
-    const k = (1 - d / 0.46) ** 1.45;
-    out.x += dir.x * k * 0.46;
-    out.y += dir.y * k * 0.66;
-    out.z += dir.z * k * 0.16;
+    const k = bump(angle(dir, e.dir), 0.37, 1.7);
+    if (!k) continue;
+    out.addScaledVector(e.dir, k * 0.4);
     if (k > ear) [ear, side] = [k, e.side];
   }
   for (const f of FEET) {
-    const d = angle(dir, f);
-    if (d < 0.4) out.addScaledVector(f, (1 - d / 0.4) ** 2 * 0.2);
+    const k = bump(angle(dir, f), 0.4, 1.4);
+    if (!k) continue;
+    out.x += f.x * k * 0.07;
+    out.y -= k * 0.24;
+    out.z += k * 0.22;
   }
-  if (out.y < -0.9) out.y = -0.9 + (out.y + 0.9) * 0.25;
+  // Flat soles to stand on.
+  if (out.y < GROUND + 0.04) out.y = GROUND + 0.04 + (out.y - GROUND - 0.04) * 0.15;
   return { ear, side };
 }
 
 // The body, with normals taken from the shape itself, so the sphere's seam never shows in the fur.
 function bodyGeometry() {
-  const g = new THREE.SphereGeometry(1, 72, 56);
+  const g = new THREE.SphereGeometry(1, 120, 88);
   const pos = g.attributes.position;
   const normals = new Float32Array(pos.count * 3);
   const ears = new Float32Array(pos.count);
   const sides = new Float32Array(pos.count);
+  // How long the coat is at each point: short around the eyes, so it frames them instead of
+  // covering them, and under the feet.
+  const trims = new Float32Array(pos.count);
   const v = new THREE.Vector3();
   const p = new THREE.Vector3();
   const a = new THREE.Vector3();
@@ -83,39 +93,53 @@ function bodyGeometry() {
     normals.set([n.x, n.y, n.z], i * 3);
     ears[i] = e.ear;
     sides[i] = e.side;
+    const eye = Math.min(...EYES.map((d) => angle(v, d)));
+    const nearEye = Math.min(1, Math.max(0, (eye - 0.2) / 0.22));
+    const sole = Math.min(1, Math.max(0, (p.y - GROUND) / 0.16));
+    trims[i] = (0.12 + 0.88 * nearEye * nearEye) * (0.35 + 0.65 * sole);
   }
   g.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
   g.setAttribute("ear", new THREE.BufferAttribute(ears, 1));
   g.setAttribute("side", new THREE.BufferAttribute(sides, 1));
+  g.setAttribute("trim", new THREE.BufferAttribute(trims, 1));
   return g;
 }
 
+// Each shell is the body pushed out along its normals. The strands lean a little, each tuft its
+// own way, and hang slightly under their weight, so the coat looks brushed rather than spiky.
 const FUR_VERTEX = /* glsl */ `
 attribute float ear;
 attribute float side;
+attribute float trim;
 uniform float uShell;
 uniform float uLength;
 uniform float uTwitch;
 uniform vec3 uSag;
-varying vec2 vUv;
+varying vec3 vBase;
+varying vec3 vObjNormal;
 varying vec3 vNormal;
 varying vec3 vView;
 void main() {
   vec3 p = position;
+  vBase = position;
   if (ear > 0.0) {
     float a = uTwitch * side * ear;
-    p.x += sin(a) * max(p.y - 0.55, 0.0) * 1.6;
-    p.y -= (1.0 - cos(a)) * 0.4 * ear;
+    p.x += sin(a) * max(p.y - 0.75, 0.0) * 1.6;
+    p.y -= (1.0 - cos(a)) * 0.3 * ear;
   }
   vec3 n = normalize(normal);
-  p += n * uLength * uShell + uSag * uShell * uShell;
+  vObjNormal = n;
+  vec3 lean = vec3(sin(position.y * 7.0 + position.z * 5.0), -0.35, cos(position.x * 6.0 - position.y * 4.0));
+  lean -= n * dot(lean, n);
+  p += (n * uLength * uShell + (uSag + lean * 0.02) * uShell * uShell) * trim;
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   vView = -mv.xyz;
   vNormal = normalize(normalMatrix * n);
-  vUv = uv;
   gl_Position = projectionMatrix * mv;
 }`;
 
+// The strands live in small cells of space, not of the sphere's own grid, so they are as dense
+// on the ears and the crown as on the belly. Each one is a column that thins toward its tip.
 const FUR_FRAGMENT = /* glsl */ `
 uniform float uShell;
 uniform vec3 uRoot;
@@ -123,34 +147,44 @@ uniform vec3 uMid;
 uniform vec3 uTip;
 uniform vec3 uSheen;
 uniform vec3 uLight;
-varying vec2 vUv;
+varying vec3 vBase;
+varying vec3 vObjNormal;
 varying vec3 vNormal;
 varying vec3 vView;
-float hash(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
+float hash(vec3 p) {
+  p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+  p += dot(p, p.yxz + 33.33);
+  return fract((p.x + p.y) * p.z);
 }
 void main() {
-  vec2 st = vUv * vec2(420.0, 210.0);
-  vec2 cell = floor(st);
-  float h = 0.55 + 0.45 * hash(cell);
+  vec3 q = vBase * 84.0;
+  vec3 cell = floor(q);
+  float h = 0.5 + 0.5 * hash(cell);
+  float alpha = 1.0;
   if (uShell > 0.0) {
     if (uShell > h) discard;
-    vec2 c = fract(st) - 0.5 - (vec2(hash(cell + 3.1), hash(cell + 7.7)) - 0.5) * 0.35;
-    float r = 0.62 * (1.0 - uShell / h);
-    if (dot(c, c) > r * r) discard;
+    vec3 jitter = (vec3(hash(cell + 1.7), hash(cell + 5.3), hash(cell + 9.1)) - 0.5) * 0.5;
+    vec3 d = fract(q) - 0.5 - jitter;
+    vec3 n = normalize(vObjNormal);
+    d -= n * dot(d, n);
+    float r = 0.56 * (1.0 - 0.78 * uShell / h);
+    alpha = 1.0 - smoothstep(r * 0.5, r, length(d));
+    if (alpha < 0.04) discard;
   }
-  vec3 base = mix(uRoot, uMid, smoothstep(0.0, 0.4, uShell));
-  base = mix(base, uTip, smoothstep(0.35, 0.95, uShell));
-  base *= 0.88 + 0.24 * hash(cell + 17.0);
+  vec3 base = mix(uRoot, uMid, smoothstep(0.0, 0.45, uShell));
+  base = mix(base, uTip, smoothstep(0.4, 1.0, uShell));
+  base *= 0.9 + 0.2 * hash(cell + 17.0);
   vec3 N = normalize(vNormal);
   vec3 V = normalize(vView);
-  float diffuse = 0.74 + 0.5 * max(dot(N, uLight), 0.0);
-  float ao = mix(0.62, 1.0, uShell);
-  float rim = pow(1.0 - max(dot(N, V), 0.0), 2.4);
-  vec3 col = base * diffuse * ao + uSheen * rim * (0.25 + 0.75 * uShell);
-  gl_FragColor = vec4(col, 1.0);
+  float ndl = dot(N, uLight);
+  // Soft light that wraps around him, darker deep in the coat and near the floor.
+  float wrap = clamp((ndl + 0.65) / 1.65, 0.0, 1.0);
+  float floorShade = mix(0.7, 1.0, smoothstep(-1.1, -0.25, vBase.y));
+  float depth = mix(0.66, 1.0, uShell);
+  float rim = pow(1.0 - max(dot(N, V), 0.0), 2.2);
+  vec3 col = base * (0.54 + 0.72 * wrap) * depth * floorShade;
+  col += uSheen * (rim * 0.34 + pow(max(ndl, 0.0), 5.0) * 0.1) * uShell;
+  gl_FragColor = vec4(col, alpha);
   #include <colorspace_fragment>
 }`;
 
@@ -206,27 +240,57 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
   };
   const shellMaterials: THREE.ShaderMaterial[] = [];
   for (let i = 0; i < SHELLS; i++) {
-    const material = new THREE.ShaderMaterial({ vertexShader: FUR_VERTEX, fragmentShader: FUR_FRAGMENT, uniforms: { ...shared, uShell: { value: i / (SHELLS - 1) } } });
+    // The strands' soft edges are resolved by the antialiasing samples (alpha to coverage).
+    const material = new THREE.ShaderMaterial({ vertexShader: FUR_VERTEX, fragmentShader: FUR_FRAGMENT, alphaToCoverage: i > 0, uniforms: { ...shared, uShell: { value: i / (SHELLS - 1) } } });
     shellMaterials.push(material);
     const shell = new THREE.Mesh(body, material);
     shell.renderOrder = i;
     rig.add(shell);
   }
 
+  // The strands' soft edges leave the picture a little see-through where they overlap the body.
+  // One last pass over the body's own outline makes it solid again (it writes no colour), so
+  // only the fringe of the coat stays soft against whatever is behind him.
+  const solid = new THREE.Mesh(
+    body,
+    new THREE.MeshBasicMaterial({
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
+      blending: THREE.CustomBlending,
+      blendSrc: THREE.ZeroFactor,
+      blendDst: THREE.OneFactor,
+      blendSrcAlpha: THREE.OneFactor,
+      blendDstAlpha: THREE.ZeroFactor,
+    }),
+  );
+  solid.renderOrder = SHELLS + 10;
+  rig.add(solid);
+
   // Googly eyes: a glossy white bowl each, a big black lens free to roll inside it.
-  const whiteMaterial = new THREE.MeshPhysicalMaterial({ color: COLORS.eyeWhite, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.04 });
+  const whiteMaterial = new THREE.MeshPhysicalMaterial({ color: COLORS.eyeWhite, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.08 });
   const blackMaterial = new THREE.MeshPhysicalMaterial({ color: COLORS.eyeBlack, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.03, metalness: 0.1 });
   const eyeGeometry = new THREE.SphereGeometry(1, 40, 28);
   const p = new THREE.Vector3();
+  const glints: THREE.Mesh[] = [];
   const eyes = EYES.map((dir, i) => {
     surface(dir, p);
     const eye = new THREE.Group();
-    eye.position.copy(p).multiplyScalar(0.97);
+    // Set into the coat, so the fur closes around each eye.
+    eye.position.copy(p).multiplyScalar(0.972);
     eye.lookAt(eye.position.clone().add(dir));
     const white = new THREE.Mesh(eyeGeometry, whiteMaterial);
-    white.scale.set(EYE_R, EYE_R, EYE_R * 0.86);
+    white.scale.set(EYE_R, EYE_R, EYE_R * 0.9);
+    // A big glossy lens, as on the sheet, with two points of light on it.
     const pupil = new THREE.Mesh(eyeGeometry, blackMaterial);
-    pupil.scale.set(EYE_R * 0.6, EYE_R * 0.6, EYE_R * 0.26);
+    pupil.scale.set(EYE_R * 0.78, EYE_R * 0.78, EYE_R * 0.3);
+    for (const [x, y, size, opacity] of [[-0.34, 0.4, 0.17, 0.95], [0.3, -0.28, 0.07, 0.6]] as const) {
+      const glint = new THREE.Mesh(eyeGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity }));
+      glint.position.set(x, y, Math.sqrt(1 - x * x - y * y) * 0.98);
+      glint.scale.set(size, size, size * 0.4);
+      glints.push(glint);
+      pupil.add(glint);
+    }
     eye.add(white, pupil);
     rig.add(eye);
     return { pupil, at: new THREE.Vector2(), speed: new THREE.Vector2(), stiffness: i ? 70 : 82 };
@@ -235,7 +299,7 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
   const shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false });
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.1), shadowMaterial);
   shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = -0.93;
+  shadow.position.y = GROUND;
   scene.add(shadow);
 
   // ------------------------------------------------------------ behaviour
@@ -317,7 +381,7 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
     }
     root.position.y = y;
     rig.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy));
-    rig.position.y = -0.93 * (1 - sy);
+    rig.position.y = GROUND * (1 - sy);
     shadow.scale.setScalar(1 - y * 0.9);
     shadowMaterial.opacity = 1 - y * 1.6;
 
@@ -339,15 +403,15 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
       eye.speed.multiplyScalar(Math.exp(-dt * 7));
       eye.at.addScaledVector(eye.speed, dt);
       const r = eye.at.length();
-      if (r > 0.58) {
-        eye.at.multiplyScalar(0.58 / r);
+      if (r > 0.5) {
+        eye.at.multiplyScalar(0.5 / r);
         eye.speed.multiplyScalar(-0.4);
       }
       const { x, y: v } = eye.at;
       const z = Math.sqrt(Math.max(0, 1 - x * x - v * v));
       forward.set(x, v, z);
-      eye.pupil.position.copy(forward).multiplyScalar(EYE_R * 0.8);
-      eye.pupil.position.z *= 0.86;
+      eye.pupil.position.copy(forward).multiplyScalar(EYE_R * 0.76);
+      eye.pupil.position.z *= 0.9;
       eye.pupil.quaternion.setFromUnitVectors(front, forward);
     }
     renderer.render(scene, camera);
@@ -382,7 +446,7 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
       shadow.geometry.dispose();
       shadowMaterial.map?.dispose();
       shadowMaterial.dispose();
-      for (const m of [...shellMaterials, whiteMaterial, blackMaterial]) m.dispose();
+      for (const m of [...shellMaterials, solid.material, whiteMaterial, blackMaterial, ...glints.map((g) => g.material as THREE.Material)]) m.dispose();
       env.dispose();
       pmrem.dispose();
       renderer.dispose();
