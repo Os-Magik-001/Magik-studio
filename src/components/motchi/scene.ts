@@ -21,14 +21,16 @@ export type MotchiScene = {
 const COLORS = { root: "#bd8a0c", mid: "#eab220", tip: "#fbd04e", sheen: "#fff0b8", eyeWhite: "#f2f2ea", eyeBlack: "#0c0c0d" };
 const SHELLS = 52;
 const FUR = 0.1;
-const EYE_R = 0.25;
+const EYE_R = 0.235;
+// How far the white of an eye rises out of the coat: a shallow dome, as on the sheet, not a ball.
+const EYE_DOME = 0.58;
 // Where he stands: the soles of his feet.
 const GROUND = -1.06;
 
 // Small rounded ears set close on the crown, two stubby feet under the front, eyes at mid height.
 const EARS = [-1, 1].map((side) => ({ side, dir: new THREE.Vector3(side * 0.43, 0.9, 0.04).normalize() }));
 const FEET = [-1, 1].map((side) => new THREE.Vector3(side * 0.4, -0.86, 0.32).normalize());
-const EYES = [-1, 1].map((side) => new THREE.Vector3(side * 0.38, 0.0, 0.925).normalize());
+const EYES = [-1, 1].map((side) => new THREE.Vector3(side * 0.35, 0.03, 0.935).normalize());
 
 const angle = (a: THREE.Vector3, b: THREE.Vector3) => Math.acos(Math.min(1, Math.max(-1, a.dot(b))));
 // A bump that is round on top and melts into the body at its edge.
@@ -94,9 +96,9 @@ function bodyGeometry() {
     ears[i] = e.ear;
     sides[i] = e.side;
     const eye = Math.min(...EYES.map((d) => angle(v, d)));
-    const nearEye = Math.min(1, Math.max(0, (eye - 0.2) / 0.22));
+    const nearEye = Math.min(1, Math.max(0, (eye - 0.17) / 0.2));
     const sole = Math.min(1, Math.max(0, (p.y - GROUND) / 0.16));
-    trims[i] = (0.12 + 0.88 * nearEye * nearEye) * (0.35 + 0.65 * sole);
+    trims[i] = (0.22 + 0.78 * nearEye * nearEye) * (0.35 + 0.65 * sole);
   }
   g.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
   g.setAttribute("ear", new THREE.BufferAttribute(ears, 1));
@@ -277,13 +279,13 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
     surface(dir, p);
     const eye = new THREE.Group();
     // Set into the coat, so the fur closes around each eye.
-    eye.position.copy(p).multiplyScalar(0.972);
+    eye.position.copy(p).multiplyScalar(0.965);
     eye.lookAt(eye.position.clone().add(dir));
     const white = new THREE.Mesh(eyeGeometry, whiteMaterial);
-    white.scale.set(EYE_R, EYE_R, EYE_R * 0.9);
+    white.scale.set(EYE_R, EYE_R, EYE_R * EYE_DOME);
     // A big glossy lens, as on the sheet, with two points of light on it.
     const pupil = new THREE.Mesh(eyeGeometry, blackMaterial);
-    pupil.scale.set(EYE_R * 0.78, EYE_R * 0.78, EYE_R * 0.3);
+    pupil.scale.set(EYE_R * 0.7, EYE_R * 0.7, EYE_R * 0.22);
     for (const [x, y, size, opacity] of [[-0.34, 0.4, 0.17, 0.95], [0.3, -0.28, 0.07, 0.6]] as const) {
       const glint = new THREE.Mesh(eyeGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity }));
       glint.position.set(x, y, Math.sqrt(1 - x * x - y * y) * 0.98);
@@ -397,21 +399,22 @@ export function createMotchi(canvas: HTMLCanvasElement, { reducedMotion = false 
     rig.rotation.x = -turn.y * 0.1;
     rig.rotation.z = reducedMotion ? 0 : 0.025 * Math.sin(t * 0.8);
     for (const eye of eyes) {
-      want.set(goal.x * 0.55, goal.y * 0.5).sub(eye.at);
+      want.set(goal.x * 0.34, goal.y * 0.3).sub(eye.at);
       eye.speed.addScaledVector(want, eye.stiffness * dt);
       if (h >= 0 && h < 1) eye.speed.y -= Math.cos(Math.PI * h) * 2.2 * dt;
       eye.speed.multiplyScalar(Math.exp(-dt * 7));
       eye.at.addScaledVector(eye.speed, dt);
       const r = eye.at.length();
-      if (r > 0.5) {
-        eye.at.multiplyScalar(0.5 / r);
+      // The lens rolls to the edge of the white and no further.
+      if (r > 0.33) {
+        eye.at.multiplyScalar(0.33 / r);
         eye.speed.multiplyScalar(-0.4);
       }
       const { x, y: v } = eye.at;
       const z = Math.sqrt(Math.max(0, 1 - x * x - v * v));
-      forward.set(x, v, z);
-      eye.pupil.position.copy(forward).multiplyScalar(EYE_R * 0.76);
-      eye.pupil.position.z *= 0.9;
+      // The lens rides the dome of the white and faces out of it.
+      eye.pupil.position.set(x * EYE_R * 0.96, v * EYE_R * 0.96, z * EYE_R * EYE_DOME * 0.94);
+      forward.set(x, v, z / EYE_DOME).normalize();
       eye.pupil.quaternion.setFromUnitVectors(front, forward);
     }
     renderer.render(scene, camera);
