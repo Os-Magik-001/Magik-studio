@@ -3,6 +3,7 @@ name: studio-feedback
 description: What the studio's owner and its clients approved and sent back on real deliveries (edit points, pacing, transitions, captions and fonts, motion design, 3D, colour, music, sound effects, end cards)
 formats: all
 agents: editor, sound, motion
+agency: magik
 ---
 
 # What the studio approved and sent back

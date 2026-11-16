@@ -18,8 +18,9 @@ import { clientMemory } from "./memory.ts";
 import type { TrendAudio } from "./sound.ts";
 import { transcribe, transcriptionAvailable } from "./transcribe.ts";
 import { friendlyError } from "./errors.ts";
+import { count, countTokens, fairOrder, forStudio, lastStartedIn } from "./agency.ts";
 
-type Report = { id: string; client_id: string; hashtags: string[]; accounts: string[]; attempts: number };
+type Report = { id: string; client_id: string; hashtags: string[]; accounts: string[]; attempts: number; agency_id: string };
 
 // Reels to watch closely per run, and how many to scrape to find them.
 const WATCH = 10;
@@ -27,14 +28,16 @@ const PER_HASHTAG = 30;
 const PER_ACCOUNT = 12;
 
 export async function claimResearch(): Promise<Report | null> {
-  const { data: queued } = await db.from("trend_reports").select("id, attempts").eq("status", "queued").order("created_at").limit(1).maybeSingle();
+  const { data: waiting } = await db.from("trend_reports").select("id, attempts, agency_id, created_at").eq("status", "queued").order("created_at").limit(200);
+  // Agencies take turns.
+  const [queued] = fairOrder(waiting ?? [], new Map(), await lastStartedIn("trend_reports"));
   if (!queued) return null;
   const { data } = await db
     .from("trend_reports")
     .update({ status: "running", started_at: new Date().toISOString(), attempts: queued.attempts + 1, progress: "Starting", error: null })
     .eq("id", queued.id)
     .eq("status", "queued")
-    .select("id, client_id, hashtags, accounts, attempts")
+    .select("id, client_id, hashtags, accounts, attempts, agency_id")
     .maybeSingle();
   return data;
 }
@@ -84,6 +87,7 @@ export async function apify<T = Item>(actor: string, input: Record<string, unkno
   if (res.status === 402) throw new Error("The Apify account is out of credit for this month.");
   if (!res.ok) throw new Error(`Apify returned ${res.status} for ${actor}.`);
   const items = await res.json();
+  count("scrape_runs", 1, actor, { items: Array.isArray(items) ? items.length : 0 });
   return Array.isArray(items) ? items : [];
 }
 
@@ -319,8 +323,8 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
   // The researcher's skills (engine/skills, agents: researcher): the studio's research playbook.
   const skills = await loadSkills("social_short", undefined, (m) => log(null, m), "dynamic", "", "researcher");
   const system = skills.length
-    ? `${SYSTEM}\n\nYour skills: the studio's own playbook for this job.\n\n${skills.map((k) => `<skill name="${k.name}">\n${k.body}\n</skill>`).join("\n\n")}`
-    : SYSTEM;
+    ? `${forStudio(SYSTEM)}\n\nYour skills: the studio's own playbook for this job.\n\n${skills.map((k) => `<skill name="${k.name}">\n${k.body}\n</skill>`).join("\n\n")}`
+    : forStudio(SYSTEM);
   const anthropic = new Anthropic();
   const response = await anthropic.beta.messages.parse({
     model: config.model,
@@ -332,6 +336,7 @@ export async function study(hashtags: string[], accounts: string[], context: Stu
     system,
     messages: [{ role: "user", content }],
   });
+  countTokens("trend research", response.model, response.usage);
   const findings = response.parsed_output;
   if (!findings) throw new Error("Claude's analysis came back incomplete.");
 

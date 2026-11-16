@@ -2,6 +2,7 @@
 name: quebec-market
 description: Making content for Québec businesses and audiences: language, local references and the calendar
 agents: strategist, planner, scriptwriter
+agency: magik
 ---
 
 **Language**

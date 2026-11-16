@@ -5,6 +5,7 @@ formats: social_short, ad
 style: dynamic
 when: aslaniedits, aslani, dcs61-6mu81, de9dkkssi7a
 agents: editor, sound, motion
+agency: magik
 ---
 
 # The @aslaniedits look

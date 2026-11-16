@@ -13,6 +13,7 @@ import { MOODS, searchMusic, trackAnalysis, type Track } from "./music.ts";
 import { streamMessage, timelineOf, type EditPlan } from "./plan.ts";
 import { searchSfx, type SfxEntry } from "./sfx.ts";
 import type { Skill } from "./skills.ts";
+import { countTokens, forStudio } from "./agency.ts";
 
 // ---------------------------------------------------------------- inputs and outputs
 
@@ -167,8 +168,8 @@ The trending sounds come from the researcher, who studied the top reels in the c
 Follow the sound skills below. The brand kit, the edit prompt and comments on the video beat them.`;
 
 function buildSystem(skills: Skill[]) {
-  if (!skills.length) return SYSTEM;
-  return `${SYSTEM}\n\n# Sound skills\n\n${skills.map((s) => `<skill name="${s.name}">\n${s.body.trim()}\n</skill>`).join("\n\n")}`;
+  if (!skills.length) return forStudio(SYSTEM);
+  return `${forStudio(SYSTEM)}\n\n# Sound skills\n\n${skills.map((s) => `<skill name="${s.name}">\n${s.body.trim()}\n</skill>`).join("\n\n")}`;
 }
 
 function describeRequest(req: SoundRequest, cut: string) {
@@ -298,6 +299,7 @@ export async function designSound(req: SoundRequest, cut: string, analyze: Analy
       tool_choice: { type: "auto" },
       messages,
     });
+    countTokens("sound", message.model, message.usage);
     used = { input: used.input + message.usage.input_tokens + (message.usage.cache_read_input_tokens ?? 0) + (message.usage.cache_creation_input_tokens ?? 0), output: used.output + message.usage.output_tokens };
     if (message.stop_reason === "refusal") throw new Error("Claude declined to design the sound.");
     if (message.stop_reason === "max_tokens") throw new Error("The sound designer's answer came back incomplete.");

@@ -5,6 +5,7 @@ import { config } from "./config.ts";
 import { frameSize, SHEET_COLS, SHEET_ROWS } from "./media.ts";
 import type { Skill } from "./skills.ts";
 import type { TranscriptLine } from "./transcribe.ts";
+import { countTokens, forStudio } from "./agency.ts";
 
 // ---------------------------------------------------------------- the edit decision list
 
@@ -430,8 +431,8 @@ export function markTakes(clips: Clip[], script = "") {
 }
 
 export function buildSystem(skills: Skill[]) {
-  if (!skills.length) return SYSTEM;
-  return `${SYSTEM}\n\n# Editing skills\n\n${skills.map((s) => `<skill name="${s.name}">\n${s.body.trim()}\n</skill>`).join("\n\n")}`;
+  if (!skills.length) return forStudio(SYSTEM);
+  return `${forStudio(SYSTEM)}\n\n# Editing skills\n\n${skills.map((s) => `<skill name="${s.name}">\n${s.body.trim()}\n</skill>`).join("\n\n")}`;
 }
 
 function describePrevious(prev: NonNullable<PlanInput["previous"]>) {
@@ -621,6 +622,7 @@ async function requestPlan(client: Anthropic, system: string, content: Anthropic
   for (let attempt = 0; attempt < 2; attempt++) {
     const message = await streamPlan(client, system, messages);
     used = { input: used.input + message.usage.input_tokens, output: used.output + message.usage.output_tokens };
+    countTokens("edit plan", message.model, message.usage);
 
     if (message.stop_reason === "refusal") throw new Error("Claude declined to plan this edit.");
     if (message.stop_reason === "max_tokens") throw new Error("Claude's edit plan came back incomplete.");

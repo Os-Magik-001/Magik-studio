@@ -33,8 +33,11 @@ before(async () => {
   dir = await mkdtemp(path.join(os.tmpdir(), "magik-it-"));
   const { data: u } = await db.auth.admin.createUser({ email: `${tag}@example.com`, email_confirm: true });
   editorId = u.user!.id;
-  await db.from("profiles").insert({ id: editorId, email: `${tag}@example.com`, role: "editor", full_name: "IT editor" });
-  const { data: c } = await db.from("clients").insert({ name: tag }).select("id").single();
+  // Everything belongs to an agency: the first one here.
+  const { data: agency } = await db.from("agencies").select("id").eq("slug", "magik").single();
+  const agency_id = agency!.id;
+  await db.from("profiles").insert({ id: editorId, email: `${tag}@example.com`, role: "editor", full_name: "IT editor", agency_id });
+  const { data: c } = await db.from("clients").insert({ name: tag, agency_id }).select("id").single();
   clientId = c!.id;
   const logo = path.join(dir, "logo.png");
   await makeLogo(logo);

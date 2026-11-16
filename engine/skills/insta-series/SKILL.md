@@ -4,6 +4,7 @@ description: Episodes of an Instagram web series (sitcom or mockumentary with re
 formats: social_short, ad
 style: dynamic
 agents: editor, sound
+agency: magik
 ---
 
 For The Boyz and other workplace or startup comedy, office-comedy-reels gives the comedy cutting technique (confessional contradictions, reactions, the pause before a punchline) and the `cutting` skill the cut mechanics. This skill gives the series itself: the cold open and title, the episode's shape, The Boyz' own timing, subtitles, music and the specials. Where this skill gives a number for The Boyz, use it.

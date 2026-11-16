@@ -16,6 +16,7 @@ import { BT709, probe, SWS } from "./media.ts";
 import { launch, serve } from "./motion.ts";
 import { personMatte, segmentationAvailable } from "./segment.ts";
 import type { pageTypography } from "./typefaces.ts";
+import { countTokens, forStudio } from "./agency.ts";
 
 const DESIGN_DIR = fileURLToPath(new URL("../design", import.meta.url));
 const FONTS_DIR = fileURLToPath(new URL("../assets/fonts", import.meta.url));
@@ -84,6 +85,7 @@ async function ask<T>(schema: z.ZodType<T>, system: string, messages: Anthropic.
       const message = await anthropic.beta.messages
         .stream({ model: config.model, max_tokens: MAX_TOKENS, thinking: { type: "adaptive" }, output_config: { effort, format: { type: "json_schema", schema: jsonSchema(schema) } }, system, messages })
         .finalMessage();
+      countTokens("graphics", message.model, message.usage);
       if (message.stop_reason === "max_tokens") {
         if (effort === "high") {
           effort = "medium";
@@ -302,7 +304,7 @@ export async function designPass(input: DesignInput) {
   // What the designer sees of the cut: 16 frames across it.
   const sheet = path.join(workDir, "cut-sheet.jpg");
   await run(config.ffmpeg, ["-v", "error", "-y", "-i", video, "-vf", `fps=16/${p.duration.toFixed(3)},scale=270:480,tile=8x2`, "-frames:v", "1", "-q:v", "3", sheet]);
-  const system = await readFile(path.join(DESIGN_DIR, "brief.md"), "utf8");
+  const system = forStudio(await readFile(path.join(DESIGN_DIR, "brief.md"), "utf8"));
   const messages: Anthropic.Beta.BetaMessageParam[] = [
     {
       role: "user",

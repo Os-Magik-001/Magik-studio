@@ -5,6 +5,7 @@ formats: social_short, ad
 style: dynamic
 when: ddo63lgpbsn
 agents: editor, sound
+agency: magik
 ---
 
 # Kinetic Type Brand Sting (motion-design showreel)

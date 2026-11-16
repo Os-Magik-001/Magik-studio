@@ -3,6 +3,7 @@ name: omgadrian-editing-dynamic-text-hooks
 description: Big amplifying text for dynamic reels: 3-second hook titles, single-keyword hits, section and comparison labels, proof cards, one annotation gag, endings (learned from @omgadrian)
 formats: all
 style: dynamic
+agency: magik
 ---
 
 # Text, hooks and annotations (dynamic)

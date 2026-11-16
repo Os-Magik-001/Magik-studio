@@ -5,6 +5,7 @@ formats: social_short, ad
 style: dynamic
 when: omgadrian
 agents: editor, sound
+agency: magik
 ---
 
 You are editing in the style of @omgadrian, a filmmaker-educator. His reels are polished 50 to 100 second tutorials and sponsored breakdowns. The edit should feel like a short film that teaches, so keep it cinematic and calm rather than hyper. The motion graphics are confident but sparse.

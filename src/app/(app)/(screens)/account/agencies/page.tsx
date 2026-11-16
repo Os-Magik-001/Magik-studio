@@ -6,7 +6,8 @@ import { createPlatformClient } from "@/lib/supabase/admin";
 import { WindowPage } from "@/components/desktop/window-page";
 import { LocalDate } from "@/components/local-date";
 import { SettingsGroup, SettingsShell } from "@/components/settings/settings-shell";
-import { DomainsForm, NewAgencyForm } from "./agency-forms";
+import { summarize, monthStart, tokensText } from "@/lib/usage";
+import { DomainsForm, EngineForm, NewAgencyForm } from "./agency-forms";
 
 export const metadata: Metadata = { title: "Agencies" };
 
@@ -17,10 +18,11 @@ export default async function AgenciesPage() {
   const viewer = await getViewer();
   if (!viewer.platformAdmin) notFound();
   const db = createPlatformClient();
-  const [{ data: agencies }, { data: people }, { data: clients }] = await Promise.all([
-    db.from("agencies").select("id, slug, name, domains, brand, created_at").order("created_at"),
+  const [{ data: agencies }, { data: people }, { data: clients }, { data: usage }] = await Promise.all([
+    db.from("agencies").select("id, slug, name, domains, brand, created_at, max_running_edits, sound_sets").order("created_at"),
     db.from("profiles").select("agency_id, role"),
     db.from("clients").select("agency_id"),
+    db.from("usage_events").select("agency_id, kind, quantity").gte("created_at", monthStart()).limit(100000),
   ]);
   const count = (rows: { agency_id: string }[] | null, id: string) => (rows ?? []).filter((r) => r.agency_id === id).length;
   return (
@@ -29,6 +31,7 @@ export default async function AgenciesPage() {
         {(agencies ?? []).map((a) => {
           const brand = brandFrom(a);
           const team = (people ?? []).filter((p) => p.agency_id === a.id && p.role !== "client").length;
+          const used = summarize((usage ?? []).filter((u) => u.agency_id === a.id));
           return (
             <SettingsGroup key={a.id}>
               <div className="flex flex-wrap items-center gap-3 px-4 py-3.5">
@@ -41,8 +44,15 @@ export default async function AgenciesPage() {
                 </div>
                 <code className="rounded-md bg-white/[0.07] px-2 py-0.5 text-[12px] text-ink-2">{a.slug}</code>
               </div>
+              <div className="px-4 py-3 text-[13px] text-ink-2">
+                This month: <span className="font-semibold text-ink">{used.edits}</span> edit{used.edits === 1 ? "" : "s"} made, <span className="font-semibold text-ink">{tokensText(used.tokens)}</span> AI tokens,{" "}
+                <span className="font-semibold text-ink">{used.scrapes}</span> research run{used.scrapes === 1 ? "" : "s"}.
+              </div>
               <div className="px-4 py-3.5">
                 <DomainsForm agencyId={a.id} domains={a.domains} first={a.slug === "magik"} />
+              </div>
+              <div className="px-4 py-3.5">
+                <EngineForm agencyId={a.id} maxRunningEdits={a.max_running_edits} soundSets={a.sound_sets} />
               </div>
             </SettingsGroup>
           );

@@ -181,6 +181,22 @@ export async function createAgency(_: ActionResult, formData: FormData): Promise
   return done(`${name} is ready at ${domains[0]}. ${fullName ?? email} signs in there with the password you set; share it with them privately.`);
 }
 
+const SOUND_SETS = ["studio", "freepd", "mixkit", "incompetech"];
+
+// What the engine does for an agency: how many edits at once, and which built-in sound sets.
+export async function saveAgencyEngine(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requirePlatform();
+  const id = text(formData, "agencyId");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("Unknown agency.");
+  const edits = Math.trunc(Number(text(formData, "maxRunningEdits")));
+  if (!Number.isFinite(edits) || edits < 1 || edits > 8) return fail("Edits at once: a number from 1 to 8.");
+  const sets = formData.getAll("soundSets").map(String).filter((s) => SOUND_SETS.includes(s));
+  const { error } = await createPlatformClient().from("agencies").update({ max_running_edits: edits, sound_sets: sets }).eq("id", id);
+  if (error) return fail("Couldn't save.");
+  refresh();
+  return done("Saved. It applies to the next edit.");
+}
+
 export async function saveAgencyDomains(_: ActionResult, formData: FormData): Promise<ActionResult> {
   await requirePlatform();
   const id = text(formData, "agencyId");

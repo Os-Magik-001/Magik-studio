@@ -23,11 +23,12 @@ import { contactSheets, download, probe, SHEET_COLS, SHEET_ROWS } from "./media.
 import { apify, cutTimes, plays, withSound, type Item } from "./research.ts";
 import { transcribe, transcriptionAvailable, type TranscriptLine } from "./transcribe.ts";
 import { friendlyError } from "./errors.ts";
+import { countTokens, fairOrder, forStudio, lastStartedIn } from "./agency.ts";
 
 // job.ts imports this file, so the log line is written here rather than imported from it.
 const log = (id: string | null, msg: string) => console.log(`${new Date().toISOString()} ${id ? `[${id.slice(0, 8)}] ` : ""}${msg}`);
 
-export type ReferenceRow = { id: string; client_id: string; video_id: string | null; url: string; platform: string; focus: string[]; note: string | null; attempts: number };
+export type ReferenceRow = { id: string; client_id: string; video_id: string | null; url: string; platform: string; focus: string[]; note: string | null; attempts: number; agency_id: string };
 
 const FOCUS: Record<string, string> = {
   hook: "the hook",
@@ -44,16 +45,18 @@ export const wanted = (focus: string[]) => focus.map((f) => FOCUS[f] ?? f).join(
 // ---------------------------------------------------------------- queue
 
 export async function claimReference(scope?: { clientId: string; videoId: string }): Promise<ReferenceRow | null> {
-  let query = db.from("reference_videos").select("id, attempts").eq("status", "queued");
+  let query = db.from("reference_videos").select("id, attempts, agency_id, created_at").eq("status", "queued");
   if (scope) query = query.eq("client_id", scope.clientId).or(`video_id.eq.${scope.videoId},video_id.is.null`);
-  const { data: queued } = await query.order("created_at").limit(1).maybeSingle();
+  const { data: waiting } = await query.order("created_at").limit(200);
+  // Agencies take turns (a job waiting on its own references has only its own to take).
+  const [queued] = scope ? (waiting ?? []) : fairOrder(waiting ?? [], new Map(), await lastStartedIn("reference_videos"));
   if (!queued) return null;
   const { data } = await db
     .from("reference_videos")
     .update({ status: "running", started_at: new Date().toISOString(), attempts: queued.attempts + 1, progress: "Starting", error: null })
     .eq("id", queued.id)
     .eq("status", "queued")
-    .select("id, client_id, video_id, url, platform, focus, note, attempts")
+    .select("id, client_id, video_id, url, platform, focus, note, attempts, agency_id")
     .maybeSingle();
   return data;
 }
@@ -401,9 +404,10 @@ export async function analyze(input: ReferenceInput, f: Fetched, w: Watched): Pr
     fallbacks: "default",
     thinking: { type: "adaptive" },
     output_config: { effort: "medium", format: betaZodOutputFormat(Breakdown) },
-    system: SYSTEM,
+    system: forStudio(SYSTEM),
     messages: [{ role: "user", content }],
   });
+  countTokens("reference", response.model, response.usage);
   if (response.stop_reason === "refusal") throw new Error("Claude declined to break this video down.");
   if (response.stop_reason === "max_tokens" || !response.parsed_output) throw new Error("Claude's breakdown came back incomplete.");
   return response.parsed_output;

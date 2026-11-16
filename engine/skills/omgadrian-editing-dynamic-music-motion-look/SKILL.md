@@ -4,6 +4,7 @@ description: Music-first editing, energy-matched framing, sparse sound effects, 
 formats: all
 style: dynamic
 agents: editor, sound
+agency: magik
 ---
 
 # Music, motion and look (dynamic)

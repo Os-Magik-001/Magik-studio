@@ -7,6 +7,7 @@
 import { mkdir } from "node:fs/promises";
 import os from "node:os";
 import { config, db } from "./config.ts";
+import { runFor } from "./agency.ts";
 import { claim, log, processJob, recoverStale } from "./job.ts";
 import { claimLibrarySync, recoverStaleLibraries, registerBuiltins, syncLibrary } from "./libraries.ts";
 import { claimReference, recoverStaleReferences, runReference } from "./references.ts";
@@ -71,7 +72,8 @@ while (!stopping) {
   if (job) {
     log(job.id, `claimed ${job.source} job for video ${job.video_id.slice(0, 8)} (attempt ${job.attempts})`);
     current = job.id;
-    await processJob(job);
+    // For the job's agency: its skills and sound sets, its name, its usage.
+    await (job.agency_id ? runFor(job.agency_id, { videoId: job.video_id }, () => processJob(job)) : processJob(job));
     current = null;
     if (once) break;
     continue;
@@ -81,7 +83,7 @@ while (!stopping) {
   if (reference) {
     log(reference.id, `claimed a ${reference.platform} reference for client ${reference.client_id.slice(0, 8)}`);
     currentReference = reference.id;
-    await runReference(reference);
+    await runFor(reference.agency_id, { clientId: reference.client_id, videoId: reference.video_id }, () => runReference(reference));
     currentReference = null;
     if (once) break;
     continue;
@@ -90,7 +92,7 @@ while (!stopping) {
   if (research) {
     log(research.id, `claimed trend research for client ${research.client_id.slice(0, 8)}`);
     currentResearch = research.id;
-    await runResearch(research);
+    await runFor(research.agency_id, { clientId: research.client_id }, () => runResearch(research));
     currentResearch = null;
     if (once) break;
     continue;

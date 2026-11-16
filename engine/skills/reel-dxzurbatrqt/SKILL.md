@@ -5,6 +5,7 @@ formats: social_short, ad
 style: dynamic
 when: dxzurbatrqt
 agents: editor, sound
+agency: magik
 ---
 
 # Minimal Glow Opener (logo reveal / motion-template promo)

@@ -5,7 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Input } from "@/components/ui";
 import { Field } from "@/components/field";
 import { NewPasswordField } from "@/components/password-tools";
-import { createAgency, saveAgencyDomains } from "@/app/actions/agency";
+import { createAgency, saveAgencyDomains, saveAgencyEngine } from "@/app/actions/agency";
 
 const toSlug = (name: string) =>
   name
@@ -76,6 +76,39 @@ export function DomainsForm({ agencyId, domains, first }: { agencyId: string; do
         <Input name="domains" defaultValue={domains.join(" ")} placeholder="studio.example.com" autoComplete="off" />
       </Field>
       <SubmitButton variant="secondary">Save</SubmitButton>
+    </ActionForm>
+  );
+}
+
+const SETS: { id: string; label: string; note: string }[] = [
+  { id: "freepd", label: "FreePD", note: "public domain" },
+  { id: "incompetech", label: "Incompetech", note: "the post must credit the track" },
+  { id: "studio", label: "Studio picks", note: "Magik's own selection" },
+  { id: "mixkit", label: "Mixkit", note: "music and effects; check its licence before sharing" },
+];
+
+// What the edit engine does for this agency.
+export function EngineForm({ agencyId, maxRunningEdits, soundSets }: { agencyId: string; maxRunningEdits: number; soundSets: string[] }) {
+  return (
+    <ActionForm action={saveAgencyEngine} className="flex flex-col gap-3">
+      <input type="hidden" name="agencyId" value={agencyId} />
+      <div className="flex flex-wrap items-end gap-4">
+        <Field label="Edits at once" hint="The engine takes turns between agencies; this is the most it runs for this one at a time.">
+          <Input name="maxRunningEdits" type="number" min={1} max={8} step={1} defaultValue={maxRunningEdits} className="w-28" />
+        </Field>
+      </div>
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1 text-[13px] font-medium text-ink-2">Built-in music and effects it may use</legend>
+        {SETS.map((s) => (
+          <label key={s.id} className="flex items-center gap-2 text-[13px] text-ink">
+            <input type="checkbox" name="soundSets" value={s.id} defaultChecked={soundSets.includes(s.id)} className="h-4 w-4 accent-[var(--accent)]" />
+            {s.label} <span className="text-muted">({s.note})</span>
+          </label>
+        ))}
+      </fieldset>
+      <div>
+        <SubmitButton variant="secondary">Save</SubmitButton>
+      </div>
     </ActionForm>
   );
 }

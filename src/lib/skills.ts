@@ -1,6 +1,7 @@
 import "server-only";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { getAgency } from "@/lib/brand-server";
 
 // Every agent's skills live in one library, engine/skills: a folder per skill holding a SKILL.md
 // with front matter (see engine/skills/README.md). `agents:` says who reads it. The edit engine
@@ -8,7 +9,8 @@ import path from "node:path";
 // files ship with the app (next.config.ts, outputFileTracingIncludes).
 
 export type AgentKey = "strategist" | "planner" | "researcher" | "scriptwriter" | "motion" | "sound" | "editor";
-export type Skill = { folder: string; name: string; description: string; agents: AgentKey[]; body: string };
+// `agency`: the agencies a skill is kept for (its own clients, its own style); none = everyone's.
+export type Skill = { folder: string; name: string; description: string; agents: AgentKey[]; agency: string[]; body: string };
 
 const DIR = path.join(process.cwd(), "engine", "skills");
 const KEYS = new Set<AgentKey>(["strategist", "planner", "researcher", "scriptwriter", "motion", "sound", "editor"]);
@@ -29,7 +31,8 @@ function parse(text: string, folder: string): Skill | null {
   // Opt-in skills (`when:`) load on the engine only when a brief names them; the app's agents
   // read the always-on ones.
   if (meta.when) return null;
-  return { folder, name: meta.name || folder, description: meta.description, agents, body: match[2].trim() };
+  const agency = (meta.agency ?? "").split(",").map((a) => a.trim().toLowerCase()).filter(Boolean);
+  return { folder, name: meta.name || folder, description: meta.description, agents, agency, body: match[2].trim() };
 }
 
 let cache: { at: number; skills: Skill[] } | null = null;
@@ -48,7 +51,17 @@ export async function allSkills(): Promise<Skill[]> {
   return skills;
 }
 
-export const skillsFor = async (agent: AgentKey) => (await allSkills()).filter((s) => s.agents.includes(agent));
+// The library as the request's agency has it: everyone's skills and its own.
+export const agencySkills = async () => {
+  const { slug } = await getAgency();
+  return (await allSkills()).filter((s) => !s.agency.length || s.agency.includes(slug));
+};
+
+// One agent's skills, for the agency of the request.
+export const skillsFor = async (agent: AgentKey) => {
+  const { slug } = await getAgency();
+  return (await allSkills()).filter((s) => s.agents.includes(agent) && (!s.agency.length || s.agency.includes(slug)));
+};
 
 // An agent's skills as a block for its system prompt.
 export async function skillsBlock(agent: AgentKey) {

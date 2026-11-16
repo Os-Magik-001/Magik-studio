@@ -43,10 +43,15 @@ export const BUILT_IN: SfxEntry[] = (
   ] as const
 ).map(([kind, title, use]) => ({ id: kind, title: `${title} (built-in): ${use}`, library: "studio", category: kind, tags: [kind], kind, duration: { whoosh: 0.55, pop: 0.14, hit: 0.8, riser: 1.8, click: 0.09, ding: 0.9 }[kind], url: "", page: "", license: "Synthesized by the engine" }));
 
-export async function loadSfxCatalog(extra: SfxEntry[] = []): Promise<SfxEntry[]> {
-  const library = await readFile(new URL("../sfx/mixkit.json", import.meta.url), "utf8")
-    .then((text) => JSON.parse(text) as SfxEntry[])
-    .catch(() => []);
+// The engine's own synthesized effects are everyone's; the recorded set only with "mixkit" among
+// `sets` (an agency's sound_sets; every set when left out).
+export async function loadSfxCatalog(extra: SfxEntry[] = [], sets?: string[]): Promise<SfxEntry[]> {
+  const library =
+    !sets || sets.includes("mixkit")
+      ? await readFile(new URL("../sfx/mixkit.json", import.meta.url), "utf8")
+          .then((text) => JSON.parse(text) as SfxEntry[])
+          .catch(() => [])
+      : [];
   return [...BUILT_IN, ...library, ...extra];
 }
 

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { answeredCount, QUESTIONS, readAnswers } from "@/lib/questionnaire";
 import { asCharte, asDesignBrief, asFindings, asPillars, asPlan, asReels, asReferenceBreakdown, asShootPlan, asSoundReport, asTrendAudio } from "@/lib/agent-types";
 import { ROSTER } from "@/lib/agent-roster";
-import { allSkills, type AgentKey } from "@/lib/skills";
+import { agencySkills, type AgentKey } from "@/lib/skills";
 import { kickQueue } from "@/lib/production";
 import { PLATFORM_LABEL, type ReferencePlatform } from "@/lib/reference-links";
 import { parseShotList } from "@/lib/workflow";
@@ -59,7 +59,7 @@ export default async function AgentsPage({ searchParams }: { searchParams: Promi
       .eq("client_id", client.id)
       .order("created_at"),
     supabase.from("agent_runs").select("id, agent, status, progress, error, video_id, output, created_at, started_at, finished_at").eq("client_id", client.id).order("created_at", { ascending: false }).limit(60),
-    allSkills(),
+    agencySkills(),
   ]);
   await kickQueue();
   const video = (videos ?? []).find((v) => v.id === videoParam) ?? videos?.[0] ?? null;

@@ -10,6 +10,7 @@ import type { RevisionKind } from "@/lib/workflow";
 import { templateById } from "@/lib/design-templates";
 import { MAGIK, brandText } from "@/lib/brand";
 import { getBrand } from "@/lib/brand-server";
+import { recordTokens } from "@/lib/usage";
 
 // The brand strategist, the content planner, the scriptwriter and the motion director run here,
 // in the app. The trend researcher downloads and watches videos, so it runs on the edit engine
@@ -57,6 +58,7 @@ async function ask<T extends z.ZodType>({
       },
     ],
   });
+  await recordTokens(agent ?? kind, response.model, response.usage);
   if (response.stop_reason === "refusal") throw new Error("The agent declined this request.");
   if (response.stop_reason === "max_tokens" || !response.parsed_output) throw new Error("The agent's answer came back incomplete. Try again.");
   return response.parsed_output as z.infer<T>;

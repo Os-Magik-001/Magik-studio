@@ -5,6 +5,7 @@ formats: social_short, ad
 style: dynamic
 when: dbocjkssdqt
 agents: editor, sound
+agency: magik
 ---
 
 # AI Tool Demo – Cinematic Voiceover Style

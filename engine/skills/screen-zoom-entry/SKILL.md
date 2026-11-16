@@ -5,6 +5,7 @@ formats: social_short, ad
 style: dynamic
 agents: editor, motion
 when: website, site web, screen, écran, portfolio, monitor
+agency: magik
 ---
 
 First made for the Magik Management portfolio demo (October 2026). The camera pushes into the monitor until the website fills the frame, the room falls away to black, the site's own elements come alive in 3D, then the camera pulls back out into another shot of the room.

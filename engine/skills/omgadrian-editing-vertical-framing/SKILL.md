@@ -2,6 +2,7 @@
 name: omgadrian-editing-vertical-framing
 description: Composition rules for 9:16: center-line weight, lead eye, constant eyeline, UI dead zones, and shot sizes built from reframe and punch-in (learned from @omgadrian)
 formats: all
+agency: magik
 ---
 
 # Vertical framing

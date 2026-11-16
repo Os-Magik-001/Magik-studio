@@ -4,7 +4,8 @@ import { ChevronRight } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { agencyDb } from "@/lib/supabase/agency";
 import { WindowPage } from "@/components/desktop/window-page";
-import { SettingsGroup, SettingsShell } from "@/components/settings/settings-shell";
+import { SettingsGroup, SettingsRow, SettingsShell } from "@/components/settings/settings-shell";
+import { monthStart, summarize, tokensText } from "@/lib/usage";
 import { ReferralRewardForm } from "./reward-form";
 
 export const metadata: Metadata = { title: "Studio settings" };
@@ -13,7 +14,12 @@ export const metadata: Metadata = { title: "Studio settings" };
 // other settings live.
 export default async function StudioSettingsPage() {
   const viewer = await requireRole("admin");
-  const { data: studio } = await (await agencyDb()).from("studio_settings").select("business_name, referral_reward").maybeSingle();
+  const db = await agencyDb();
+  const [{ data: studio }, { data: usage }] = await Promise.all([
+    db.from("studio_settings").select("business_name, referral_reward").maybeSingle(),
+    db.from("usage_events").select("kind, quantity").gte("created_at", monthStart()).limit(100000),
+  ]);
+  const used = summarize(usage ?? []);
   return (
     <WindowPage>
       <SettingsShell role={viewer.role} platform={viewer.platformAdmin} active="studio" title="Studio" description={`Settings for ${studio?.business_name ?? "the studio"}: shared by everyone.`}>
@@ -21,6 +27,17 @@ export default async function StudioSettingsPage() {
           <div className="p-4">
             <ReferralRewardForm reward={studio?.referral_reward ?? 100} />
           </div>
+        </SettingsGroup>
+        <SettingsGroup title="This month" description="What the studio has used since the first of the month: edits made by the engine, the AI's reading and writing, and trend-research runs.">
+          <SettingsRow label="Edits made">
+            <span className="text-[13.5px] font-semibold text-ink tabular-nums">{used.edits}</span>
+          </SettingsRow>
+          <SettingsRow label="AI tokens">
+            <span className="text-[13.5px] font-semibold text-ink tabular-nums">{tokensText(used.tokens)}</span>
+          </SettingsRow>
+          <SettingsRow label="Research runs">
+            <span className="text-[13.5px] font-semibold text-ink tabular-nums">{used.scrapes}</span>
+          </SettingsRow>
         </SettingsGroup>
         <SettingsGroup title="Elsewhere">
           {[

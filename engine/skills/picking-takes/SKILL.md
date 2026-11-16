@@ -27,7 +27,7 @@ formats: all
 - Never let two takes overlap at a cut, so no syllable is heard twice ("Nor-Normally").
 
 **Pauses and fillers**
-- Compress pauses rather than removing them. What to keep between phrases depends on the format (measured on the studio's references): 0.15-0.45 s in dialogue comedy and series (Cluely's median 0.23 s, The Boyz 0.25-0.45 s); 0.12-0.25 s in creator and realtor talking heads, where nothing over about 0.3 s is left inside a shot. Speech with no gaps at all sounds frantic.
+- Compress pauses rather than removing them. What to keep between phrases depends on the format (measured on the studio's references): 0.15-0.45 s in dialogue comedy and series (a fast office comedy's median 0.23 s, a slower sitcom 0.25-0.45 s); 0.12-0.25 s in creator and realtor talking heads, where nothing over about 0.3 s is left inside a shot. Speech with no gaps at all sounds frantic.
 - Long empty pauses (over about 0.75 s) shrink to that gap.
 - **A performed pause is not an empty pause:** the beat before a punchline (0.8-1.6 s in top comedy), a shrug, a stare, a gesture between two orders. Keep it and protect it (see `cutting`: label the shot `punchline` or `reaction`, or write "beat" in its purpose).
 - Never cut out laughter, a gasp or a one-word punchline. Mark punchlines `beat: punchline`, so their beat before and after is kept.

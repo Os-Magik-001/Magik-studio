@@ -59,3 +59,7 @@ The starting set was distilled, not copied, from these sources:
 - **About 35 more open-source editing skill repos.** They cover talking-head editors (cut-video, ghost-editor, naive-video-skill, JJKoubo, jtxvideo-skill), short-form and ad editors (favstash, video-editor-agent, tiktok-video-skills, remotion-ads, qingyun-cine-skill), vlog and clipping tools (ai-video-editing-skill, newcut, smart-video-editor, easyedit) and full editors (OpenMontage, OpenChatCut, vex, cartcut). Where they disagreed, the rule kept is the one that most of them, or the measured examples, supported.
 
 Several of those repos are non-commercial or copyleft (CC BY-NC, PolyForm Noncommercial, AGPL, GPL). Only general editing practice was taken from them, rewritten in our own words, and none of their text or code is included here.
+
+## Skills kept for one agency
+
+The engine and the app work for several studios (agencies). A skill with `agency: magik` in its front matter is read only for that agency's jobs: its own clients' series, a creator's style it studied, its own feedback and market. Leave `agency` out for craft every studio may use, and keep clients' and people's names out of those.

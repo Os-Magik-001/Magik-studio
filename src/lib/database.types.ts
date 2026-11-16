@@ -20,8 +20,10 @@ export type Database = {
           created_at: string
           domains: string[]
           id: string
+          max_running_edits: number
           name: string
           slug: string
+          sound_sets: string[]
           updated_at: string
         }
         Insert: {
@@ -29,8 +31,10 @@ export type Database = {
           created_at?: string
           domains?: string[]
           id?: string
+          max_running_edits?: number
           name: string
           slug: string
+          sound_sets?: string[]
           updated_at?: string
         }
         Update: {
@@ -38,8 +42,10 @@ export type Database = {
           created_at?: string
           domains?: string[]
           id?: string
+          max_running_edits?: number
           name?: string
           slug?: string
+          sound_sets?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -1960,6 +1966,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_events: {
+        Row: {
+          agency_id: string
+          client_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          model: string | null
+          quantity: number
+          source: string
+          video_id: string | null
+          what: string | null
+        }
+        Insert: {
+          agency_id?: string
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          model?: string | null
+          quantity: number
+          source: string
+          video_id?: string | null
+          what?: string | null
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          model?: string | null
+          quantity?: number
+          source?: string
+          video_id?: string | null
+          what?: string | null
+        }
+        Relationships: []
       }
       versions: {
         Row: {

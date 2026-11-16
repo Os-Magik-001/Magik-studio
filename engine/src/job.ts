@@ -18,6 +18,7 @@ import { reviewRender } from "./review.ts";
 import { loadSfxCatalog, type SfxEntry } from "./sfx.ts";
 import { scoreSound, type SoundReport, type SoundRequest, type TrendAudio } from "./sound.ts";
 import { loadSkills } from "./skills.ts";
+import { count, currentAgency, fairOrder, lastStartedIn } from "./agency.ts";
 import { clipSounds, refineEdits } from "./edits.ts";
 import { checkCut } from "./qc.ts";
 import { pictureCuts } from "./splits.ts";
@@ -29,7 +30,7 @@ import { friendlyError } from "./errors.ts";
 export const log = (job: string | null, msg: string) =>
   console.log(`${new Date().toISOString()} ${job ? `[${job.slice(0, 8)}] ` : ""}${msg}`);
 
-export type Job = { id: string; video_id: string; source: "launch" | "editor_fix" | "client_changes"; instructions: string | null; base_version_id: string | null; attempts: number };
+export type Job = { id: string; video_id: string; source: "launch" | "editor_fix" | "client_changes"; instructions: string | null; base_version_id: string | null; attempts: number; agency_id?: string };
 
 // ---------------------------------------------------------------- queue
 
@@ -53,17 +54,22 @@ export async function recoverStale() {
 export async function claim(): Promise<Job | null> {
   const { data: queued } = await db
     .from("edit_jobs")
-    .select("id, video_id")
+    .select("id, video_id, agency_id, created_at")
     .eq("status", "queued")
     .order("created_at")
-    .limit(10);
-  for (const candidate of queued ?? []) {
-    const { count } = await db
-      .from("edit_jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("video_id", candidate.video_id)
-      .eq("status", "running");
-    if (count) continue; // one edit per video at a time
+    .limit(300);
+  if (!queued?.length) return null;
+  // Agencies take turns, each within its own limit of edits at once (see fairOrder).
+  const [{ data: running }, { data: agencies }, lastStarted] = await Promise.all([
+    db.from("edit_jobs").select("video_id, agency_id").eq("status", "running"),
+    db.from("agencies").select("id, max_running_edits").in("id", [...new Set(queued.map((q) => q.agency_id))]),
+    lastStartedIn("edit_jobs"),
+  ]);
+  const busy = new Map<string, number>();
+  for (const r of running ?? []) busy.set(r.agency_id, (busy.get(r.agency_id) ?? 0) + 1);
+  const limits = new Map((agencies ?? []).map((a) => [a.id, a.max_running_edits]));
+  for (const candidate of fairOrder(queued, busy, lastStarted, limits)) {
+    if (running?.some((r) => r.video_id === candidate.video_id)) continue; // one edit per video at a time
     const { data: current } = await db.from("edit_jobs").select("attempts").eq("id", candidate.id).single();
     // Conditional update: only one worker can move it out of "queued".
     const { data: claimed } = await db
@@ -77,7 +83,7 @@ export async function claim(): Promise<Job | null> {
       })
       .eq("id", candidate.id)
       .eq("status", "queued")
-      .select("id, video_id, source, instructions, base_version_id, attempts")
+      .select("id, video_id, source, instructions, base_version_id, attempts, agency_id")
       .maybeSingle();
     if (claimed) return claimed as Job;
   }
@@ -192,9 +198,11 @@ export type DesignRequest = {
 };
 
 // Every library the sound designer searches: the built-in ones and the studio's Drive folders.
+// Only what the job's agency may use: its built-in sets and its own Drive folders.
 async function soundCatalogs(note: Note): Promise<{ music: Track[]; sfx: SfxEntry[] }> {
-  const drive = await driveLibraries().catch((err) => (note(`Drive sound libraries unavailable: ${err.message}`), { music: [], sfx: [] }));
-  const [music, sfx] = await Promise.all([loadCatalog(drive.music), loadSfxCatalog(drive.sfx)]);
+  const agency = currentAgency();
+  const drive = await driveLibraries(agency.id).catch((err) => (note(`Drive sound libraries unavailable: ${err.message}`), { music: [], sfx: [] }));
+  const [music, sfx] = await Promise.all([loadCatalog(drive.music, agency.soundSets), loadSfxCatalog(drive.sfx, agency.soundSets)]);
   return { music, sfx };
 }
 
@@ -227,7 +235,7 @@ export async function planAndRender(
   const input = { ...rest, instructions: [clean && CLEAN, bare && DESIGNED, rest.instructions].filter(Boolean).join("\n\n") || null };
   note(`skills: ${skills.map((s) => s.name).join(", ") || "none"}`);
   await step("Claude is planning the cut");
-  const library = await loadLibrary().catch(() => []);
+  const library = currentAgency().soundSets.includes("studio") ? await loadLibrary().catch(() => []) : [];
   // The editor picks from the studio's picks; a revision may keep a track the sound designer
   // chose from any library.
   const catalogs = await soundCatalogs(note);
@@ -478,6 +486,7 @@ export function soundLine(s: SoundReport) {
 // calling Claude (`sounder: null` skips the sound designer).
 export async function processJob(job: Job, planner: typeof planEdit = planEdit, sounder: typeof scoreSound | null = scoreSound, designer: typeof designPass = designPass) {
   const dir = path.join(config.workDir, job.id);
+  const began = Date.now();
   await mkdir(dir, { recursive: true });
   const cachedFiles = new Set<string>();
   const step = (text: string) => progress(job.id, text);
@@ -584,7 +593,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
         formatKey: video.format,
         clean: kit?.edit_style === "clean",
         brand: { colors: kit?.colors ?? [], fonts: kit?.fonts ?? [], logoFile, typography },
-        clientName: client?.name ?? (clientId ? "Client" : "Magik Studio (the studio's own video)"),
+        clientName: client?.name ?? (clientId ? "Client" : `${currentAgency().studio} (the studio's own video)`),
         title: video.title,
         format: video.format.replace("_", " "),
         aspect: video.aspect,
@@ -667,6 +676,7 @@ export async function processJob(job: Job, planner: typeof planEdit = planEdit, 
       throw new Error(`Couldn't save the version: ${vErr?.message}`);
     }
 
+    count("edits", 1, job.source, { version: number, worked_seconds: Math.round((Date.now() - began) / 1000) });
     await db
       .from("edit_jobs")
       .update({ status: "done", progress: null, finished_at: new Date().toISOString(), result_version_id: version.id })

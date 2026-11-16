@@ -2,6 +2,7 @@
 name: omgadrian-editing-cutaways-and-inserts
 description: Covering a voice and building scenes: cut rates by format, literal cutaways on named words, pointer-word cuts, location bridges, proof pairs, cold-open Q&A (learned from @omgadrian)
 formats: all
+agency: magik
 ---
 
 # Coverage, cutaways and inserts

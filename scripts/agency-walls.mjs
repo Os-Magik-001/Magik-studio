@@ -17,7 +17,7 @@ const TABLES = [
   "agent_runs", "brand_kits", "brand_questionnaires", "brand_strategies", "calendar_attendees", "calendar_events", "calendar_feeds",
   "client_invites", "client_team", "clients", "comments", "contracts", "credit_ledger", "edit_jobs", "footage", "help_requests", "invoices",
   "motion_prompts", "notifications", "onboardings", "packs", "profiles", "reference_library", "reference_videos", "referrals",
-  "script_revisions", "scripts", "shoots", "sound_files", "sound_libraries", "studio_settings", "trend_reports", "versions", "videos",
+  "script_revisions", "scripts", "shoots", "sound_files", "sound_libraries", "studio_settings", "trend_reports", "usage_events", "versions", "videos",
 ];
 const SHARED = new Set(["motion_prompts", "reference_library", "sound_libraries", "sound_files"]);
 const PASSWORD = "walls-test-2026";

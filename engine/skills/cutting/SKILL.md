@@ -7,7 +7,7 @@ agents: editor
 
 # Cutting
 
-This is the cut itself: where each `start` and `end` goes and how long each shot lasts. Format skills (office-comedy-reels, insta-series, creator-reels, trailer-and-montage...) choose the style; where one of them gives a number for its own format, use that number. Everything here was measured on the references the studio gave (Cluely, The Marketing Interns, The Boyz, J.K. Hamington, Kapsalon, 13 single references) and checked frame by frame on the most played. @omgadrian's 268 editing lessons (see the omgadrian skills) agree on the core: hide each cut in a movement, give every named thing its own picture, alternate sizes at sentence ends, and keep the face for the payoff.
+This is the cut itself: where each `start` and `end` goes and how long each shot lasts. Format skills (office-comedy-reels, insta-series, creator-reels, trailer-and-montage...) choose the style; where one of them gives a number for its own format, use that number. Everything here was measured on the references the studio gave (office comedies, sitcom series, creator and business reels, and single references) and checked frame by frame on the most played. @omgadrian's 268 editing lessons (see the omgadrian skills) agree on the core: hide each cut in a movement, give every named thing its own picture, alternate sizes at sentence ends, and keep the face for the payoff.
 
 In the clean editing style, use only what that style keeps (hard cuts, static framing up to 1.4, subtitles, a music section under the series intro): the engine removes freezes, pushes, transitions, titles and effects.
 
@@ -45,7 +45,7 @@ When a reel mixes them (a meme skit with one spoken line, an episode with a musi
 
 ## 3. Pauses inside a shot
 
-- Keep the breathing between phrases: 0.15-0.45 s in dialogue (Cluely's median is 0.23 s, The Boyz 0.25-0.45 s), 0.12-0.25 s for a creator or realtor talking head. Under about 0.1 s between sentences sounds frantic, except in a deliberate fast exchange.
+- Keep the breathing between phrases: 0.15-0.45 s in dialogue (a fast office comedy's median is 0.23 s, a slower sitcom runs 0.25-0.45 s), 0.12-0.25 s for a creator or realtor talking head. Under about 0.1 s between sentences sounds frantic, except in a deliberate fast exchange.
 - Remove empty pauses. Creator, realtor and voiceover reels never keep more than about 0.3 s inside a shot; dialogue removes gaps over 0.75-0.9 s (the trim pass does this automatically from 0.75 s).
 - **Performed pauses are content, not dead air:** the beat before a punchline (0.8-1.6 s in the most played Cluely episodes: "or" / 1.1 s / the punchline), a deadpan hold, a shrug, a stare before a confessional line (0.6-1.3 s), the beat between barked orders. Keep them at 0.6-1.6 s and protect them:
   - keep the setup's last phrase and the punchline in **one** segment labelled `beat: punchline`, and write "beat" (or "pause", "deadpan", "stare") in its `purpose`: the trim pass then leaves that segment exactly as planned. Without the word, it keeps only the pauses before a punchline's last three words and cuts longer gaps before them;

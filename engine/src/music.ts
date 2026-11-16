@@ -79,10 +79,12 @@ export async function loadLibrary(): Promise<StudioTrack[]> {
 
 // Every built-in track: the studio's picks first, then the libraries (a track already among
 // the picks keeps its measured entry), then the extra tracks given (the Drive libraries).
-export async function loadCatalog(extra: Track[] = []): Promise<Track[]> {
-  const picks: Track[] = (await loadLibrary()).map((t) => ({ ...t, library: "studio", tags: [t.mood.replace("-", " ")] }));
+// `sets` names the built-in sets to include (an agency's sound_sets); all of them when left out.
+export async function loadCatalog(extra: Track[] = [], sets?: string[]): Promise<Track[]> {
+  const has = (set: string) => !sets || sets.includes(set);
+  const picks: Track[] = has("studio") ? (await loadLibrary()).map((t) => ({ ...t, library: "studio", tags: [t.mood.replace("-", " ")] })) : [];
   const libraries = await Promise.all(
-    LIBRARIES.map((name) =>
+    LIBRARIES.filter(has).map((name) =>
       readFile(new URL(`../music/${name}.json`, import.meta.url), "utf8")
         .then((text) => JSON.parse(text) as Track[])
         .catch(() => []),

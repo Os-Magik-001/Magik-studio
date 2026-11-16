@@ -146,9 +146,13 @@ export async function syncLibrary(lib: Library) {
 }
 
 // The Drive libraries' files, as tracks and effects the sound designer can search.
-export async function driveLibraries(): Promise<{ music: Track[]; sfx: SfxEntry[] }> {
+// `agencyId`: only that agency's folders and the ones shared with every agency (no agency).
+// Left out or null (the tests, a script): every folder.
+export async function driveLibraries(agencyId?: string | null): Promise<{ music: Track[]; sfx: SfxEntry[] }> {
   // A library still syncing already offers the files measured so far.
-  const { data: libs } = await db.from("sound_libraries").select("id, name, kind, license").eq("source", "drive").in("status", ["done", "queued", "running"]);
+  let query = db.from("sound_libraries").select("id, name, kind, license").eq("source", "drive").in("status", ["done", "queued", "running"]);
+  if (agencyId) query = query.or(`agency_id.is.null,agency_id.eq.${agencyId}`);
+  const { data: libs } = await query;
   if (!libs?.length) return { music: [], sfx: [] };
   const { data: files } = await db.from("sound_files").select("library_id, drive_file_id, name, folder, duration, mood, tags, analysis").in("library_id", libs.map((l) => l.id));
   const music: Track[] = [];
